@@ -15,17 +15,15 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({ event, isRevealed = true 
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
   };
 
-  const getGoogleMapsEmbedUrl = (location: string) => {
-    return `https://www.google.com/maps/embed/v1/place?key=YOUR_API_KEY&q=${encodeURIComponent(location)}&zoom=15`;
-  };
-
   if (!isRevealed) {
     return (
       <Card className="mb-3 opacity-60">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
             <div className="w-12 h-12 rounded-full bg-neutral-200 flex items-center justify-center">
-              <Activity className="w-6 h-6 text-neutral-400" />
+              <svg className="w-6 h-6 text-neutral-400\" viewBox="0 0 24 24\" fill="none\" stroke="currentColor\" strokeWidth="2">
+                <path d="M9 12h6m-6-4h6m-6 8h6M12 2v20\" strokeLinecap="round\" strokeLinejoin="round" />
+              </svg>
             </div>
             <div className="ml-4">
               <h3 className="text-lg font-medium text-neutral-600">??? Mystery Activity ???</h3>
@@ -92,7 +90,7 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({ event, isRevealed = true 
                   rel="noopener noreferrer"
                   className="text-sm text-primary-600 hover:underline"
                 >
-                  {activity.address || activity.location}
+                  {activity.address || 'Not provided'}
                 </a>
               </div>
               <div>
@@ -129,17 +127,15 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({ event, isRevealed = true 
               )}
             </div>
             
-            <div className="mt-3 rounded-md overflow-hidden h-64">
-              <iframe
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                loading="lazy"
-                allowFullScreen
-                referrerPolicy="no-referrer-when-downgrade"
-                src={getGoogleMapsEmbedUrl(activity.address || activity.location)}
-              />
-            </div>
+            {activity.imageUrl && (
+              <div className="mt-3 rounded-md overflow-hidden h-48">
+                <img 
+                  src={activity.imageUrl} 
+                  alt={activity.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
             
             {activity.bookingLink && (
               <a 
@@ -181,7 +177,7 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({ event, isRevealed = true 
       const mode = travel.mode === 'driving' ? 'driving' : 
                   travel.mode === 'walking' ? 'walking' :
                   travel.mode === 'cycling' ? 'bicycling' :
-                  'transit';
+                  travel.mode === 'transit';
       
       return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=${mode}`;
     };

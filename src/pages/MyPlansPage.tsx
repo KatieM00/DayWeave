@@ -5,10 +5,9 @@ import Button from '../components/common/Button';
 import Card from '../components/common/Card';
 import Input from '../components/common/Input';
 import { DayPlan } from '../types';
-import { mockDayPlan } from '../utils/mockData';
 
 const MyPlansPage: React.FC = () => {
-  const [plans, setPlans] = useState<DayPlan[]>([mockDayPlan]);
+  const [plans, setPlans] = useState<DayPlan[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredPlans = plans.filter(plan => 

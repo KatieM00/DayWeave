@@ -5,9 +5,10 @@ import DetailedForm from '../components/forms/DetailedForm';
 import ItineraryView from '../components/itinerary/ItineraryView';
 import { UserPreferences, DayPlan } from '../types';
 import { generateDetailedDayPlan } from '../utils/mockData';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const DetailedPlanPage: React.FC = () => {
+  const navigate = useNavigate();
   const [dayPlan, setDayPlan] = useState<DayPlan | null>(null);
   
   // Function to handle form submission
@@ -30,6 +31,20 @@ const DetailedPlanPage: React.FC = () => {
   const handleExportPDF = () => {
     // In a real app, this would generate a PDF
     alert('This would generate a downloadable PDF in the full application!');
+  };
+
+  // Function to handle plan updates
+  const handleUpdatePlan = (updatedPlan: DayPlan) => {
+    setDayPlan(updatedPlan);
+  };
+
+  // Function to handle saving plan
+  const handleSavePlan = () => {
+    if (dayPlan) {
+      // In a real app, this would save to a database
+      // For now, we'll just navigate to My Plans
+      navigate('/my-plans');
+    }
   };
   
   return (
@@ -56,16 +71,9 @@ const DetailedPlanPage: React.FC = () => {
               isSurpriseMode={false}
               onSharePlan={handleSharePlan}
               onExportPDF={handleExportPDF}
+              onUpdatePlan={handleUpdatePlan}
+              onSavePlan={handleSavePlan}
             />
-            
-            <div className="mt-8 text-center">
-              <Button
-                variant="outline"
-                onClick={() => setDayPlan(null)}
-              >
-                Modify Plan
-              </Button>
-            </div>
           </div>
         ) : (
           <>
