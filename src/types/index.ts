@@ -7,7 +7,13 @@ export type TravelDistance = {
   unit: 'miles' | 'hours';
 };
 
-export type BudgetRange = 'budget' | 'moderate' | 'premium';
+export type BudgetRange = 
+  | 'budget-low'
+  | 'budget-mid'
+  | 'budget'
+  | 'moderate'
+  | 'premium'
+  | 'luxury';
 
 export type ActivityVibe = 'relaxing' | 'adventurous' | 'cultural' | 'active' | 'mixed';
 
@@ -39,6 +45,12 @@ export type AgeRestriction =
   | 'under-18'
   | 'no-restrictions';
 
+export interface MealPreferences {
+  includeCoffee: boolean;
+  includeLunch: boolean;
+  includeDinner: boolean;
+}
+
 // User preferences for planning
 export interface UserPreferences {
   // Common to both modes
@@ -59,6 +71,7 @@ export interface UserPreferences {
   transportModes?: TransportMode[];
   activityTypes?: ActivityType[];
   ageRestrictions?: AgeRestriction[];
+  mealPreferences?: MealPreferences;
 }
 
 // Activity/Event in an itinerary

@@ -1,8 +1,8 @@
 import React, { ButtonHTMLAttributes } from 'react';
 import { COLORS, TRANSITIONS } from '../../constants/theme';
 
-type ButtonVariant = 'primary' | 'secondary' | 'accent' | 'outline' | 'ghost' | 'danger';
-type ButtonSize = 'sm' | 'md' | 'lg' | 'xl';
+type ButtonVariant = 'primary' | 'secondary' | 'accent' | 'outline' | 'ghost';
+type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -28,19 +28,17 @@ const Button: React.FC<ButtonProps> = ({
   const baseClasses = 'rounded-lg font-medium inline-flex items-center justify-center transition-all';
 
   const variantClasses = {
-    primary: `bg-primary-400 text-white hover:bg-primary-500 active:bg-primary-600 disabled:bg-primary-200`,
-    secondary: `bg-secondary-400 text-white hover:bg-secondary-500 active:bg-secondary-600 disabled:bg-secondary-200`,
-    accent: `bg-accent-300 text-neutral-900 hover:bg-accent-400 active:bg-accent-500 disabled:bg-accent-100`,
-    outline: `bg-transparent border-2 border-primary-400 text-primary-400 hover:bg-primary-50 active:bg-primary-100 disabled:border-primary-200 disabled:text-primary-200`,
-    ghost: `bg-transparent text-primary-400 hover:bg-primary-50 active:bg-primary-100 disabled:text-primary-200`,
-    danger: `bg-error-default text-white hover:bg-error-dark active:bg-error-dark disabled:opacity-50`,
+    primary: `bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 disabled:bg-primary-300`,
+    secondary: `bg-secondary-600 text-white hover:bg-secondary-700 active:bg-secondary-800 disabled:bg-secondary-300`,
+    accent: `bg-accent-500 text-neutral-900 hover:bg-accent-600 active:bg-accent-700 disabled:bg-accent-300`,
+    outline: `bg-transparent border-2 border-primary-600 text-primary-600 hover:bg-primary-50 active:bg-primary-100 disabled:border-primary-300 disabled:text-primary-300`,
+    ghost: `bg-transparent text-primary-600 hover:bg-primary-50 active:bg-primary-100 disabled:text-primary-300`,
   };
 
   const sizeClasses = {
-    sm: 'text-sm py-1.5 px-3 h-8',
-    md: 'text-base py-2 px-4 h-10',
-    lg: 'text-lg py-2.5 px-6 h-12',
-    xl: 'text-xl py-3 px-8 h-14',
+    sm: 'text-sm py-1.5 px-3',
+    md: 'text-base py-2 px-4',
+    lg: 'text-lg py-3 px-6',
   };
 
   const widthClass = fullWidth ? 'w-full' : '';

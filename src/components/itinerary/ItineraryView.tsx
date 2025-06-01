@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Clock, DollarSign, MapPin, Calendar, Share2, Users } from 'lucide-react';
+import { Clock, DollarSign, MapPin, Calendar, Share2, Users, Edit2, Save, X } from 'lucide-react';
 import Card from '../common/Card';
 import Button from '../common/Button';
-import { DayPlan, WeatherForecast } from '../../types';
+import { DayPlan, WeatherForecast, ItineraryEvent } from '../../types';
 import ItineraryItem from './ItineraryItem';
+import DetailedForm from '../forms/DetailedForm';
 
 interface ItineraryViewProps {
   dayPlan: DayPlan;
@@ -11,6 +12,8 @@ interface ItineraryViewProps {
   onRevealMore?: () => void;
   onSharePlan?: () => void;
   onExportPDF?: () => void;
+  onSavePlan?: () => void;
+  onUpdatePlan?: (updatedPlan: DayPlan) => void;
 }
 
 const ItineraryView: React.FC<ItineraryViewProps> = ({
@@ -19,28 +22,60 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   onRevealMore,
   onSharePlan,
   onExportPDF,
+  onSavePlan,
+  onUpdatePlan
 }) => {
   const [weatherExpanded, setWeatherExpanded] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [selectedEvents, setSelectedEvents] = useState<Set<string>>(new Set());
   
-  // Helper function to format duration
   const formatDuration = (minutes: number): string => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours}h ${mins}m`;
   };
   
-  // Helper function to determine how many events to show
   const getVisibleEvents = () => {
     if (!isSurpriseMode || !dayPlan.revealProgress) {
       return dayPlan.events;
     }
     
-    // Calculate how many events to show based on revealProgress percentage
     const eventsToShow = Math.ceil((dayPlan.events.length * dayPlan.revealProgress) / 100);
     return dayPlan.events.slice(0, eventsToShow);
   };
 
-  // Weather card component
+  const handleEventToggle = (eventId: string) => {
+    setSelectedEvents(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(eventId)) {
+        newSet.delete(eventId);
+      } else {
+        newSet.add(eventId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleUpdatePlan = () => {
+    if (!onUpdatePlan) return;
+
+    const updatedEvents = dayPlan.events.filter(event => {
+      const id = event.type === 'activity' ? event.data.id : event.data.id;
+      return !selectedEvents.has(id);
+    });
+
+    const updatedPlan = {
+      ...dayPlan,
+      events: updatedEvents,
+      totalCost: updatedEvents.reduce((sum, event) => sum + event.data.cost, 0),
+      totalDuration: updatedEvents.reduce((sum, event) => sum + event.data.duration, 0),
+    };
+
+    onUpdatePlan(updatedPlan);
+    setIsEditing(false);
+    setSelectedEvents(new Set());
+  };
+
   const WeatherCard = ({ forecast }: { forecast: WeatherForecast }) => (
     <Card className="bg-gradient-to-br from-secondary-100 to-secondary-50 mb-4">
       <div className="flex justify-between items-center">
@@ -83,6 +118,52 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   const visibleEvents = getVisibleEvents();
   const hiddenEvents = dayPlan.events.slice(visibleEvents.length);
 
+  if (isEditing) {
+    return (
+      <div className="max-w-2xl w-full mx-auto">
+        <Card className="mb-4">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-primary-800">Edit Your Plan</h2>
+            <Button
+              variant="outline"
+              size="sm"
+              icon={<X className="h-4 w-4" />}
+              onClick={() => setIsEditing(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+          
+          <div className="space-y-4">
+            {dayPlan.events.map((event) => (
+              <div key={`${event.type}-${event.data.id}`} className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectedEvents.has(event.data.id)}
+                  onChange={() => handleEventToggle(event.data.id)}
+                  className="h-5 w-5 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
+                />
+                <div className="flex-grow">
+                  <ItineraryItem event={event} isRevealed={true} />
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="mt-6 flex justify-end gap-2">
+            <Button
+              variant="primary"
+              onClick={handleUpdatePlan}
+              disabled={selectedEvents.size === 0}
+            >
+              Update Plan
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl w-full mx-auto">
       <Card className="mb-4">
@@ -92,7 +173,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
           <div className="flex flex-wrap gap-4 mt-2">
             <div className="flex items-center text-neutral-600">
               <Calendar className="h-5 w-5 mr-1 text-primary-500" />
-              <span>{new Date(dayPlan.date).toLocaleDateString('en-US', { 
+              <span>{new Date(dayPlan.date).toLocaleDateString('en-GB', { 
                 weekday: 'long', 
                 year: 'numeric', 
                 month: 'long', 
@@ -125,6 +206,28 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
         </div>
         
         <div className="flex gap-2 mb-4">
+          {!isSurpriseMode && onUpdatePlan && (
+            <Button
+              variant="outline"
+              size="sm"
+              icon={<Edit2 className="h-4 w-4" />}
+              onClick={() => setIsEditing(true)}
+            >
+              Modify Plan
+            </Button>
+          )}
+          
+          {isSurpriseMode && onSavePlan && (
+            <Button
+              variant="primary"
+              size="sm"
+              icon={<Save className="h-4 w-4" />}
+              onClick={onSavePlan}
+            >
+              Save Plan
+            </Button>
+          )}
+          
           <Button
             variant="outline"
             size="sm"
