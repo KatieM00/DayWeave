@@ -5,10 +5,9 @@ import DetailedForm from '../components/forms/DetailedForm';
 import ItineraryView from '../components/itinerary/ItineraryView';
 import { UserPreferences, DayPlan } from '../types';
 import { generateDetailedDayPlan } from '../utils/mockData';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 const DetailedPlanPage: React.FC = () => {
-  const navigate = useNavigate();
   const [dayPlan, setDayPlan] = useState<DayPlan | null>(null);
   
   // Function to handle form submission
@@ -37,15 +36,6 @@ const DetailedPlanPage: React.FC = () => {
   const handleUpdatePlan = (updatedPlan: DayPlan) => {
     setDayPlan(updatedPlan);
   };
-
-  // Function to handle saving plan
-  const handleSavePlan = () => {
-    if (dayPlan) {
-      // In a real app, this would save to a database
-      // For now, we'll just navigate to My Plans
-      navigate('/my-plans');
-    }
-  };
   
   return (
     <div className="min-h-screen bg-neutral-50 py-8 px-4">
@@ -72,7 +62,6 @@ const DetailedPlanPage: React.FC = () => {
               onSharePlan={handleSharePlan}
               onExportPDF={handleExportPDF}
               onUpdatePlan={handleUpdatePlan}
-              onSavePlan={handleSavePlan}
             />
           </div>
         ) : (
