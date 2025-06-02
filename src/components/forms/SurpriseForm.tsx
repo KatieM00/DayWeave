@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { MapPin, Users, Compass, DollarSign, Sparkles } from 'lucide-react';
+import { MapPin, Users, Compass, DollarSign, Sparkles, Eye, EyeOff } from 'lucide-react';
 import Button from '../common/Button';
 import Input from '../common/Input';
 import Card from '../common/Card';
 import { UserPreferences, BudgetRange, ActivityVibe, TravelDistance } from '../../types';
 
 interface SurpriseFormProps {
-  onSubmit: (preferences: UserPreferences) => void;
+  onSubmit: (preferences: UserPreferences & { surpriseMode: boolean }) => void;
 }
 
 const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
   const [step, setStep] = useState(1);
-  const [preferences, setPreferences] = useState<UserPreferences>({
+  const [preferences, setPreferences] = useState<UserPreferences & { surpriseMode?: boolean }>({
     startLocation: '',
     groupSize: 1,
     budgetRange: 'moderate' as BudgetRange,
@@ -65,7 +65,10 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
 
   const handleSubmit = () => {
     if (validateStep(step)) {
-      onSubmit(preferences);
+      onSubmit({
+        ...preferences,
+        surpriseMode: preferences.surpriseMode ?? false
+      });
     }
   };
 
@@ -213,38 +216,38 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
               What's your budget looking like?
             </h2>
             
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-4">
               <Button
                 variant={preferences.budgetRange === 'budget' ? 'primary' : 'outline'}
                 size="lg"
                 onClick={() => handleChange('budgetRange', 'budget')}
-                className="aspect-square flex flex-col items-center justify-center gap-2"
+                className="aspect-square flex flex-col items-center justify-center gap-2 p-6"
               >
                 <DollarSign className="h-8 w-8" />
-                <span className="font-semibold">Budget</span>
-                <span className="text-sm">£0-50</span>
+                <span className="font-semibold text-center">Budget</span>
+                <span className="text-sm text-center">£0-50</span>
               </Button>
               
               <Button
                 variant={preferences.budgetRange === 'moderate' ? 'primary' : 'outline'}
                 size="lg"
                 onClick={() => handleChange('budgetRange', 'moderate')}
-                className="aspect-square flex flex-col items-center justify-center gap-2"
+                className="aspect-square flex flex-col items-center justify-center gap-2 p-6"
               >
                 <DollarSign className="h-8 w-8" />
-                <span className="font-semibold">Moderate</span>
-                <span className="text-sm">£50-150</span>
+                <span className="font-semibold text-center">Moderate</span>
+                <span className="text-sm text-center">£50-150</span>
               </Button>
               
               <Button
                 variant={preferences.budgetRange === 'premium' ? 'primary' : 'outline'}
                 size="lg"
                 onClick={() => handleChange('budgetRange', 'premium')}
-                className="aspect-square flex flex-col items-center justify-center gap-2"
+                className="aspect-square flex flex-col items-center justify-center gap-2 p-6"
               >
                 <DollarSign className="h-8 w-8" />
-                <span className="font-semibold">Premium</span>
-                <span className="text-sm">£150+</span>
+                <span className="font-semibold text-center">Premium</span>
+                <span className="text-sm text-center">£150+</span>
               </Button>
             </div>
             
@@ -299,10 +302,75 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
               variant="primary"
               size="lg"
               fullWidth
-              onClick={handleSubmit}
+              onClick={nextStep}
               disabled={!Array.isArray(preferences.activityVibe) || preferences.activityVibe.length === 0}
             >
-              Create My Surprise Day!
+              Next
+            </Button>
+          </div>
+        );
+
+      case 6:
+        return (
+          <div className="space-y-6 animate-fadeIn">
+            <h2 className="text-2xl font-bold text-primary-800 text-center mb-4">
+              Would you like to experience your journey as a surprise adventure?
+            </h2>
+            
+            <p className="text-center text-neutral-600 mb-8">
+              Choose how you want to view your itinerary
+            </p>
+            
+            <div className="grid grid-cols-1 gap-6">
+              <Button
+                variant={preferences.surpriseMode ? 'primary' : 'outline'}
+                size="lg"
+                onClick={() => setPreferences(prev => ({ ...prev, surpriseMode: true }))}
+                className="p-6 flex flex-col items-center gap-4 text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <EyeOff className="h-8 w-8 shrink-0" />
+                  <span className="text-xl font-semibold">🎲 YES - SURPRISE MODE</span>
+                </div>
+                <ul className="text-sm space-y-2 list-disc ml-6">
+                  <li>See only travel times and distances between stops</li>
+                  <li>Destinations and activities remain hidden until you're ready</li>
+                  <li>Click "Reveal" at each stop to uncover your next location</li>
+                  <li>Perfect for spontaneous travelers who love surprises</li>
+                </ul>
+              </Button>
+              
+              <Button
+                variant={preferences.surpriseMode === false ? 'primary' : 'outline'}
+                size="lg"
+                onClick={() => setPreferences(prev => ({ ...prev, surpriseMode: false }))}
+                className="p-6 flex flex-col items-center gap-4 text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <Eye className="h-8 w-8 shrink-0" />
+                  <span className="text-xl font-semibold">📝 NO - STANDARD MODE</span>
+                </div>
+                <ul className="text-sm space-y-2 list-disc ml-6">
+                  <li>View your complete itinerary immediately</li>
+                  <li>All destinations and activities shown upfront</li>
+                  <li>Get a clear overview of your entire journey</li>
+                  <li>Ideal for those who prefer to plan ahead</li>
+                </ul>
+              </Button>
+            </div>
+            
+            <div className="text-center text-sm text-neutral-600 mt-4">
+              Note: You can switch between modes at any time during your trip.
+            </div>
+            
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              onClick={handleSubmit}
+              disabled={preferences.surpriseMode === undefined}
+            >
+              Create My Adventure!
             </Button>
           </div>
         );
@@ -316,7 +384,7 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
     <Card className="max-w-xl w-full mx-auto">
       <div className="flex justify-between items-center mb-8">
         <div className="flex space-x-2">
-          {[1, 2, 3, 4, 5].map((stepNumber) => (
+          {[1, 2, 3, 4, 5, 6].map((stepNumber) => (
             <div
               key={stepNumber}
               className={`
@@ -327,7 +395,7 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
             />
           ))}
         </div>
-        <span className="text-sm text-neutral-500">Step {step} of 5</span>
+        <span className="text-sm text-neutral-500">Step {step} of 6</span>
       </div>
       
       {renderStepContent()}

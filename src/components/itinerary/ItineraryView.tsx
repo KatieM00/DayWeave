@@ -47,6 +47,17 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
     return `${hours}h ${mins}m`;
   };
 
+  const getVisibleEvents = () => {
+    if (!isSurpriseMode || !dayPlan.revealProgress) {
+      return events;
+    }
+    
+    const eventsToShow = Math.ceil((events.length * dayPlan.revealProgress) / 100);
+    return events.slice(0, eventsToShow);
+  };
+
+  const hiddenEvents = events.slice(getVisibleEvents().length);
+
   const handleDeleteEvent = (eventId: string) => {
     const updatedEvents = events.filter(event => {
       const id = event.type === 'activity' ? event.data.id : event.data.id;
@@ -295,6 +306,8 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
     </div>
   );
 
+  const visibleEvents = getVisibleEvents();
+
   return (
     <div className="max-w-2xl w-full mx-auto">
       <Card className="mb-4">
@@ -402,7 +415,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
               {...provided.droppableProps}
               className="space-y-3 mb-6"
             >
-              {events.map((event, index) => (
+              {visibleEvents.map((event, index) => (
                 <Draggable 
                   key={`${event.type}-${event.data.id}`}
                   draggableId={`${event.type}-${event.data.id}`}
@@ -424,7 +437,10 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
                           <X className="w-4 h-4" />
                         </button>
                       )}
-                      <ItineraryItem event={event} isRevealed={true} />
+                      <ItineraryItem 
+                        event={event} 
+                        isRevealed={!isSurpriseMode || event.type === 'travel'} 
+                      />
                     </div>
                   )}
                 </Draggable>
@@ -434,6 +450,42 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
           )}
         </Droppable>
       </DragDropContext>
+
+      {hiddenEvents.length > 0 && isSurpriseMode && (
+        <div className="text-center py-6">
+          <div className="mb-4">
+            <div className="w-12 h-12 rounded-full bg-accent-100 text-accent-600 mx-auto flex items-center justify-center">
+              <ChevronDown className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-medium text-neutral-800 mt-2">
+              {hiddenEvents.length} more {hiddenEvents.length === 1 ? 'activity' : 'activities'} to discover!
+            </h3>
+            <p className="text-neutral-600 mt-1">
+              Ready to see what's next on your surprise itinerary?
+            </p>
+          </div>
+          
+          <div className="flex justify-center gap-3">
+            <Button
+              variant="primary"
+              onClick={onRevealMore}
+            >
+              Reveal Next Activity
+            </Button>
+            
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (onRevealMore) {
+                  [...Array(hiddenEvents.length)].forEach(() => onRevealMore());
+                }
+              }}
+            >
+              Reveal All
+            </Button>
+          </div>
+        </div>
+      )}
 
       {showActivityChoices && <ActivityOverlay />}
       {showSaveDialog && <SaveDialog />}

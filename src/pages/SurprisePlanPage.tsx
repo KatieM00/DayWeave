@@ -12,16 +12,22 @@ const SurprisePlanPage: React.FC = () => {
   const [revealProgress, setRevealProgress] = useState(0);
   
   // Function to handle form submission
-  const handleSubmit = (preferences: UserPreferences) => {
+  const handleSubmit = (preferences: UserPreferences & { surpriseMode: boolean }) => {
     // In a real app, this would make API calls to generate the plan
     const plan = generateSurpriseDayPlan(preferences);
     
-    // Set initial reveal progress to show just the first event (usually the starting point)
-    const initialReveal = Math.ceil((1 / plan.events.length) * 100);
-    plan.revealProgress = initialReveal;
+    if (preferences.surpriseMode) {
+      // Set initial reveal progress to show just the first event
+      const initialReveal = Math.ceil((1 / plan.events.length) * 100);
+      plan.revealProgress = initialReveal;
+      setRevealProgress(initialReveal);
+    } else {
+      // Show all events immediately
+      plan.revealProgress = 100;
+      setRevealProgress(100);
+    }
     
     setDayPlan(plan);
-    setRevealProgress(initialReveal);
     
     // Scroll to top
     window.scrollTo(0, 0);
@@ -56,6 +62,12 @@ const SurprisePlanPage: React.FC = () => {
     // In a real app, this would generate a PDF
     alert('This would generate a downloadable PDF in the full application!');
   };
+
+  // Function to handle saving plan
+  const handleSavePlan = () => {
+    // In a real app, this would save the plan to the user's account
+    alert('This would save the plan to your account in the full application!');
+  };
   
   return (
     <div className="min-h-screen bg-neutral-50 py-8 px-4">
@@ -72,22 +84,28 @@ const SurprisePlanPage: React.FC = () => {
             <div className="text-center mb-10">
               <h1 className="text-3xl font-bold text-primary-800 mb-2">Your Surprise Adventure</h1>
               <p className="text-neutral-600">
-                Here's the perfect day we've planned for you. The more you reveal, the more adventures await!
+                {revealProgress < 100 
+                  ? "Here's your adventure, ready to be discovered one step at a time!"
+                  : "Here's your complete adventure plan. Enjoy your journey!"}
               </p>
             </div>
             
             <ItineraryView
               dayPlan={dayPlan}
-              isSurpriseMode={true}
+              isSurpriseMode={revealProgress < 100}
               onRevealMore={handleRevealMore}
               onSharePlan={handleSharePlan}
               onExportPDF={handleExportPDF}
+              onSavePlan={handleSavePlan}
             />
             
             <div className="mt-8 text-center">
               <Button
                 variant="outline"
-                onClick={() => setDayPlan(null)}
+                onClick={() => {
+                  setDayPlan(null);
+                  setRevealProgress(0);
+                }}
               >
                 Start Over
               </Button>
