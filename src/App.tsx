@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 
 // Pages
 import HomePage from './pages/HomePage';
@@ -15,24 +16,26 @@ import Footer from './components/layout/Footer';
 
 function App() {
   return (
-    <Router>
-      <div className="flex flex-col min-h-screen">
-        <Header />
-        
-        <main className="flex-grow">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/surprise" element={<SurprisePlanPage />} />
-            <Route path="/plan" element={<DetailedPlanPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
-            <Route path="/my-plans" element={<MyPlansPage />} />
-          </Routes>
-        </main>
-        
-        <Footer />
-      </div>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <div className="flex flex-col min-h-screen">
+          <Header />
+          
+          <main className="flex-grow">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/surprise" element={<SurprisePlanPage />} />
+              <Route path="/plan" element={<DetailedPlanPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
+              <Route path="/my-plans" element={<MyPlansPage />} />
+            </Routes>
+          </main>
+          
+          <Footer />
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 
