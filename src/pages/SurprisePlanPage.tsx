@@ -11,36 +11,27 @@ const SurprisePlanPage: React.FC = () => {
   const [dayPlan, setDayPlan] = useState<DayPlan | null>(null);
   const [revealProgress, setRevealProgress] = useState(0);
   
-  // Function to handle form submission
   const handleSubmit = (preferences: UserPreferences & { surpriseMode: boolean }) => {
-    // In a real app, this would make API calls to generate the plan
     const plan = generateSurpriseDayPlan(preferences);
     
     if (preferences.surpriseMode) {
-      // Set initial reveal progress to show just the first event
       const initialReveal = Math.ceil((1 / plan.events.length) * 100);
       plan.revealProgress = initialReveal;
       setRevealProgress(initialReveal);
     } else {
-      // Show all events immediately
       plan.revealProgress = 100;
       setRevealProgress(100);
     }
     
     setDayPlan(plan);
-    
-    // Scroll to top
     window.scrollTo(0, 0);
   };
   
-  // Function to reveal more of the itinerary
   const handleRevealMore = () => {
     if (!dayPlan) return;
     
     const eventCount = dayPlan.events.length;
     const currentlyRevealed = Math.ceil((eventCount * revealProgress) / 100);
-    
-    // Reveal one more event
     const newRevealed = currentlyRevealed + 1;
     const newProgress = Math.min(100, Math.ceil((newRevealed / eventCount) * 100));
     
@@ -51,22 +42,21 @@ const SurprisePlanPage: React.FC = () => {
     });
   };
   
-  // Function to handle sharing plan
   const handleSharePlan = () => {
-    // In a real app, this would generate a shareable link
     alert('This would generate a shareable link in the full application!');
   };
   
-  // Function to handle PDF export
   const handleExportPDF = () => {
-    // In a real app, this would generate a PDF
     alert('This would generate a downloadable PDF in the full application!');
   };
 
-  // Function to handle saving plan
   const handleSavePlan = () => {
-    // In a real app, this would save the plan to the user's account
     alert('This would save the plan to your account in the full application!');
+  };
+
+  const handleUpdatePlan = (updatedPlan: DayPlan) => {
+    setDayPlan(updatedPlan);
+    setRevealProgress(updatedPlan.revealProgress || 0);
   };
   
   return (
@@ -97,6 +87,7 @@ const SurprisePlanPage: React.FC = () => {
               onSharePlan={handleSharePlan}
               onExportPDF={handleExportPDF}
               onSavePlan={handleSavePlan}
+              onUpdatePlan={handleUpdatePlan}
             />
             
             <div className="mt-8 text-center">

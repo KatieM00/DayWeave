@@ -4,8 +4,8 @@ import Button from '../components/common/Button';
 import DetailedForm from '../components/forms/DetailedForm';
 import ItineraryView from '../components/itinerary/ItineraryView';
 import { UserPreferences, DayPlan } from '../types';
-import { generateDetailedDayPlan } from '../utils/mockData';
 import { Link } from 'react-router-dom';
+import { generateDetailedDayPlan } from '../utils/mockData';
 
 const DetailedPlanPage: React.FC = () => {
   const [dayPlan, setDayPlan] = useState<DayPlan | null>(null);
@@ -43,7 +43,7 @@ const DetailedPlanPage: React.FC = () => {
         {dayPlan ? (
           <div className="mb-6">
             <div className="mb-6">
-              <Link to="/\" className="inline-flex items-center text-primary-600 hover:text-primary-700">
+              <Link to="/" className="inline-flex items-center text-primary-600 hover:text-primary-700">
                 <ArrowLeft className="w-4 h-4 mr-1" />
                 Back to Home
               </Link>

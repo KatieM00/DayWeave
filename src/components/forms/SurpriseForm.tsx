@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Users, Compass, DollarSign, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { MapPin, LogIn, Users, Compass, DollarSign, Sparkles, Eye, EyeOff } from 'lucide-react';
 import Button from '../common/Button';
 import Input from '../common/Input';
 import Card from '../common/Card';
@@ -13,9 +13,9 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
   const [step, setStep] = useState(1);
   const [preferences, setPreferences] = useState<UserPreferences & { surpriseMode?: boolean }>({
     startLocation: '',
-    groupSize: 1,
-    budgetRange: 'moderate' as BudgetRange,
-    travelDistance: { value: 5, unit: 'miles' },
+    groupSize: 0,
+    budgetRange: '' as BudgetRange,
+    travelDistance: { value: 0, unit: 'miles' },
     activityVibe: [] as ActivityVibe[],
   });
 

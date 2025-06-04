@@ -1,29 +1,84 @@
 import React, { useState } from 'react';
-import { Clock, MapPin, DollarSign, ChevronDown, ChevronUp, Activity } from 'lucide-react';
-import type { Activity as ActivityType, Travel, ItineraryEvent, ActivityType as ActivityTypeEnum, TransportMode } from '../../types';
+import { Clock, MapPin, DollarSign, ChevronDown, ChevronUp, Activity, AlertTriangle } from 'lucide-react';
+import type { Activity as ActivityType, Travel, ItineraryEvent } from '../../types';
 import Card from '../common/Card';
+import Button from '../common/Button';
 
 interface ItineraryItemProps {
   event: ItineraryEvent;
   isRevealed?: boolean;
+  isSurpriseMode?: boolean;
+  isPreviouslyRevealed?: boolean;
 }
 
-const ItineraryItem: React.FC<ItineraryItemProps> = ({ event, isRevealed = true }) => {
+const ItineraryItem: React.FC<ItineraryItemProps> = ({ 
+  event, 
+  isRevealed = true,
+  isSurpriseMode = false,
+  isPreviouslyRevealed = false
+}) => {
   const [expanded, setExpanded] = useState(false);
+  const [showDirectionsWarning, setShowDirectionsWarning] = useState(false);
+  const [pendingUrl, setPendingUrl] = useState<string>('');
 
   const getGoogleMapsUrl = (location: string) => {
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
   };
 
-  if (!isRevealed) {
+  const handleDirectionsClick = (e: React.MouseEvent, url: string) => {
+    e.preventDefault();
+    if (!isSurpriseMode) {
+      window.open(url, '_blank');
+      return;
+    }
+    setPendingUrl(url);
+    setShowDirectionsWarning(true);
+  };
+
+  const DirectionsWarning = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg p-6 max-w-md w-full animate-fadeIn">
+        <div className="flex items-center gap-3 text-warning-default mb-4">
+          <AlertTriangle className="h-6 w-6" />
+          <h3 className="text-lg font-semibold">Woooah!</h3>
+        </div>
+        
+        <p className="text-neutral-600 mb-6">
+          Are you ready to see your next location? Clicking 'show location' will open Google Maps!
+        </p>
+        
+        <div className="flex justify-end gap-3">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setShowDirectionsWarning(false);
+              setPendingUrl('');
+            }}
+          >
+            Not yet
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => {
+              window.open(pendingUrl, '_blank');
+              setShowDirectionsWarning(false);
+              setPendingUrl('');
+            }}
+          >
+            Show Location
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (!isRevealed && !isPreviouslyRevealed) {
     return (
       <Card className="mb-3 opacity-60">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
             <div className="w-12 h-12 rounded-full bg-neutral-200 flex items-center justify-center">
-              <svg className="w-6 h-6 text-neutral-400\" viewBox="0 0 24 24\" fill="none\" stroke="currentColor\" strokeWidth="2">
-                <path d="M9 12h6m-6-4h6m-6 8h6M12 2v20\" strokeLinecap="round\" strokeLinejoin="round" />
-              </svg>
+              <Activity className="w-6 h-6 text-neutral-400" />
             </div>
             <div className="ml-4">
               <h3 className="text-lg font-medium text-neutral-600">??? Mystery Activity ???</h3>
@@ -38,26 +93,21 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({ event, isRevealed = true 
     );
   }
 
-  const toggleExpand = () => {
-    setExpanded(!expanded);
-  };
-
   const renderActivityContent = (activity: ActivityType) => {
     return (
       <>
         <div className="flex justify-between items-center">
           <div className="flex items-center">
             <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center">
-              {getActivityIcon(activity.activityType[0])}
+              <Activity className="w-6 h-6 text-primary-600" />
             </div>
             <div className="ml-4">
               <h3 className="text-lg font-medium text-neutral-800">{activity.name}</h3>
               <div className="flex items-center text-sm text-neutral-600">
                 <MapPin className="h-4 w-4 mr-1 text-primary-500" />
                 <a 
-                  href={getGoogleMapsUrl(activity.location)}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="#"
+                  onClick={(e) => handleDirectionsClick(e, getGoogleMapsUrl(activity.location))}
                   className="hover:text-primary-600 hover:underline"
                 >
                   {activity.location}
@@ -85,12 +135,11 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({ event, isRevealed = true 
               <div>
                 <h4 className="text-sm font-medium text-neutral-700 mb-1">Address</h4>
                 <a 
-                  href={getGoogleMapsUrl(activity.address || activity.location)}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="#"
+                  onClick={(e) => handleDirectionsClick(e, getGoogleMapsUrl(activity.address || activity.location))}
                   className="text-sm text-primary-600 hover:underline"
                 >
-                  {activity.address || 'Not provided'}
+                  {activity.address || activity.location}
                 </a>
               </div>
               <div>
@@ -151,7 +200,7 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({ event, isRevealed = true 
         )}
         
         <button
-          onClick={toggleExpand}
+          onClick={() => setExpanded(!expanded)}
           className="flex items-center text-primary-600 hover:text-primary-700 mt-3 text-sm font-medium"
         >
           {expanded ? (
@@ -177,7 +226,7 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({ event, isRevealed = true 
       const mode = travel.mode === 'driving' ? 'driving' : 
                   travel.mode === 'walking' ? 'walking' :
                   travel.mode === 'cycling' ? 'bicycling' :
-                  travel.mode === 'transit';
+                  'transit';
       
       return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=${mode}`;
     };
@@ -185,7 +234,7 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({ event, isRevealed = true 
     return (
       <div className="flex items-center py-2 px-3 bg-secondary-50 border-l-4 border-secondary-400">
         <div className="w-10 h-10 rounded-full bg-secondary-100 flex items-center justify-center">
-          {getTransportIcon(travel.mode)}
+          <Activity className="w-6 h-6 text-secondary-600" />
         </div>
         
         <div className="ml-3 flex-grow">
@@ -199,9 +248,8 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({ event, isRevealed = true 
         </div>
         
         <a
-          href={getDirectionsUrl()}
-          target="_blank"
-          rel="noopener noreferrer"
+          href="#"
+          onClick={(e) => handleDirectionsClick(e, getDirectionsUrl())}
           className="ml-2 text-secondary-600 hover:text-secondary-700 flex items-center"
         >
           <MapPin className="h-4 w-4 mr-1" />
@@ -212,34 +260,16 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({ event, isRevealed = true 
   };
 
   return (
-    <Card className={`mb-3 ${event.type === 'travel' ? 'border-l-4 border-secondary-400 bg-secondary-50' : ''}`}>
-      {event.type === 'activity' 
-        ? renderActivityContent(event.data) 
-        : renderTravelContent(event.data)
-      }
-    </Card>
+    <>
+      <Card className={`mb-3 ${event.type === 'travel' ? 'border-l-4 border-secondary-400 bg-secondary-50' : ''}`}>
+        {event.type === 'activity' 
+          ? renderActivityContent(event.data) 
+          : renderTravelContent(event.data)
+        }
+      </Card>
+      {showDirectionsWarning && <DirectionsWarning />}
+    </>
   );
-};
-
-const getActivityIcon = (type: ActivityTypeEnum) => {
-  switch (type) {
-    case 'outdoor':
-      return <Activity className="w-6 h-6 text-primary-600" />;
-    case 'indoor':
-      return <MapPin className="w-6 h-6 text-primary-600" />;
-    case 'nature':
-      return <MapPin className="w-6 h-6 text-primary-600" />;
-    case 'culture':
-      return <MapPin className="w-6 h-6 text-primary-600" />;
-    case 'food':
-      return <MapPin className="w-6 h-6 text-primary-600" />;
-    default:
-      return <MapPin className="w-6 h-6 text-primary-600" />;
-  }
-};
-
-const getTransportIcon = (mode: TransportMode) => {
-  return <MapPin className="w-6 h-6 text-secondary-600" />;
 };
 
 export default ItineraryItem;

@@ -11,6 +11,93 @@ import type {
   WeatherForecast
 } from '../types';
 
+// Helper function to calculate travel time and distance between two points
+export const generateTravelSegment = (
+  startLocation: string,
+  endLocation: string,
+  startTime: string,
+  preferredModes: TransportMode[] = ['walking', 'driving']
+): Travel => {
+  // In a real app, this would use Google Maps API or similar
+  // For now, we'll generate realistic-looking mock data
+  
+  // Generate a random distance between 0.1 and 15 miles
+  const distance = Math.round((Math.random() * 14.9 + 0.1) * 10) / 10;
+  
+  // Choose transport mode based on distance and preferences
+  let mode: TransportMode = 'walking';
+  if (distance > 2 && preferredModes.includes('driving')) {
+    mode = 'driving';
+  } else if (distance > 1 && preferredModes.includes('cycling')) {
+    mode = 'cycling';
+  }
+  
+  // Calculate duration based on mode and distance
+  let speedMph = mode === 'walking' ? 3 : mode === 'cycling' ? 12 : 25;
+  const durationMinutes = Math.ceil((distance / speedMph) * 60);
+  
+  // Calculate end time
+  const [hours, minutes] = startTime.split(':').map(Number);
+  const startDate = new Date(2025, 0, 1, hours, minutes);
+  const endDate = new Date(startDate.getTime() + durationMinutes * 60000);
+  const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
+  
+  // Calculate cost (only for driving/taxi)
+  const cost = mode === 'driving' ? Math.round(distance * 0.5 * 100) / 100 : 0;
+  
+  return {
+    id: `travel-${startTime}-${endTime}`.replace(/:/g, ''),
+    startLocation,
+    endLocation,
+    startTime,
+    endTime,
+    duration: durationMinutes,
+    mode,
+    cost,
+    distance
+  };
+};
+
+// Helper function to recalculate all travel segments in an itinerary
+export const recalculateTravel = (
+  activities: Activity[],
+  preferences: UserPreferences
+): Travel[] => {
+  const travels: Travel[] = [];
+  
+  for (let i = 0; i < activities.length - 1; i++) {
+    const currentActivity = activities[i];
+    const nextActivity = activities[i + 1];
+    
+    const travel = generateTravelSegment(
+      currentActivity.location,
+      nextActivity.location,
+      currentActivity.endTime,
+      preferences.transportModes
+    );
+    
+    // Adjust next activity start time if needed
+    const [travelEndHours, travelEndMinutes] = travel.endTime.split(':').map(Number);
+    const [nextStartHours, nextStartMinutes] = nextActivity.startTime.split(':').map(Number);
+    const travelEndMinutesTotal = travelEndHours * 60 + travelEndMinutes;
+    const nextStartMinutesTotal = nextStartHours * 60 + nextStartMinutes;
+    
+    if (travelEndMinutesTotal > nextStartMinutesTotal) {
+      const newStartDate = new Date(2025, 0, 1, travelEndHours, travelEndMinutes);
+      nextActivity.startTime = `${newStartDate.getHours().toString().padStart(2, '0')}:${newStartDate.getMinutes().toString().padStart(2, '0')}`;
+      
+      // Adjust end time accordingly
+      const activityDuration = nextActivity.duration;
+      const endDate = new Date(newStartDate.getTime() + activityDuration * 60000);
+      nextActivity.endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
+    }
+    
+    travels.push(travel);
+  }
+  
+  return travels;
+};
+
 // Sample activities with UK locations and pound sterling
 export const mockActivities: Activity[] = [
   {
@@ -108,63 +195,13 @@ export const mockActivities: Activity[] = [
 ];
 
 // Sample travel segments with UK locations
-export const mockTravels: Travel[] = [
-  {
-    id: 't1',
-    startLocation: 'The Clocktower Café',
-    endLocation: 'Seven Sisters Country Park',
-    startTime: '09:45',
-    endTime: '10:15',
-    duration: 30,
-    mode: 'driving',
-    cost: 2.50,
-    distance: 5.2
-  },
-  {
-    id: 't2',
-    startLocation: 'Seven Sisters Country Park',
-    endLocation: 'The Garden Kitchen',
-    startTime: '12:15',
-    endTime: '13:00',
-    duration: 45,
-    mode: 'driving',
-    cost: 3.50,
-    distance: 7.8
-  },
-  {
-    id: 't3',
-    startLocation: 'The Garden Kitchen',
-    endLocation: 'Brighton Museum',
-    startTime: '14:30',
-    endTime: '15:00',
-    duration: 30,
-    mode: 'walking',
-    cost: 0,
-    distance: 0.5
-  },
-  {
-    id: 't4',
-    startLocation: 'Brighton Museum',
-    endLocation: 'Brighton Beach',
-    startTime: '17:00',
-    endTime: '17:30',
-    duration: 30,
-    mode: 'walking',
-    cost: 0,
-    distance: 0.3
-  },
-  {
-    id: 't5',
-    startLocation: 'Brighton Beach',
-    endLocation: 'The Salt Room',
-    startTime: '18:30',
-    endTime: '19:00',
-    duration: 30,
-    mode: 'walking',
-    cost: 0,
-    distance: 0.2
-  }
-];
+export const mockTravels: Travel[] = recalculateTravel(mockActivities, {
+  startLocation: 'Brighton City Centre',
+  groupSize: 2,
+  budgetRange: 'moderate',
+  travelDistance: { value: 10, unit: 'miles' },
+  transportModes: ['walking', 'driving']
+});
 
 // Sample day plan with UK location
 export const mockDayPlan: DayPlan = {
@@ -201,27 +238,6 @@ export const mockDayPlan: DayPlan = {
     windSpeed: 5,
   },
   revealProgress: 100,
-};
-
-// Mock user preferences with UK location
-export const mockUserPreferences: UserPreferences = {
-  startLocation: 'Brighton City Centre',
-  groupSize: 2,
-  budgetRange: 'moderate',
-  travelDistance: { value: 10, unit: 'miles' },
-  activityVibe: 'mixed',
-  transportModes: ['walking', 'driving'],
-  activityTypes: ['outdoor', 'food', 'culture', 'nature'],
-  ageRestrictions: ['no-restrictions'],
-};
-
-// Mock weather forecast with Celsius
-export const mockWeatherForecast: WeatherForecast = {
-  condition: 'Partly Cloudy',
-  temperature: 18,
-  icon: 'partly-cloudy',
-  precipitation: 10,
-  windSpeed: 5,
 };
 
 // Function to generate a surprise day plan

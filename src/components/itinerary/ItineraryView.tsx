@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Clock, DollarSign, MapPin, Calendar, Share2, Users, Edit2, Save, X, Plus, ChevronDown, Download, Link } from 'lucide-react';
+import { MapPin, Calendar, Share2, Users, Edit2, Save, X, Plus, ChevronDown, Download, Link, Clock, DollarSign } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import Card from '../common/Card';
 import Button from '../common/Button';
 import Input from '../common/Input';
 import { DayPlan, WeatherForecast, ItineraryEvent, Activity } from '../../types';
 import ItineraryItem from './ItineraryItem';
-import { mockActivities } from '../../utils/mockData';
+import { mockActivities, recalculateTravel } from '../../utils/mockData';
 
 interface ItineraryViewProps {
   dayPlan: DayPlan;
@@ -40,6 +40,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
     })}`
   );
   const [shareOption, setShareOption] = useState<'link' | 'pdf'>('link');
+  const [revealProgress, setRevealProgress] = useState(dayPlan.revealProgress || 0);
   
   const formatDuration = (minutes: number): string => {
     const hours = Math.floor(minutes / 60);
@@ -58,14 +59,45 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
 
   const hiddenEvents = events.slice(getVisibleEvents().length);
 
+  const handleRevealAll = () => {
+    if (onRevealMore) {
+      setRevealProgress(100);
+      if (onUpdatePlan) {
+        onUpdatePlan({
+          ...dayPlan,
+          revealProgress: 100
+        });
+      }
+    }
+  };
+
+  const extractActivities = (events: ItineraryEvent[]): Activity[] => {
+    return events
+      .filter(event => event.type === 'activity')
+      .map(event => event.data as Activity);
+  };
+
   const handleDeleteEvent = (eventId: string) => {
     const updatedEvents = events.filter(event => {
       const id = event.type === 'activity' ? event.data.id : event.data.id;
       return id !== eventId;
     });
     
-    setEvents(updatedEvents);
-    updateTotals(updatedEvents);
+    // Extract activities and recalculate travel segments
+    const activities = extractActivities(updatedEvents);
+    const travels = recalculateTravel(activities, dayPlan.preferences);
+    
+    // Rebuild events array with new travel segments
+    const newEvents: ItineraryEvent[] = [];
+    activities.forEach((activity, index) => {
+      newEvents.push({ type: 'activity', data: activity });
+      if (index < activities.length - 1) {
+        newEvents.push({ type: 'travel', data: travels[index] });
+      }
+    });
+    
+    setEvents(newEvents);
+    updateTotals(newEvents);
   };
 
   const updateTotals = (updatedEvents: ItineraryEvent[]) => {
@@ -89,23 +121,51 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
 
-    setEvents(items);
-    recalculateTimesAndDistances(items);
-  };
-
-  const recalculateTimesAndDistances = (updatedEvents: ItineraryEvent[]) => {
-    updateTotals(updatedEvents);
+    // Extract activities and recalculate travel segments
+    const activities = extractActivities(items);
+    const travels = recalculateTravel(activities, dayPlan.preferences);
+    
+    // Rebuild events array with new travel segments
+    const newEvents: ItineraryEvent[] = [];
+    activities.forEach((activity, index) => {
+      newEvents.push({ type: 'activity', data: activity });
+      if (index < activities.length - 1) {
+        newEvents.push({ type: 'travel', data: travels[index] });
+      }
+    });
+    
+    setEvents(newEvents);
+    updateTotals(newEvents);
   };
 
   const handleAddSelectedActivities = () => {
-    const newEvents = selectedActivities.map(activity => ({
-      type: 'activity' as const,
-      data: activity
-    }));
+    // Extract current activities
+    const currentActivities = extractActivities(events);
     
-    const updatedEvents = [...events, ...newEvents];
-    setEvents(updatedEvents);
-    updateTotals(updatedEvents);
+    // Add new activities
+    const allActivities = [...currentActivities, ...selectedActivities];
+    
+    // Sort activities by start time
+    allActivities.sort((a, b) => {
+      const timeA = a.startTime.split(':').map(Number);
+      const timeB = b.startTime.split(':').map(Number);
+      return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
+    });
+    
+    // Recalculate travel segments
+    const travels = recalculateTravel(allActivities, dayPlan.preferences);
+    
+    // Build new events array
+    const newEvents: ItineraryEvent[] = [];
+    allActivities.forEach((activity, index) => {
+      newEvents.push({ type: 'activity', data: activity });
+      if (index < allActivities.length - 1) {
+        newEvents.push({ type: 'travel', data: travels[index] });
+      }
+    });
+    
+    setEvents(newEvents);
+    updateTotals(newEvents);
     setSelectedActivities([]);
     setShowActivityChoices(false);
   };
@@ -440,6 +500,8 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
                       <ItineraryItem 
                         event={event} 
                         isRevealed={!isSurpriseMode || event.type === 'travel'} 
+                        isSurpriseMode={isSurpriseMode}
+                        isPreviouslyRevealed={index < visibleEvents.length - 1}
                       />
                     </div>
                   )}
@@ -475,11 +537,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
             
             <Button
               variant="outline"
-              onClick={() => {
-                if (onRevealMore) {
-                  [...Array(hiddenEvents.length)].forEach(() => onRevealMore());
-                }
-              }}
+              onClick={handleRevealAll}
             >
               Reveal All
             </Button>
