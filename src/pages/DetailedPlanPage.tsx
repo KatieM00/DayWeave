@@ -3,36 +3,46 @@ import { ArrowLeft } from 'lucide-react';
 import Button from '../components/common/Button';
 import DetailedForm from '../components/forms/DetailedForm';
 import ItineraryView from '../components/itinerary/ItineraryView';
+import ItineraryGenerator from '../components/common/ItineraryGenerator';
 import { UserPreferences, DayPlan } from '../types';
 import { Link } from 'react-router-dom';
-import { generateDetailedDayPlan } from '../utils/mockData';
+import { generateItinerary } from '../services/geminiService';
 
 const DetailedPlanPage: React.FC = () => {
   const [dayPlan, setDayPlan] = useState<DayPlan | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  // Function to handle form submission
-  const handleSubmit = (preferences: UserPreferences) => {
-    // In a real app, this would make API calls to generate the plan
-    const plan = generateDetailedDayPlan(preferences);
-    setDayPlan(plan);
+  const handleSubmit = async (preferences: UserPreferences) => {
+    setIsLoading(true);
+    setError(null);
     
-    // Scroll to top
-    window.scrollTo(0, 0);
+    try {
+      const plan = await generateItinerary({
+        location: preferences.startLocation,
+        date: preferences.planDate || new Date().toISOString().split('T')[0],
+        preferences,
+        surpriseMode: false
+      });
+      
+      setDayPlan(plan);
+      window.scrollTo(0, 0);
+    } catch (err) {
+      setError('Failed to generate your itinerary. Please try again.');
+      console.error('Itinerary generation error:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
   
-  // Function to handle sharing plan
   const handleSharePlan = () => {
-    // In a real app, this would generate a shareable link
     alert('This would generate a shareable link in the full application!');
   };
   
-  // Function to handle PDF export
   const handleExportPDF = () => {
-    // In a real app, this would generate a PDF
     alert('This would generate a downloadable PDF in the full application!');
   };
 
-  // Function to handle plan updates
   const handleUpdatePlan = (updatedPlan: DayPlan) => {
     setDayPlan(updatedPlan);
   };
@@ -43,7 +53,7 @@ const DetailedPlanPage: React.FC = () => {
         {dayPlan ? (
           <div className="mb-6">
             <div className="mb-6">
-              <Link to="/" className="inline-flex items-center text-primary-600 hover:text-primary-700">
+              <Link to="/\" className="inline-flex items-center text-primary-600 hover:text-primary-700">
                 <ArrowLeft className="w-4 h-4 mr-1" />
                 Back to Home
               </Link>
@@ -81,7 +91,15 @@ const DetailedPlanPage: React.FC = () => {
               </p>
             </div>
             
-            <DetailedForm onSubmit={handleSubmit} />
+            {isLoading || error ? (
+              <ItineraryGenerator 
+                isLoading={isLoading}
+                error={error || undefined}
+                onRetry={() => setError(null)}
+              />
+            ) : (
+              <DetailedForm onSubmit={handleSubmit} />
+            )}
           </>
         )}
       </div>

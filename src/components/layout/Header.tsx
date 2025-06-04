@@ -2,8 +2,19 @@ import React from 'react';
 import { MapPin, LogIn, UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Button from '../common/Button';
+import UserDropdown from '../auth/UserDropdown';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Header: React.FC = () => {
+  const { user } = useAuth();
+
+  const getUserName = () => {
+    if (!user) return '';
+    return user.user_metadata?.full_name || 
+           user.email?.split('@')[0] || 
+           'User';
+  };
+
   return (
     <header className="bg-gradient-to-r from-primary-700 to-secondary-700 text-white shadow-md">
       <div className="container mx-auto px-4 py-4">
@@ -20,32 +31,40 @@ const Header: React.FC = () => {
               <Link to="/" className="hover:text-accent-300 transition-colors">
                 Home
               </Link>
-              <Link to="/my-plans" className="hover:text-accent-300 transition-colors">
-                My Plans
-              </Link>
+              {user && (
+                <Link to="/my-plans" className="hover:text-accent-300 transition-colors">
+                  My Plans
+                </Link>
+              )}
               <Link to="/about" className="hover:text-accent-300 transition-colors">
                 About
               </Link>
             </nav>
 
             <div className="flex items-center space-x-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                icon={<LogIn className="h-4 w-4" />}
-                onClick={() => window.location.href = '/login'}
-                className="text-white hover:bg-white/10"
-              >
-                Sign In
-              </Button>
-              <Button
-                variant="accent"
-                size="sm"
-                icon={<UserPlus className="h-4 w-4" />}
-                onClick={() => window.location.href = '/signup'}
-              >
-                Sign Up
-              </Button>
+              {user ? (
+                <UserDropdown userName={getUserName()} />
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={<LogIn className="h-4 w-4" />}
+                    onClick={() => window.location.href = '/login'}
+                    className="text-white hover:bg-white/10"
+                  >
+                    Sign In
+                  </Button>
+                  <Button
+                    variant="accent"
+                    size="sm"
+                    icon={<UserPlus className="h-4 w-4" />}
+                    onClick={() => window.location.href = '/signup'}
+                  >
+                    Sign Up
+                  </Button>
+                </>
+              )}
             </div>
           </div>
           

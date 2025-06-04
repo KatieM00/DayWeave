@@ -3,28 +3,46 @@ import { ArrowLeft } from 'lucide-react';
 import Button from '../components/common/Button';
 import SurpriseForm from '../components/forms/SurpriseForm';
 import ItineraryView from '../components/itinerary/ItineraryView';
+import ItineraryGenerator from '../components/common/ItineraryGenerator';
 import { UserPreferences, DayPlan } from '../types';
-import { generateSurpriseDayPlan } from '../utils/mockData';
+import { generateItinerary } from '../services/geminiService';
 import { Link } from 'react-router-dom';
 
 const SurprisePlanPage: React.FC = () => {
   const [dayPlan, setDayPlan] = useState<DayPlan | null>(null);
   const [revealProgress, setRevealProgress] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  const handleSubmit = (preferences: UserPreferences & { surpriseMode: boolean }) => {
-    const plan = generateSurpriseDayPlan(preferences);
+  const handleSubmit = async (preferences: UserPreferences & { surpriseMode: boolean }) => {
+    setIsLoading(true);
+    setError(null);
     
-    if (preferences.surpriseMode) {
-      const initialReveal = Math.ceil((1 / plan.events.length) * 100);
-      plan.revealProgress = initialReveal;
-      setRevealProgress(initialReveal);
-    } else {
-      plan.revealProgress = 100;
-      setRevealProgress(100);
+    try {
+      const plan = await generateItinerary({
+        location: preferences.startLocation,
+        date: preferences.planDate || new Date().toISOString().split('T')[0],
+        preferences,
+        surpriseMode: preferences.surpriseMode
+      });
+      
+      if (preferences.surpriseMode) {
+        const initialReveal = Math.ceil((1 / plan.events.length) * 100);
+        plan.revealProgress = initialReveal;
+        setRevealProgress(initialReveal);
+      } else {
+        plan.revealProgress = 100;
+        setRevealProgress(100);
+      }
+      
+      setDayPlan(plan);
+      window.scrollTo(0, 0);
+    } catch (err) {
+      setError('Failed to generate your surprise itinerary. Please try again.');
+      console.error('Itinerary generation error:', err);
+    } finally {
+      setIsLoading(false);
     }
-    
-    setDayPlan(plan);
-    window.scrollTo(0, 0);
   };
   
   const handleRevealMore = () => {
@@ -96,6 +114,7 @@ const SurprisePlanPage: React.FC = () => {
                 onClick={() => {
                   setDayPlan(null);
                   setRevealProgress(0);
+                  setError(null);
                 }}
               >
                 Start Over
@@ -119,7 +138,15 @@ const SurprisePlanPage: React.FC = () => {
               </p>
             </div>
             
-            <SurpriseForm onSubmit={handleSubmit} />
+            {isLoading || error ? (
+              <ItineraryGenerator 
+                isLoading={isLoading}
+                error={error || undefined}
+                onRetry={() => setError(null)}
+              />
+            ) : (
+              <SurpriseForm onSubmit={handleSubmit} />
+            )}
           </>
         )}
       </div>
