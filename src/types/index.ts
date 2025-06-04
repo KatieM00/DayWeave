@@ -53,25 +53,30 @@ export interface MealPreferences {
 
 // User preferences for planning
 export interface UserPreferences {
-  // Common to both modes
+  // Step 1: Where?
   startLocation: string;
-  groupSize: number;
-  budgetRange: BudgetRange;
+  endLocation?: string;
+  transportModes?: TransportMode[];
   travelDistance: TravelDistance;
 
-  // Specific to surprise mode
-  activityVibe?: ActivityVibe;
-  indoorBackup?: boolean;
-  
-  // Specific to detailed mode
-  endLocation?: string;
+  // Step 2: When?
+  planDate?: string;
   startTime?: string;
   endTime?: string;
   totalHours?: number;
-  transportModes?: TransportMode[];
-  activityTypes?: ActivityType[];
+
+  // Step 3: Who?
+  groupSize: number;
   ageRestrictions?: AgeRestriction[];
+
+  // Step 4: What?
+  activityTypes?: ActivityType[];
+  budgetRange: BudgetRange;
   mealPreferences?: MealPreferences;
+
+  // Surprise mode specific
+  activityVibe?: ActivityVibe;
+  indoorBackup?: boolean;
 }
 
 // Activity/Event in an itinerary

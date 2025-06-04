@@ -1,5 +1,19 @@
 import React, { useState } from 'react';
-import { MapPin, Calendar, Share2, Users, Edit2, Save, X, Plus, ChevronDown, Download, Link, Clock, DollarSign } from 'lucide-react';
+import { 
+  MapPin, 
+  Calendar, 
+  Share2, 
+  Users, 
+  Edit2, 
+  Save, 
+  X, 
+  Plus, 
+  ChevronDown, 
+  Download, 
+  Link,
+  Clock,
+  DollarSign
+} from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import Card from '../common/Card';
 import Button from '../common/Button';

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Users, Clock, Compass, DollarSign, Activity, Coffee, Wallet } from 'lucide-react';
+import { MapPin, Users, Clock, Compass, DollarSign, Activity, Coffee, Wallet, Calendar } from 'lucide-react';
 import Button from '../common/Button';
 import Input from '../common/Input';
 import RadioGroup from '../common/RadioGroup';
@@ -64,31 +64,32 @@ interface DetailedFormProps {
   isEditing?: boolean;
 }
 
-interface MealPreferences {
-  includeCoffee: boolean;
-  includeLunch: boolean;
-  includeDinner: boolean;
-}
-
 const DetailedForm: React.FC<DetailedFormProps> = ({ 
   onSubmit, 
   initialPreferences,
   isEditing = false 
 }) => {
   const [step, setStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
   const [preferences, setPreferences] = useState<UserPreferences>(
     initialPreferences || {
       startLocation: '',
+      endLocation: '',
       groupSize: 1,
       budgetRange: '' as BudgetRange,
       travelDistance: { value: 5, unit: 'miles' },
       transportModes: [],
       activityTypes: [],
       ageRestrictions: [],
+      planDate: new Date().toISOString().split('T')[0],
     }
   );
 
-  const [mealPreferences, setMealPreferences] = useState<MealPreferences>({
+  const [mealPreferences, setMealPreferences] = useState<{
+    includeCoffee: boolean;
+    includeLunch: boolean;
+    includeDinner: boolean;
+  }>({
     includeCoffee: false,
     includeLunch: false,
     includeDinner: false
@@ -140,9 +141,15 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
       if (!preferences.startLocation.trim()) {
         newErrors.startLocation = 'Starting location is required';
       }
+      if (!preferences.transportModes?.length) {
+        newErrors.transportModes = 'Please select at least one way to get around';
+      }
     }
     
     if (currentStep === 2) {
+      if (!preferences.planDate) {
+        newErrors.planDate = 'Please select a date';
+      }
       if (!preferences.startTime) {
         newErrors.startTime = 'Start time is required';
       }
@@ -155,14 +162,20 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
     }
     
     if (currentStep === 3) {
-      if (!preferences.transportModes?.length) {
-        newErrors.transportModes = 'Please select at least one way to get around';
+      if (!preferences.groupSize) {
+        newErrors.groupSize = 'Please select group size';
+      }
+      if (!preferences.ageRestrictions?.length) {
+        newErrors.ageRestrictions = 'Please select age suitability';
       }
     }
     
     if (currentStep === 4) {
       if (!preferences.activityTypes?.length) {
         newErrors.activityTypes = 'Please select at least one type of activity';
+      }
+      if (!preferences.budgetRange) {
+        newErrors.budgetRange = 'Please select a budget range';
       }
     }
     
@@ -173,20 +186,27 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
   const nextStep = () => {
     if (validateStep(step)) {
       setStep(step + 1);
+      window.scrollTo(0, 0);
     }
   };
 
   const prevStep = () => {
     setStep(step - 1);
+    window.scrollTo(0, 0);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateStep(step)) {
-      onSubmit({
-        ...preferences,
-        mealPreferences
-      });
+      setIsLoading(true);
+      try {
+        await onSubmit({
+          ...preferences,
+          mealPreferences
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -262,13 +282,13 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
       case 1:
         return (
           <>
-            <h3 className="text-xl font-semibold text-primary-800 mb-4">Where shall we begin?</h3>
+            <h3 className="text-xl font-semibold text-primary-800 mb-4">Where?</h3>
             
             <div className="space-y-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-primary-600 font-medium">
                   <MapPin className="h-5 w-5" />
-                  <span>Where are you starting your adventure from today?</span>
+                  <span>Where are you starting your adventure from?</span>
                 </div>
                 
                 <Input
@@ -284,7 +304,7 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-primary-600 font-medium">
                   <MapPin className="h-5 w-5" />
-                  <span>Planning to end somewhere else? (Leave empty if same as start)</span>
+                  <span>Planning to end somewhere else? (Optional)</span>
                 </div>
                 
                 <Input
@@ -295,94 +315,7 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                   fullWidth
                 />
               </div>
-            </div>
-          </>
-        );
 
-      case 2:
-        return (
-          <>
-            <h3 className="text-xl font-semibold text-primary-800 mb-4">When & Who</h3>
-            
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-primary-600 font-medium">
-                  <Clock className="h-5 w-5" />
-                  <span>When would you like to begin your day out?</span>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-neutral-700 mb-1">Start Time</label>
-                    <select
-                      value={preferences.startTime || ''}
-                      onChange={(e) => handleChange('startTime', e.target.value)}
-                      className="w-full border-2 border-neutral-300 rounded-md p-2 focus:border-primary-500 focus:outline-none"
-                    >
-                      <option value="">Select start time</option>
-                      {timeOptions.map(time => (
-                        <option key={`start-${time}`} value={time}>{time}</option>
-                      ))}
-                    </select>
-                    {errors.startTime && (
-                      <p className="mt-1 text-sm text-error-default">{errors.startTime}</p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm text-neutral-700 mb-1">End Time</label>
-                    <select
-                      value={preferences.endTime || ''}
-                      onChange={(e) => handleChange('endTime', e.target.value)}
-                      className="w-full border-2 border-neutral-300 rounded-md p-2 focus:border-primary-500 focus:outline-none"
-                    >
-                      <option value="">Select end time</option>
-                      {timeOptions.map(time => (
-                        <option 
-                          key={`end-${time}`} 
-                          value={time}
-                          disabled={preferences.startTime && time <= preferences.startTime}
-                        >
-                          {time}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.endTime && (
-                      <p className="mt-1 text-sm text-error-default">{errors.endTime}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-primary-600 font-medium">
-                  <Users className="h-5 w-5" />
-                  <span>How many people will be joining you on this adventure?</span>
-                </div>
-                
-                <div className="grid grid-cols-5 gap-2">
-                  {[1, 2, 3, 4, 5].map((num) => (
-                    <Button
-                      key={num}
-                      variant={preferences.groupSize === num ? 'primary' : 'outline'}
-                      onClick={() => handleChange('groupSize', num)}
-                      className="w-full"
-                    >
-                      {num} {num === 1 ? 'person' : 'people'}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </>
-        );
-
-      case 3:
-        return (
-          <>
-            <h3 className="text-xl font-semibold text-primary-800 mb-4">Getting Around</h3>
-            
-            <div className="space-y-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-primary-600 font-medium">
                   <Compass className="h-5 w-5" />
@@ -432,7 +365,7 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-primary-600 font-medium">
                   <Activity className="h-5 w-5" />
-                  <span>How would you prefer to get around today?</span>
+                  <span>How would you prefer to get around?</span>
                 </div>
                 
                 {errors.transportModes && (
@@ -472,10 +405,167 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
           </>
         );
 
+      case 2:
+        return (
+          <>
+            <h3 className="text-xl font-semibold text-primary-800 mb-4">When?</h3>
+            
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-primary-600 font-medium">
+                  <Calendar className="h-5 w-5" />
+                  <span>Which day would you like to plan for?</span>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <Button
+                    variant={preferences.planDate === new Date().toISOString().split('T')[0] ? 'primary' : 'outline'}
+                    onClick={() => handleChange('planDate', new Date().toISOString().split('T')[0])}
+                  >
+                    Today
+                  </Button>
+                  <Button
+                    variant={preferences.planDate === new Date(Date.now() + 86400000).toISOString().split('T')[0] ? 'primary' : 'outline'}
+                    onClick={() => handleChange('planDate', new Date(Date.now() + 86400000).toISOString().split('T')[0])}
+                  >
+                    Tomorrow
+                  </Button>
+                  <div>
+                    <input
+                      type="date"
+                      value={preferences.planDate}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => handleChange('planDate', e.target.value)}
+                      className="w-full border-2 border-neutral-300 rounded-md p-2 focus:border-primary-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-primary-600 font-medium">
+                  <Clock className="h-5 w-5" />
+                  <span>What time would you like to begin and end?</span>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-neutral-700 mb-1">Start Time</label>
+                    <select
+                      value={preferences.startTime || ''}
+                      onChange={(e) => handleChange('startTime', e.target.value)}
+                      className="w-full border-2 border-neutral-300 rounded-md p-2 focus:border-primary-500 focus:outline-none"
+                    >
+                      <option value="">Select start time</option>
+                      {timeOptions.map(time => (
+                        <option key={`start-${time}`} value={time}>{time}</option>
+                      ))}
+                    </select>
+                    {errors.startTime && (
+                      <p className="mt-1 text-sm text-error-default">{errors.startTime}</p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm text-neutral-700 mb-1">End Time</label>
+                    <select
+                      value={preferences.endTime || ''}
+                      onChange={(e) => handleChange('endTime', e.target.value)}
+                      className="w-full border-2 border-neutral-300 rounded-md p-2 focus:border-primary-500 focus:outline-none"
+                    >
+                      <option value="">Select end time</option>
+                      {timeOptions.map(time => (
+                        <option 
+                          key={`end-${time}`} 
+                          value={time}
+                          disabled={preferences.startTime && time <= preferences.startTime}
+                        >
+                          {time}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.endTime && (
+                      <p className="mt-1 text-sm text-error-default">{errors.endTime}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        );
+
+      case 3:
+        return (
+          <>
+            <h3 className="text-xl font-semibold text-primary-800 mb-4">Who?</h3>
+            
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-primary-600 font-medium">
+                  <Users className="h-5 w-5" />
+                  <span>How many people will be joining you?</span>
+                </div>
+                
+                <div className="grid grid-cols-5 gap-2">
+                  {[1, 2, 3, 4, 5].map((num) => (
+                    <Button
+                      key={num}
+                      variant={preferences.groupSize === num ? 'primary' : 'outline'}
+                      onClick={() => handleChange('groupSize', num)}
+                      className="w-full"
+                    >
+                      {num} {num === 1 ? 'person' : 'people'}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-primary-600 font-medium">
+                  <Users className="h-5 w-5" />
+                  <span>Any age-specific requirements?</span>
+                </div>
+                
+                {errors.ageRestrictions && (
+                  <div className="text-error-default text-sm mb-2">{errors.ageRestrictions}</div>
+                )}
+                
+                <div className="space-y-2">
+                  {[
+                    { value: 'family-friendly', label: 'Family-friendly' },
+                    { value: 'adults-only', label: 'Adults only (18+)' },
+                    { value: 'seniors', label: 'Senior-friendly' },
+                    { value: 'under-18', label: 'Under 18' },
+                    { value: 'no-restrictions', label: 'No restrictions' },
+                  ].map((option) => (
+                    <label 
+                      key={option.value}
+                      className={`
+                        flex items-center space-x-2 p-3 border-2 rounded-md cursor-pointer transition-all block
+                        ${preferences.ageRestrictions?.includes(option.value) 
+                          ? 'border-primary-500 bg-primary-50 text-primary-700' 
+                          : 'border-neutral-300 bg-white text-neutral-700 hover:border-primary-300'}
+                      `}
+                    >
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                        checked={preferences.ageRestrictions?.includes(option.value)}
+                        onChange={(e) => handleMultiSelectChange('ageRestrictions', option.value, e.target.checked)}
+                      />
+                      <span>{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </>
+        );
+
       case 4:
         return (
           <>
-            <h3 className="text-xl font-semibold text-primary-800 mb-4">Activities & Budget</h3>
+            <h3 className="text-xl font-semibold text-primary-800 mb-4">What?</h3>
             
             <div className="space-y-6">
               <div className="space-y-2">
@@ -523,8 +613,12 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-primary-600 font-medium">
                   <Wallet className="h-5 w-5" />
-                  <span>What's your budget looking like for today?</span>
+                  <span>What's your budget looking like?</span>
                 </div>
+                
+                {errors.budgetRange && (
+                  <div className="text-error-default text-sm mb-2">{errors.budgetRange}</div>
+                )}
                 
                 <RadioGroup
                   options={budgetOptions}
@@ -534,6 +628,63 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                   card
                 />
               </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-primary-600 font-medium">
+                  <Coffee className="h-5 w-5" />
+                  <span>Would you like us to include meal breaks?</span>
+                </div>
+                
+                <div className="space-y-3">
+                  <label className="flex items-center p-3 border-2 rounded-md cursor-pointer transition-all hover:border-primary-300">
+                    <input
+                      type="checkbox"
+                      checked={mealPreferences.includeCoffee}
+                      onChange={(e) => setMealPreferences(prev => ({
+                        ...prev,
+                        includeCoffee: e.target.checked
+                      }))}
+                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                    />
+                    <div className="ml-3">
+                      <span className="font-medium text-neutral-800">Morning Coffee Break</span>
+                      <p className="text-sm text-neutral-600">Start your day with a nice coffee or tea</p>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center p-3 border-2 rounded-md cursor-pointer transition-all hover:border-primary-300">
+                    <input
+                      type="checkbox"
+                      checked={mealPreferences.includeLunch}
+                      onChange={(e) => setMealPreferences(prev => ({
+                        ...prev,
+                        includeLunch: e.target.checked
+                      }))}
+                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                    />
+                    <div className="ml-3">
+                      <span className="font-medium text-neutral-800">Lunch Break</span>
+                      <p className="text-sm text-neutral-600">Include time for lunch in your schedule</p>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center p-3 border-2 rounded-md cursor-pointer transition-all hover:border-primary-300">
+                    <input
+                      type="checkbox"
+                      checked={mealPreferences.includeDinner}
+                      onChange={(e) => setMealPreferences(prev => ({
+                        ...prev,
+                        includeDinner: e.target.checked
+                      }))}
+                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                    />
+                    <div className="ml-3">
+                      <span className="font-medium text-neutral-800">Dinner Plans</span>
+                      <p className="text-sm text-neutral-600">End your day with a nice dinner</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
             </div>
           </>
         );
@@ -541,52 +692,67 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
       case 5:
         return (
           <>
-            {renderMealPreferences()}
-            <div className="mt-8">
-              <h3 className="text-xl font-semibold text-primary-800 mb-4">Age Suitability</h3>
+            <h3 className="text-xl font-semibold text-primary-800 mb-4">Ready!</h3>
             
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-primary-600 font-medium">
-                    <Users className="h-5 w-5" />
-                    <span>Any age-specific requirements for the activities?</span>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    {[
-                      { value: 'family-friendly', label: 'Family-friendly' },
-                      { value: 'adults-only', label: 'Adults only (18+)' },
-                      { value: 'seniors', label: 'Senior-friendly' },
-                      { value: 'under-18', label: 'Under 18' },
-                      { value: 'no-restrictions', label: 'No restrictions' },
-                    ].map((option) => (
-                      <label 
-                        key={option.value}
-                        className={`
-                          flex items-center space-x-2 p-3 border-2 rounded-md cursor-pointer transition-all block
-                          ${preferences.ageRestrictions?.includes(option.value) 
-                            ? 'border-primary-500 bg-primary-50 text-primary-700' 
-                            : 'border-neutral-300 bg-white text-neutral-700 hover:border-primary-300'}
-                        `}
-                      >
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                          checked={preferences.ageRestrictions?.includes(option.value)}
-                          onChange={(e) => handleMultiSelectChange('ageRestrictions', option.value, e.target.checked)}
-                        />
-                        <span>{option.label}</span>
-                      </label>
-                    ))}
-                  </div>
+            <div className="space-y-6">
+              <div className="bg-primary-50 border-l-4 border-primary-500 p-4 rounded">
+                <h4 className="font-medium text-primary-800 mb-2">Your Plan Summary</h4>
+                <div className="space-y-2 text-sm">
+                  <p>
+                    <span className="font-medium">Date:</span>{' '}
+                    {new Date(preferences.planDate!).toLocaleDateString('en-GB', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </p>
+                  <p>
+                    <span className="font-medium">Time:</span>{' '}
+                    {preferences.startTime} - {preferences.endTime}
+                  </p>
+                  <p>
+                    <span className="font-medium">Location:</span>{' '}
+                    {preferences.startLocation}
+                    {preferences.endLocation && ` to ${preferences.endLocation}`}
+                  </p>
+                  <p>
+                    <span className="font-medium">Group:</span>{' '}
+                    {preferences.groupSize} {preferences.groupSize === 1 ? 'person' : 'people'}
+                  </p>
+                  <p>
+                    <span className="font-medium">Transport:</span>{' '}
+                    {preferences.transportModes?.map(mode => 
+                      mode.charAt(0).toUpperCase() + mode.slice(1)
+                    ).join(', ')}
+                  </p>
+                  <p>
+                    <span className="font-medium">Budget:</span>{' '}
+                    {budgetOptions.find(opt => opt.value === preferences.budgetRange)?.label}
+                  </p>
                 </div>
               </div>
               
-              <div className="p-4 bg-accent-50 border-l-4 border-accent-500 rounded mt-6">
-                <h4 className="font-medium text-accent-800">Ready to plan your perfect day?</h4>
-                <p className="text-accent-700 text-sm mt-1">
-                  We've collected all the information we need to create your personalised itinerary.
-                  Click "Create My Day Plan" below to see your custom plan!
+              <div className="text-center">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
+                      Creating Your Plan...
+                    </div>
+                  ) : (
+                    'Create My Day Plan'
+                  )}
+                </Button>
+                
+                <p className="mt-4 text-sm text-neutral-600">
+                  We'll create a personalized itinerary based on your preferences
                 </p>
               </div>
             </div>
@@ -597,65 +763,6 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
         return <div>Unknown step</div>;
     }
   };
-
-  const renderMealPreferences = () => (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 text-primary-600 font-medium">
-        <Coffee className="h-5 w-5" />
-        <span>Would you like us to include meal breaks?</span>
-      </div>
-      
-      <div className="space-y-3">
-        <label className="flex items-center p-3 border-2 rounded-md cursor-pointer transition-all hover:border-primary-300">
-          <input
-            type="checkbox"
-            checked={mealPreferences.includeCoffee}
-            onChange={(e) => setMealPreferences(prev => ({
-              ...prev,
-              includeCoffee: e.target.checked
-            }))}
-            className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-          />
-          <div className="ml-3">
-            <span className="font-medium text-neutral-800">Morning Coffee Break</span>
-            <p className="text-sm text-neutral-600">Start your day with a nice coffee or tea</p>
-          </div>
-        </label>
-
-        <label className="flex items-center p-3 border-2 rounded-md cursor-pointer transition-all hover:border-primary-300">
-          <input
-            type="checkbox"
-            checked={mealPreferences.includeLunch}
-            onChange={(e) => setMealPreferences(prev => ({
-              ...prev,
-              includeLunch: e.target.checked
-            }))}
-            className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-          />
-          <div className="ml-3">
-            <span className="font-medium text-neutral-800">Lunch Break</span>
-            <p className="text-sm text-neutral-600">Include time for lunch in your schedule</p>
-          </div>
-        </label>
-
-        <label className="flex items-center p-3 border-2 rounded-md cursor-pointer transition-all hover:border-primary-300">
-          <input
-            type="checkbox"
-            checked={mealPreferences.includeDinner}
-            onChange={(e) => setMealPreferences(prev => ({
-              ...prev,
-              includeDinner: e.target.checked
-            }))}
-            className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-          />
-          <div className="ml-3">
-            <span className="font-medium text-neutral-800">Dinner Plans</span>
-            <p className="text-sm text-neutral-600">End your day with a nice dinner</p>
-          </div>
-        </label>
-      </div>
-    </div>
-  );
 
   return (
     <Card className="max-w-xl w-full mx-auto">
@@ -671,45 +778,47 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
         </p>
       </div>
       
-      <div className="flex mb-8 justify-between">
-        {[1, 2, 3, 4, 5].map((stepNumber) => (
-          <div 
-            key={stepNumber}
-            className={`relative flex flex-col items-center ${stepNumber < 5 ? 'w-full' : ''}`}
-          >
+      <div className="relative mb-8 px-4">
+        <div className="absolute top-4 left-0 right-0 h-0.5 bg-neutral-200 mx-8" />
+        
+        <div 
+          className="absolute top-4 left-0 h-0.5 bg-primary-400 mx-8 transition-all duration-300"
+          style={{ width: `calc(${((step - 1) / 4) * 100}%)` }}
+        />
+        
+        <div className="relative flex justify-between">
+          {[1, 2, 3, 4, 5].map((stepNumber) => (
             <div 
-              className={`
-                w-8 h-8 rounded-full flex items-center justify-center z-10
-                ${step === stepNumber ? 'bg-primary-600 text-white' : 
-                  step > stepNumber ? 'bg-primary-400 text-white' : 'bg-neutral-200 text-neutral-500'}
-              `}
+              key={stepNumber}
+              className="flex flex-col items-center flex-1"
             >
-              {step > stepNumber ? (
-                <svg className="w-5 h-5\" viewBox="0 0 24 24\" fill="none\" stroke="currentColor\" strokeWidth="3\" strokeLinecap="round\" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              ) : (
-                stepNumber
-              )}
-            </div>
-            
-            {stepNumber < 5 && (
               <div 
-                className={`absolute top-4 left-1/2 h-0.5 w-full transform -translate-y-1/2 ${
-                  step > stepNumber ? 'bg-primary-400' : 'bg-neutral-200'
-                }`}
-              />
-            )}
-            
-            <span className="text-xs mt-2 text-center hidden md:block">
-              {stepNumber === 1 && "Location"}
-              {stepNumber === 2 && "Time & People"}
-              {stepNumber === 3 && "Travel"}
-              {stepNumber === 4 && "Activities"}
-              {stepNumber === 5 && "Age Groups"}
-            </span>
-          </div>
-        ))}
+                className={`
+                  w-8 h-8 rounded-full flex items-center justify-center z-10
+                  ${step === stepNumber ? 'bg-primary-600 text-white' : 
+                    step > stepNumber ? 'bg-primary-400 text-white' : 'bg-neutral-200 text-neutral-500'}
+                  transition-all duration-300
+                `}
+              >
+                {step > stepNumber ? (
+                  <svg className="w-5 h-5\" viewBox="0 0 24 24\" fill="none\" stroke="currentColor\" strokeWidth="3\" strokeLinecap="round\" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                ) : (
+                  stepNumber
+                )}
+              </div>
+              
+              <span className="text-xs mt-2 text-center hidden md:block text-neutral-600 whitespace-nowrap px-1">
+                {stepNumber === 1 && "Where?"}
+                {stepNumber === 2 && "When?"}
+                {stepNumber === 3 && "Who?"}
+                {stepNumber === 4 && "What?"}
+                {stepNumber === 5 && "Ready!"}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
       
       <form onSubmit={step === 5 ? handleSubmit : (e) => e.preventDefault()}>
@@ -738,6 +847,7 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
             <Button
               type="submit"
               variant="primary"
+              disabled={isLoading}
             >
               {isEditing ? 'Update Plan' : 'Create My Day Plan'}
             </Button>
