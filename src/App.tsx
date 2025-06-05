@@ -9,6 +9,7 @@ import DetailedPlanPage from './pages/DetailedPlanPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import MyPlansPage from './pages/MyPlansPage';
+import UserPreferencesPage from './pages/UserPreferencesPage';
 
 // Components
 import Header from './components/layout/Header';
@@ -29,6 +30,7 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/my-plans" element={<MyPlansPage />} />
+              <Route path="/preferences" element={<UserPreferencesPage />} />
             </Routes>
           </main>
           
