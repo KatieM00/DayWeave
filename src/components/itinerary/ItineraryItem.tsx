@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Clock, MapPin, DollarSign, ChevronDown, ChevronUp, Activity, AlertTriangle } from 'lucide-react';
+import { Clock, MapPin, DollarSign, ChevronDown, ChevronUp, Activity, AlertTriangle, Camera } from 'lucide-react';
 import type { Activity as ActivityType, Travel, ItineraryEvent } from '../../types';
 import Card from '../common/Card';
 import Button from '../common/Button';
+import { getPlaceholderImage } from '../../utils/imageUtils';
 
 interface ItineraryItemProps {
   event: ItineraryEvent;
@@ -20,6 +21,8 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
   const [expanded, setExpanded] = useState(false);
   const [showDirectionsWarning, setShowDirectionsWarning] = useState(false);
   const [pendingUrl, setPendingUrl] = useState<string>('');
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
 
   const getGoogleMapsUrl = (location: string) => {
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
@@ -33,6 +36,11 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
     }
     setPendingUrl(url);
     setShowDirectionsWarning(true);
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
+    setImageLoading(false);
   };
 
   const DirectionsWarning = () => (
@@ -94,6 +102,10 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
   }
 
   const renderActivityContent = (activity: ActivityType) => {
+    const imageUrl = activity.imageUrl || (activity.activityType?.length > 0 
+      ? getPlaceholderImage(activity.activityType[0], activity.name)
+      : null);
+
     return (
       <>
         <div className="flex justify-between items-center">
@@ -176,13 +188,32 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
               )}
             </div>
             
-            {activity.imageUrl && (
-              <div className="mt-3 rounded-md overflow-hidden h-48">
-                <img 
-                  src={activity.imageUrl} 
-                  alt={activity.name}
-                  className="w-full h-full object-cover"
-                />
+            {imageUrl && (
+              <div className="mt-3 rounded-md overflow-hidden h-48 relative">
+                {imageLoading && (
+                  <div className="absolute inset-0 bg-neutral-100 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent"></div>
+                  </div>
+                )}
+                {imageError ? (
+                  <div className="h-full bg-neutral-100 flex items-center justify-center">
+                    <div className="text-center text-neutral-500">
+                      <Camera className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <span className="text-sm">Image unavailable</span>
+                    </div>
+                  </div>
+                ) : (
+                  <img 
+                    src={imageUrl}
+                    alt={activity.name}
+                    className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
+                    onLoad={() => {
+                      setImageLoading(false);
+                      setImageError(false);
+                    }}
+                    onError={handleImageError}
+                  />
+                )}
               </div>
             )}
             

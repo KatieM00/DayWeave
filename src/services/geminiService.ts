@@ -47,7 +47,7 @@ Generate a JSON response with this exact structure:
         "activityType": ["outdoor", "culture"],
         "address": "Full address",
         "ratings": 4.5,
-        "imageUrl": "realistic_image_url"
+        "imageUrl": null
       }
     },
     {
@@ -83,12 +83,12 @@ REQUIREMENTS:
 - Ensure activities are open on ${date}
 - Keep within specified budget range
 - Include meal options if meal preferences selected
+- Set imageUrl to null - do not generate image URLs
 - Return ONLY valid JSON, no additional text`;
 };
 
 export const generateItinerary = async (request: LLMItineraryRequest): Promise<DayPlan> => {
   try {
-    // Use the correct model name
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
     
     const prompt = buildPrompt(request);
@@ -97,10 +97,8 @@ export const generateItinerary = async (request: LLMItineraryRequest): Promise<D
     const response = await result.response;
     const text = response.text();
     
-    // Add better JSON parsing with error handling
     let itineraryData;
     try {
-      // Clean the response text (remove any markdown formatting)
       const cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       itineraryData = JSON.parse(cleanText);
     } catch (parseError) {
@@ -127,7 +125,6 @@ export const generateActivitySuggestions = async (
   preferences: UserPreferences
 ): Promise<Activity[]> => {
   try {
-    // Use the correct model name
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
     
     const prompt = `Generate 5 activity suggestions for ${location} based on these preferences:
@@ -149,7 +146,7 @@ Return ONLY a JSON array of activities with this structure:
     "activityType": ["type1", "type2"],
     "address": "Full address",
     "ratings": 4.5,
-    "imageUrl": "realistic_image_url"
+    "imageUrl": null
   }
 ]`;
 

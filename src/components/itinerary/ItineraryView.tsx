@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   MapPin, 
   Calendar, 
@@ -12,7 +12,7 @@ import {
   Download, 
   Link,
   Clock,
-  DollarSign
+  Home
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import Card from '../common/Card';
@@ -20,7 +20,7 @@ import Button from '../common/Button';
 import Input from '../common/Input';
 import { DayPlan, WeatherForecast, ItineraryEvent, Activity } from '../../types';
 import ItineraryItem from './ItineraryItem';
-import { mockActivities, recalculateTravel } from '../../utils/mockData';
+import { mockActivities, recalculateTravel, generateTravelSegment } from '../../utils/mockData';
 
 interface ItineraryViewProps {
   dayPlan: DayPlan;
@@ -44,7 +44,23 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [showActivityChoices, setShowActivityChoices] = useState(false);
   const [selectedActivities, setSelectedActivities] = useState<Activity[]>([]);
-  const [events, setEvents] = useState<ItineraryEvent[]>(dayPlan.events);
+  const [events, setEvents] = useState<ItineraryEvent[]>(() => {
+    const lastEvent = dayPlan.events[dayPlan.events.length - 1];
+    if (lastEvent.type === 'activity') {
+      const finalDestination = dayPlan.preferences.endLocation || dayPlan.preferences.startLocation;
+      const finalTravel = {
+        ...generateTravelSegment(
+          lastEvent.data.location,
+          finalDestination,
+          lastEvent.data.endTime,
+          dayPlan.preferences.transportModes
+        ),
+        isEndOfDay: true // Special flag for end of day travel
+      };
+      return [...dayPlan.events, { type: 'travel', data: finalTravel }];
+    }
+    return dayPlan.events;
+  });
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [planName, setPlanName] = useState(
     `${dayPlan.preferences.startLocation} - ${new Date(dayPlan.date).toLocaleDateString('en-GB', { 
@@ -97,11 +113,9 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
       return id !== eventId;
     });
     
-    // Extract activities and recalculate travel segments
     const activities = extractActivities(updatedEvents);
     const travels = recalculateTravel(activities, dayPlan.preferences);
     
-    // Rebuild events array with new travel segments
     const newEvents: ItineraryEvent[] = [];
     activities.forEach((activity, index) => {
       newEvents.push({ type: 'activity', data: activity });
@@ -135,11 +149,9 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
 
-    // Extract activities and recalculate travel segments
     const activities = extractActivities(items);
     const travels = recalculateTravel(activities, dayPlan.preferences);
     
-    // Rebuild events array with new travel segments
     const newEvents: ItineraryEvent[] = [];
     activities.forEach((activity, index) => {
       newEvents.push({ type: 'activity', data: activity });
@@ -153,23 +165,18 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   };
 
   const handleAddSelectedActivities = () => {
-    // Extract current activities
     const currentActivities = extractActivities(events);
     
-    // Add new activities
     const allActivities = [...currentActivities, ...selectedActivities];
     
-    // Sort activities by start time
     allActivities.sort((a, b) => {
       const timeA = a.startTime.split(':').map(Number);
       const timeB = b.startTime.split(':').map(Number);
       return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
     });
     
-    // Recalculate travel segments
     const travels = recalculateTravel(allActivities, dayPlan.preferences);
     
-    // Build new events array
     const newEvents: ItineraryEvent[] = [];
     allActivities.forEach((activity, index) => {
       newEvents.push({ type: 'activity', data: activity });
@@ -243,7 +250,6 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
                         {formatDuration(activity.duration)}
                       </span>
                       <span className="flex items-center">
-                        <DollarSign className="w-4 h-4 mr-1" />
                         £{activity.cost}
                       </span>
                     </div>
@@ -424,7 +430,6 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
             </div>
             
             <div className="flex items-center text-neutral-600">
-              <DollarSign className="h-5 w-5 mr-1 text-primary-500" />
               <span>£{dayPlan.totalCost.toFixed(2)} total</span>
             </div>
             
@@ -489,38 +494,79 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
               {...provided.droppableProps}
               className="space-y-3 mb-6"
             >
-              {visibleEvents.map((event, index) => (
-                <Draggable 
-                  key={`${event.type}-${event.data.id}`}
-                  draggableId={`${event.type}-${event.data.id}`}
-                  index={index}
-                  isDragDisabled={!isEditing}
-                >
-                  {(provided) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
-                      className="relative"
-                    >
-                      {isEditing && (
-                        <button
-                          onClick={() => handleDeleteEvent(event.data.id)}
-                          className="absolute -right-2 -top-2 w-6 h-6 bg-error-default text-white rounded-full flex items-center justify-center z-10 shadow-md hover:bg-error-dark transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
-                      <ItineraryItem 
-                        event={event} 
-                        isRevealed={!isSurpriseMode || event.type === 'travel'} 
-                        isSurpriseMode={isSurpriseMode}
-                        isPreviouslyRevealed={index < visibleEvents.length - 1}
-                      />
-                    </div>
-                  )}
-                </Draggable>
-              ))}
+              {visibleEvents.map((event, index) => {
+                const isLastTravel = index === visibleEvents.length - 1 && event.type === 'travel';
+                
+                return (
+                  <Draggable 
+                    key={`${event.type}-${event.data.id}`}
+                    draggableId={`${event.type}-${event.data.id}`}
+                    index={index}
+                    isDragDisabled={!isEditing || isLastTravel}
+                  >
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        className="relative"
+                      >
+                        {isEditing && !isLastTravel && (
+                          <button
+                            onClick={() => handleDeleteEvent(event.data.id)}
+                            className="absolute -right-2 -top-2 w-6 h-6 bg-error-default text-white rounded-full flex items-center justify-center z-10 shadow-md hover:bg-error-dark transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                        
+                        {isLastTravel ? (
+                          <Card className="border-l-4 border-accent-400 bg-accent-50">
+                            <div className="flex items-center py-2 px-3">
+                              <div className="w-10 h-10 rounded-full bg-accent-100 flex items-center justify-center">
+                                <Home className="w-6 h-6 text-accent-600" />
+                              </div>
+                              
+                              <div className="ml-3 flex-grow">
+                                <div className="text-accent-800 font-medium">
+                                  Time to head {event.data.endLocation === dayPlan.preferences.startLocation ? 'back home' : 'to your destination'}!
+                                </div>
+                                <div className="flex items-center text-sm text-neutral-600">
+                                  <span>{event.data.startTime} → {event.data.endTime}</span>
+                                  <span className="mx-2">•</span>
+                                  <span>{Math.floor(event.data.duration)} min</span>
+                                  <span className="mx-2">•</span>
+                                  <span>{event.data.distance} miles</span>
+                                </div>
+                              </div>
+                              
+                              <a
+                                href="#"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  const url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(event.data.startLocation)}&destination=${encodeURIComponent(event.data.endLocation)}&travelmode=${event.data.mode}`;
+                                  window.open(url, '_blank');
+                                }}
+                                className="ml-2 text-accent-600 hover:text-accent-700 flex items-center"
+                              >
+                                <MapPin className="h-4 w-4 mr-1" />
+                                <span className="text-sm">Directions</span>
+                              </a>
+                            </div>
+                          </Card>
+                        ) : (
+                          <ItineraryItem 
+                            event={event} 
+                            isRevealed={!isSurpriseMode || event.type === 'travel'} 
+                            isSurpriseMode={isSurpriseMode}
+                            isPreviouslyRevealed={index < visibleEvents.length - 1}
+                          />
+                        )}
+                      </div>
+                    )}
+                  </Draggable>
+                );
+              })}
               {provided.placeholder}
             </div>
           )}

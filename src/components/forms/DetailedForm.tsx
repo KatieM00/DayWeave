@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { MapPin, Users, Clock, Compass, DollarSign, Activity, Coffee, Wallet, Calendar } from 'lucide-react';
+import { MapPin, Users, Clock, Compass, Activity, Coffee, Calendar, Bot as Boot, Bike, Car, Bus, Train } from 'lucide-react';
 import Button from '../common/Button';
 import Input from '../common/Input';
-import RadioGroup from '../common/RadioGroup';
 import Card from '../common/Card';
+import LocationInput from '../common/LocationInput';
 import { 
   UserPreferences, 
   BudgetRange, 
@@ -13,7 +13,6 @@ import {
   TravelDistance
 } from '../../types';
 
-// Generate time options in 15-minute increments (24-hour format)
 const generateTimeOptions = () => {
   const options = [];
   for (let hour = 8; hour < 24; hour++) {
@@ -25,18 +24,15 @@ const generateTimeOptions = () => {
   return options;
 };
 
-// Generate distance options from < 1 to 24+
 const generateDistanceOptions = () => {
   const options = [
     { value: 0.5, label: '< 1' }
   ];
   
-  // Add options from 1 to 24
   for (let i = 1; i <= 24; i++) {
     options.push({ value: i, label: i.toString() });
   }
   
-  // Add 24+ option
   options.push({ value: 25, label: '24+' });
   
   return options;
@@ -44,6 +40,34 @@ const generateDistanceOptions = () => {
 
 const timeOptions = generateTimeOptions();
 const distanceOptions = generateDistanceOptions();
+
+const transportOptions = [
+  {
+    value: 'walking',
+    label: 'Walking',
+    icon: <Boot className="h-6 w-6" />
+  },
+  {
+    value: 'cycling',
+    label: 'Cycling',
+    icon: <Bike className="h-6 w-6" />
+  },
+  {
+    value: 'driving',
+    label: 'Driving',
+    icon: <Car className="h-6 w-6" />
+  },
+  {
+    value: 'bus',
+    label: 'Bus',
+    icon: <Bus className="h-6 w-6" />
+  },
+  {
+    value: 'train',
+    label: 'Train',
+    icon: <Train className="h-6 w-6" />
+  }
+];
 
 const activityOptions = [
   { value: 'indoor', label: 'Indoor Activities' },
@@ -56,6 +80,15 @@ const activityOptions = [
   { value: 'food', label: 'Food & Drink' },
   { value: 'movies', label: 'Cinema & Movies' },
   { value: 'theatre', label: 'Theatre & Shows' },
+];
+
+const budgetOptions = [
+  { value: 'budget-low', label: '£0-20' },
+  { value: 'budget-mid', label: '£20-35' },
+  { value: 'budget', label: '£35-50' },
+  { value: 'moderate', label: '£50-100' },
+  { value: 'premium', label: '£100-200' },
+  { value: 'luxury', label: '£200+' }
 ];
 
 interface DetailedFormProps {
@@ -82,18 +115,13 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
       activityTypes: [],
       ageRestrictions: [],
       planDate: new Date().toISOString().split('T')[0],
+      mealPreferences: {
+        includeCoffee: false,
+        includeLunch: false,
+        includeDinner: false
+      }
     }
   );
-
-  const [mealPreferences, setMealPreferences] = useState<{
-    includeCoffee: boolean;
-    includeLunch: boolean;
-    includeDinner: boolean;
-  }>({
-    includeCoffee: false,
-    includeLunch: false,
-    includeDinner: false
-  });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -200,82 +228,12 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
     if (validateStep(step)) {
       setIsLoading(true);
       try {
-        await onSubmit({
-          ...preferences,
-          mealPreferences
-        });
+        await onSubmit(preferences);
       } finally {
         setIsLoading(false);
       }
     }
   };
-
-  const transportOptions = [
-    {
-      value: 'walking',
-      label: 'Walking',
-      icon: <Users className="h-5 w-5" />
-    },
-    {
-      value: 'cycling',
-      label: 'Cycling',
-      icon: <Users className="h-5 w-5" />
-    },
-    {
-      value: 'driving',
-      label: 'Driving',
-      icon: <Users className="h-5 w-5" />
-    },
-    {
-      value: 'bus',
-      label: 'Bus',
-      icon: <Users className="h-5 w-5" />
-    },
-    {
-      value: 'train',
-      label: 'Train',
-      icon: <Users className="h-5 w-5" />
-    }
-  ];
-
-  const budgetOptions = [
-    { 
-      value: 'budget-low', 
-      label: '£0-20',
-      description: 'Perfect for a thrifty day out',
-      icon: <Wallet className="h-5 w-5" />
-    },
-    { 
-      value: 'budget-mid', 
-      label: '£20-35',
-      description: 'Great value activities',
-      icon: <Wallet className="h-5 w-5" />
-    },
-    { 
-      value: 'budget', 
-      label: '£35-50',
-      description: 'Balanced mix of activities',
-      icon: <Wallet className="h-5 w-5" />
-    },
-    { 
-      value: 'moderate', 
-      label: '£50-100',
-      description: 'Room for some treats',
-      icon: <Wallet className="h-5 w-5" />
-    },
-    { 
-      value: 'premium', 
-      label: '£100-200',
-      description: 'Premium experiences',
-      icon: <Wallet className="h-5 w-5" />
-    },
-    { 
-      value: 'luxury', 
-      label: '£200+',
-      description: 'Luxury indulgence',
-      icon: <Wallet className="h-5 w-5" />
-    }
-  ];
 
   const renderStepContent = () => {
     switch (step) {
@@ -291,11 +249,10 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                   <span>Where are you starting your adventure from?</span>
                 </div>
                 
-                <Input
-                  type="text"
+                <LocationInput
                   placeholder="Enter city, town, or postcode"
                   value={preferences.startLocation}
-                  onChange={(e) => handleChange('startLocation', e.target.value)}
+                  onChange={(value) => handleChange('startLocation', value)}
                   error={errors.startLocation}
                   fullWidth
                 />
@@ -307,11 +264,10 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                   <span>Planning to end somewhere else? (Optional)</span>
                 </div>
                 
-                <Input
-                  type="text"
+                <LocationInput
                   placeholder="Enter end location if different"
                   value={preferences.endLocation}
-                  onChange={(e) => handleChange('endLocation', e.target.value)}
+                  onChange={(value) => handleChange('endLocation', value)}
                   fullWidth
                 />
               </div>
@@ -372,32 +328,21 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                   <div className="text-error-default text-sm mb-2">{errors.transportModes}</div>
                 )}
                 
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <div className="grid grid-cols-5 gap-3">
                   {transportOptions.map((option) => (
-                    <label 
+                    <button
                       key={option.value}
+                      onClick={() => handleMultiSelectChange('transportModes', option.value, !preferences.transportModes?.includes(option.value))}
                       className={`
-                        relative flex items-center justify-center h-16 p-3 border-2 rounded-md cursor-pointer transition-all
+                        relative flex flex-col items-center justify-center h-20 p-3 border-2 rounded-md transition-all
                         ${preferences.transportModes?.includes(option.value) 
                           ? 'border-primary-500 bg-primary-50 text-primary-700' 
                           : 'border-neutral-300 bg-white text-neutral-700 hover:border-primary-300'}
                       `}
                     >
-                      <input
-                        type="checkbox"
-                        className="sr-only"
-                        checked={preferences.transportModes?.includes(option.value)}
-                        onChange={(e) => handleMultiSelectChange('transportModes', option.value, e.target.checked)}
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className={`transition-opacity duration-200 ${preferences.transportModes?.includes(option.value) ? 'opacity-0' : 'opacity-100'}`}>
-                          {option.icon}
-                        </div>
-                        <span className={`transition-opacity duration-200 ${preferences.transportModes?.includes(option.value) ? 'opacity-100' : 'opacity-0'}`}>
-                          {option.label}
-                        </span>
-                      </div>
-                    </label>
+                      {option.icon}
+                      <span className="text-sm mt-2">{option.label}</span>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -583,50 +528,46 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                   </Button>
                 </div>
                 
-                {errors.activityTypes && (
-                  <div className="text-error-default text-sm mb-2">{errors.activityTypes}</div>
-                )}
-                
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   {activityOptions.map((option) => (
-                    <label 
+                    <button
                       key={option.value}
+                      onClick={() => handleMultiSelectChange('activityTypes', option.value, !preferences.activityTypes?.includes(option.value))}
                       className={`
-                        flex items-center space-x-2 p-3 border-2 rounded-md cursor-pointer transition-all
-                        ${preferences.activityTypes?.includes(option.value) 
-                          ? 'border-primary-500 bg-primary-50 text-primary-700' 
-                          : 'border-neutral-300 bg-white text-neutral-700 hover:border-primary-300'}
+                        p-4 border-2 rounded-lg text-left transition-all
+                        ${preferences.activityTypes?.includes(option.value)
+                          ? 'border-primary-500 bg-primary-50 text-primary-700'
+                          : 'border-neutral-300 hover:border-primary-300'}
                       `}
                     >
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                        checked={preferences.activityTypes?.includes(option.value)}
-                        onChange={(e) => handleMultiSelectChange('activityTypes', option.value, e.target.checked)}
-                      />
-                      <span className="text-sm">{option.label}</span>
-                    </label>
+                      {option.label}
+                    </button>
                   ))}
                 </div>
               </div>
               
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-primary-600 font-medium">
-                  <Wallet className="h-5 w-5" />
+                  <Activity className="h-5 w-5" />
                   <span>What's your budget looking like?</span>
                 </div>
                 
-                {errors.budgetRange && (
-                  <div className="text-error-default text-sm mb-2">{errors.budgetRange}</div>
-                )}
-                
-                <RadioGroup
-                  options={budgetOptions}
-                  value={preferences.budgetRange}
-                  onChange={(value) => handleChange('budgetRange', value)}
-                  name="budget"
-                  card
-                />
+                <div className="grid grid-cols-3 gap-3">
+                  {budgetOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => handleChange('budgetRange', option.value)}
+                      className={`
+                        p-4 border-2 rounded-lg text-center transition-all aspect-square flex flex-col items-center justify-center
+                        ${preferences.budgetRange === option.value
+                          ? 'border-primary-500 bg-primary-50 text-primary-700'
+                          : 'border-neutral-300 hover:border-primary-300'}
+                      `}
+                    >
+                      <span className="text-lg font-semibold">{option.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -639,11 +580,11 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                   <label className="flex items-center p-3 border-2 rounded-md cursor-pointer transition-all hover:border-primary-300">
                     <input
                       type="checkbox"
-                      checked={mealPreferences.includeCoffee}
-                      onChange={(e) => setMealPreferences(prev => ({
-                        ...prev,
+                      checked={preferences.mealPreferences?.includeCoffee}
+                      onChange={(e) => handleChange('mealPreferences', {
+                        ...preferences.mealPreferences,
                         includeCoffee: e.target.checked
-                      }))}
+                      })}
                       className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                     />
                     <div className="ml-3">
@@ -655,11 +596,11 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                   <label className="flex items-center p-3 border-2 rounded-md cursor-pointer transition-all hover:border-primary-300">
                     <input
                       type="checkbox"
-                      checked={mealPreferences.includeLunch}
-                      onChange={(e) => setMealPreferences(prev => ({
-                        ...prev,
+                      checked={preferences.mealPreferences?.includeLunch}
+                      onChange={(e) => handleChange('mealPreferences', {
+                        ...preferences.mealPreferences,
                         includeLunch: e.target.checked
-                      }))}
+                      })}
                       className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                     />
                     <div className="ml-3">
@@ -671,11 +612,11 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                   <label className="flex items-center p-3 border-2 rounded-md cursor-pointer transition-all hover:border-primary-300">
                     <input
                       type="checkbox"
-                      checked={mealPreferences.includeDinner}
-                      onChange={(e) => setMealPreferences(prev => ({
-                        ...prev,
+                      checked={preferences.mealPreferences?.includeDinner}
+                      onChange={(e) => handleChange('mealPreferences', {
+                        ...preferences.mealPreferences,
                         includeDinner: e.target.checked
-                      }))}
+                      })}
                       className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                     />
                     <div className="ml-3">
@@ -726,10 +667,6 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                       mode.charAt(0).toUpperCase() + mode.slice(1)
                     ).join(', ')}
                   </p>
-                  <p>
-                    <span className="font-medium">Budget:</span>{' '}
-                    {budgetOptions.find(opt => opt.value === preferences.budgetRange)?.label}
-                  </p>
                 </div>
               </div>
               
@@ -760,7 +697,7 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
         );
 
       default:
-        return <div>Unknown step</div>;
+        return null;
     }
   };
 
@@ -800,16 +737,10 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                   transition-all duration-300
                 `}
               >
-                {step > stepNumber ? (
-                  <svg className="w-5 h-5\" viewBox="0 0 24 24\" fill="none\" stroke="currentColor\" strokeWidth="3\" strokeLinecap="round\" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                ) : (
-                  stepNumber
-                )}
+                {stepNumber}
               </div>
               
-              <span className="text-xs mt-2 text-center hidden md:block text-neutral-600 whitespace-nowrap px-1">
+              <span className="text-xs mt-2 text-center hidden md:block text-neutral-600">
                 {stepNumber === 1 && "Where?"}
                 {stepNumber === 2 && "When?"}
                 {stepNumber === 3 && "Who?"}

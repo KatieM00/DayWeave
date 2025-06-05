@@ -4,6 +4,7 @@ import Button from '../components/common/Button';
 import SurpriseForm from '../components/forms/SurpriseForm';
 import ItineraryView from '../components/itinerary/ItineraryView';
 import ItineraryGenerator from '../components/common/ItineraryGenerator';
+import HomeButton from '../components/common/HomeButton';
 import { UserPreferences, DayPlan } from '../types';
 import { generateItinerary } from '../services/geminiService';
 import { Link } from 'react-router-dom';
@@ -76,6 +77,12 @@ const SurprisePlanPage: React.FC = () => {
     setDayPlan(updatedPlan);
     setRevealProgress(updatedPlan.revealProgress || 0);
   };
+
+  const getCurrentLocation = () => {
+    if (!dayPlan?.events.length) return '';
+    const lastEvent = dayPlan.events[dayPlan.events.length - 1];
+    return lastEvent.type === 'activity' ? lastEvent.data.location : '';
+  };
   
   return (
     <div className="min-h-screen bg-neutral-50 py-8 px-4">
@@ -83,7 +90,7 @@ const SurprisePlanPage: React.FC = () => {
         {dayPlan ? (
           <div className="mb-6">
             <div className="mb-6">
-              <Link to="/\" className="inline-flex items-center text-primary-600 hover:text-primary-700">
+              <Link to="/" className="inline-flex items-center text-primary-600 hover:text-primary-700">
                 <ArrowLeft className="w-4 h-4 mr-1" />
                 Back to Home
               </Link>
@@ -150,6 +157,12 @@ const SurprisePlanPage: React.FC = () => {
           </>
         )}
       </div>
+
+      <HomeButton
+        isSurpriseMode={revealProgress < 100}
+        currentLocation={getCurrentLocation()}
+        endLocation={dayPlan?.preferences.endLocation || dayPlan?.preferences.startLocation}
+      />
     </div>
   );
 };
