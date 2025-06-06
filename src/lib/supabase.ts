@@ -1,19 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 
-interface ImportMetaEnv {
-  VITE_SUPABASE_URL: string
-  VITE_SUPABASE_ANON_KEY: string
-}
-
-interface ImportMeta {
-  env: ImportMetaEnv
-}
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+// Use Netlify's Supabase extension variable names
+const supabaseUrl = import.meta.env.VITE_SUPABASE_DATABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 if (!supabaseUrl) {
-  throw new Error('Missing VITE_SUPABASE_URL environment variable')
+  throw new Error('Missing VITE_SUPABASE_DATABASE_URL environment variable')
 }
 
 if (!supabaseAnonKey) {
