@@ -1,10 +1,10 @@
 import type { DayPlan, UserPreferences, Activity, WeatherForecast } from '../types';
 
 // Supabase URL for edge functions
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_DATABASE_URL;
 
 if (!SUPABASE_URL) {
-  throw new Error('VITE_SUPABASE_URL environment variable is required');
+  throw new Error('VITE_SUPABASE_DATABASE_URL environment variable is required');
 }
 
 // Helper function to make authenticated requests to edge functions

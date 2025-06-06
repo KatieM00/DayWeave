@@ -20,9 +20,14 @@ A beautiful, production-ready day planning application that creates personalized
 - **APIs**: OpenWeatherMap, Google Maps/Places
 - **Deployment**: Netlify
 
-## Security
+## 🔒 Security Architecture
 
-All API keys are securely stored and accessed through Supabase Edge Functions, ensuring no sensitive credentials are exposed to the client.
+This application follows security best practices:
+
+- **API Keys**: All sensitive API keys (Google AI, OpenWeather, Google Maps) are stored as Supabase Edge Function secrets, never exposed to the client
+- **Server-Side Processing**: All API calls to external services happen through Supabase Edge Functions
+- **Client-Side Safety**: Only Supabase URL and anonymous key are exposed to the browser (these are designed to be public)
+- **No Environment Variables**: No sensitive credentials in `.env` files or client-side code
 
 ## Setup
 
@@ -34,18 +39,20 @@ All API keys are securely stored and accessed through Supabase Edge Functions, e
 - OpenWeatherMap API key
 - Google Maps API key
 
-### Environment Variables
+### 1. Client Configuration
 
-1. Copy `.env.example` to `.env`
-2. Fill in your Supabase project details:
-   ```
-   VITE_SUPABASE_URL=your_supabase_project_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
+Create a `.env` file with only the Supabase client configuration:
 
-### API Key Configuration
+```env
+VITE_SUPABASE_DATABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-Configure your API keys as Supabase secrets (not in environment files):
+**⚠️ NEVER put API keys in this file!**
+
+### 2. Secure API Key Configuration
+
+Configure your API keys as Supabase Edge Function secrets (server-side only):
 
 ```bash
 # Install Supabase CLI
@@ -54,13 +61,13 @@ npm install -g supabase
 # Login to Supabase
 supabase login
 
-# Set your API keys as secrets
+# Set your API keys as secrets (server-side only)
 supabase secrets set GOOGLE_AI_API_KEY=your_google_ai_key
 supabase secrets set OPENWEATHER_API_KEY=your_openweather_key
 supabase secrets set GOOGLE_API_KEY=your_google_maps_key
 ```
 
-### Installation
+### 3. Installation
 
 ```bash
 # Install dependencies
@@ -81,9 +88,11 @@ The database migrations are included in the `supabase/migrations` folder and wil
 1. Connect your repository to Netlify
 2. Set build command: `npm run build`
 3. Set publish directory: `dist`
-4. Add environment variables in Netlify dashboard:
-   - `VITE_SUPABASE_URL`
+4. Add **only these** environment variables in Netlify dashboard:
+   - `VITE_SUPABASE_DATABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
+
+**🔒 Security Note**: Do NOT add API keys to Netlify environment variables. They should only exist as Supabase Edge Function secrets.
 
 ### Supabase Edge Functions
 
@@ -96,6 +105,14 @@ supabase functions deploy get-weather
 supabase functions deploy search-places
 supabase functions deploy generate-activity-suggestions
 ```
+
+## Security Best Practices Implemented
+
+1. **API Key Isolation**: Sensitive API keys never leave the server environment
+2. **Edge Function Secrets**: API keys stored securely in Supabase, accessible only to edge functions
+3. **CORS Protection**: Proper CORS headers on all edge functions
+4. **Client-Side Safety**: Only public Supabase credentials exposed to browsers
+5. **No Credential Leakage**: No sensitive data in repository, environment files, or client code
 
 ## API Documentation
 
