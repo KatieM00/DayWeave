@@ -16,6 +16,9 @@ import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { getActivitySuggestions } from '../services/activitySuggestions';
+import { trackEvent } from '../services/analytics';
+import { trackBudget, getBudgetSummary } from '../services/budgetTracking';
 
 interface ActivityPreference {
   category: string;
@@ -73,6 +76,7 @@ const UserPreferencesPage: React.FC = () => {
   useEffect(() => {
     loadPreferences();
     initializeMap();
+    loadBudgetSummary();
   }, [user]);
 
   const loadPreferences = async () => {
@@ -93,6 +97,24 @@ const UserPreferencesPage: React.FC = () => {
       console.error('Error loading preferences:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadBudgetSummary = async () => {
+    if (!user) return;
+    
+    try {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 30); // Last 30 days
+      const summary = await getBudgetSummary(startDate, new Date());
+      
+      // Update UI with budget summary
+      setPreferences(prev => ({
+        ...prev,
+        budgetSummary: summary
+      }));
+    } catch (error) {
+      console.error('Error loading budget summary:', error);
     }
   };
 
@@ -184,6 +206,11 @@ const UserPreferencesPage: React.FC = () => {
 
     setIsSaving(true);
     try {
+      await trackEvent('preferences_updated', {
+        categories: preferences.activities.map(a => a.category),
+        budget: preferences.weeklyBudget
+      });
+
       const { error } = await supabase
         .from('user_preferences')
         .upsert({
@@ -193,7 +220,19 @@ const UserPreferencesPage: React.FC = () => {
 
       if (error) throw error;
 
-      // Show success message
+      // Track budget changes
+      await trackBudget('weekly_budget', preferences.weeklyBudget);
+
+      // Update activity suggestions
+      const suggestions = await getActivitySuggestions({
+        location: preferences.homeLocation,
+        categories: preferences.activities.map(a => a.category),
+        maxBudget: preferences.weeklyBudget,
+        radius: preferences.searchRadius
+      });
+
+      setSuggestions(suggestions);
+
       alert('Preferences saved successfully!');
     } catch (error) {
       console.error('Error saving preferences:', error);

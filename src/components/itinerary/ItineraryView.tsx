@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  MapPin, 
-  Calendar, 
-  Share2, 
-  Users, 
-  Edit2, 
-  Save, 
-  X, 
-  Plus, 
-  ChevronDown, 
-  Download, 
+import {
+  ChevronDown,
+  Download,
+  Edit2,
   Link,
+  Plus,
+  Save,
+  Share2,
+  Trash2,
+  X,
+  MapPin,
+  Calendar,
+  Users,
   Clock,
-  Home
+  Home,
+  Search,
+  Star
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import Card from '../common/Card';
@@ -20,7 +23,9 @@ import Button from '../common/Button';
 import Input from '../common/Input';
 import { DayPlan, WeatherForecast, ItineraryEvent, Activity } from '../../types';
 import ItineraryItem from './ItineraryItem';
-import { mockActivities, recalculateTravel, generateTravelSegment } from '../../utils/mockData';
+import { generateTravelSegment } from '../../utils/mockData';
+import { getActivitySuggestions } from '../../services/activitySuggestions';
+import { searchPlaces, getPlaceDetails } from '../../services/googleMapsService';
 
 interface ItineraryViewProps {
   dayPlan: DayPlan;
@@ -55,7 +60,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
           lastEvent.data.endTime,
           dayPlan.preferences.transportModes
         ),
-        isEndOfDay: true // Special flag for end of day travel
+        isEndOfDay: true
       };
       return [...dayPlan.events, { type: 'travel', data: finalTravel }];
     }
@@ -71,7 +76,115 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   );
   const [shareOption, setShareOption] = useState<'link' | 'pdf'>('link');
   const [revealProgress, setRevealProgress] = useState(dayPlan.revealProgress || 0);
-  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [activitySuggestions, setActivitySuggestions] = useState<Activity[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (showActivityChoices) {
+      loadActivitySuggestions();
+    }
+  }, [showActivityChoices]);
+
+  const loadActivitySuggestions = async () => {
+    setIsLoadingSuggestions(true);
+    setError(null);
+    try {
+      const suggestions = await getActivitySuggestions({
+        location: dayPlan.preferences.startLocation,
+        categories: dayPlan.preferences.activityTypes || [],
+        maxBudget: extractBudgetLimit(dayPlan.preferences.budgetRange),
+        radius: dayPlan.preferences.travelDistance.value
+      });
+
+      const enrichedSuggestions = await Promise.all(
+        suggestions.map(async (suggestion) => {
+          try {
+            const places = await searchPlaces(
+              `${suggestion.name} near ${dayPlan.preferences.startLocation}`,
+              dayPlan.preferences.startLocation
+            );
+
+            if (places.length > 0) {
+              const details = await getPlaceDetails(places[0].place_id);
+              return {
+                ...suggestion,
+                location: details.name,
+                address: details.formatted_address,
+                ratings: details.rating,
+                imageUrl: null
+              };
+            }
+            return suggestion;
+          } catch (error) {
+            console.error('Error enriching suggestion:', error);
+            return suggestion;
+          }
+        })
+      );
+
+      setActivitySuggestions(enrichedSuggestions);
+    } catch (error) {
+      console.error('Error loading suggestions:', error);
+      setError('Failed to load activity suggestions. Please try again.');
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+
+  const extractBudgetLimit = (budgetRange: string): number => {
+    const ranges: Record<string, number> = {
+      'budget-low': 20,
+      'budget-mid': 35,
+      'budget': 50,
+      'moderate': 100,
+      'premium': 200,
+      'luxury': 500
+    };
+    return ranges[budgetRange] || 100;
+  };
+
+  const handleSearchSuggestions = async () => {
+    if (!searchQuery.trim()) return;
+
+    setIsLoadingSuggestions(true);
+    setError(null);
+    try {
+      const places = await searchPlaces(
+        `${searchQuery} near ${dayPlan.preferences.startLocation}`,
+        dayPlan.preferences.startLocation
+      );
+
+      const suggestions = await Promise.all(
+        places.slice(0, 5).map(async (place) => {
+          const details = await getPlaceDetails(place.place_id);
+          return {
+            id: place.place_id,
+            name: details.name,
+            description: `Visit ${details.name} - a highly rated destination in ${dayPlan.preferences.startLocation}`,
+            location: details.name,
+            startTime: '',
+            endTime: '',
+            duration: 120,
+            cost: details.price_level ? details.price_level * 25 : 25,
+            activityType: ['custom'],
+            address: details.formatted_address,
+            ratings: details.rating,
+            imageUrl: null
+          };
+        })
+      );
+
+      setActivitySuggestions(prev => [...suggestions, ...prev]);
+    } catch (error) {
+      console.error('Error searching places:', error);
+      setError('Failed to search for places. Please try again.');
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+
   const formatDuration = (minutes: number): string => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
@@ -206,98 +319,161 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
     </Card>
   );
 
-  const ActivityOverlay = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
-        <div className="p-6 border-b border-neutral-200">
-          <div className="flex justify-between items-center">
-            <h3 className="text-xl font-semibold text-primary-800">Add New Activities</h3>
-            <button 
-              onClick={() => setShowActivityChoices(false)}
-              className="text-neutral-500 hover:text-neutral-700"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-        </div>
+  const ActivityOverlay = () => {
+    const [sortOrder, setSortOrder] = useState<'rating' | 'cost' | 'name'>('rating');
+    const [filteredSuggestions, setFilteredSuggestions] = useState<Activity[]>([]);
 
-        <div className="flex-grow overflow-y-auto p-6">
-          <div className="grid gap-4">
-            {mockActivities.map((activity) => (
-              <div
-                key={activity.id}
-                className={`
-                  relative p-4 border-2 rounded-lg cursor-pointer transition-all
-                  ${selectedActivities.includes(activity) 
-                    ? 'border-primary-500 bg-primary-50' 
-                    : 'border-neutral-200 hover:border-primary-300'}
-                `}
-                onClick={() => {
-                  setSelectedActivities(prev => 
-                    prev.includes(activity)
-                      ? prev.filter(a => a.id !== activity.id)
-                      : [...prev, activity]
-                  );
-                }}
-              >
-                <div className="flex justify-between items-start">
-                  <div className="flex-grow">
-                    <h4 className="font-medium text-primary-800">{activity.name}</h4>
-                    <p className="text-sm text-neutral-600 mt-1">{activity.description}</p>
-                    <div className="flex items-center gap-4 mt-2 text-sm text-neutral-500">
-                      <span className="flex items-center">
-                        <Clock className="w-4 h-4 mr-1" />
-                        {formatDuration(activity.duration)}
-                      </span>
-                      <span className="flex items-center">
-                        £{activity.cost}
-                      </span>
-                    </div>
-                  </div>
-                  {activity.imageUrl && (
-                    <img 
-                      src={activity.imageUrl} 
-                      alt={activity.name}
-                      className="w-24 h-24 object-cover rounded-lg ml-4"
-                    />
-                  )}
-                </div>
+    useEffect(() => {
+      if (activitySuggestions.length > 0) {
+        let sorted = [...activitySuggestions];
+        
+        switch (sortOrder) {
+          case 'rating':
+            sorted.sort((a, b) => (b.ratings || 0) - (a.ratings || 0));
+            break;
+          case 'cost':
+            sorted.sort((a, b) => a.cost - b.cost);
+            break;
+          case 'name':
+            sorted.sort((a, b) => a.name.localeCompare(b.name));
+            break;
+        }
 
-                {selectedActivities.includes(activity) && (
-                  <div className="absolute top-2 right-2 w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center text-white">
-                    <ChevronDown className="w-4 h-4" />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+        setFilteredSuggestions(sorted);
+      }
+    }, [activitySuggestions, sortOrder]);
 
-        <div className="p-6 border-t border-neutral-200 bg-neutral-50">
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-neutral-600">
-              {selectedActivities.length} activities selected
-            </div>
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="p-6 border-b border-neutral-200">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-semibold text-primary-800">Add New Activities</h3>
+              <button 
                 onClick={() => setShowActivityChoices(false)}
+                className="text-neutral-500 hover:text-neutral-700"
               >
-                Cancel
-              </Button>
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="mt-4 flex gap-4">
+              <Input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search for places..."
+                icon={<Search className="w-5 h-5" />}
+                fullWidth
+              />
               <Button
                 variant="primary"
-                onClick={handleAddSelectedActivities}
-                disabled={selectedActivities.length === 0}
+                onClick={handleSearchSuggestions}
+                disabled={isLoadingSuggestions || !searchQuery.trim()}
               >
-                Add to Plan
+                Search
               </Button>
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as 'rating' | 'cost' | 'name')}
+                className="border-2 border-neutral-300 rounded-md px-3 focus:border-primary-500 focus:outline-none"
+              >
+                <option value="rating">Rating (High to Low)</option>
+                <option value="cost">Cost (Low to High)</option>
+                <option value="name">Name (A-Z)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex-grow overflow-y-auto p-6">
+            {error && (
+              <div className="bg-error-light text-error-dark p-4 rounded-lg mb-4">
+                {error}
+              </div>
+            )}
+
+            {isLoadingSuggestions ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent"></div>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {filteredSuggestions.map((activity) => (
+                  <div
+                    key={activity.id}
+                    className={`
+                      relative p-4 border-2 rounded-lg cursor-pointer transition-all
+                      ${selectedActivities.some(a => a.id === activity.id)
+                        ? 'border-primary-500 bg-primary-50' 
+                        : 'border-neutral-200 hover:border-primary-300'}
+                    `}
+                    onClick={() => {
+                      setSelectedActivities(prev => 
+                        prev.some(a => a.id === activity.id)
+                          ? prev.filter(a => a.id !== activity.id)
+                          : [...prev, activity]
+                      );
+                    }}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-grow">
+                        <h4 className="font-medium text-primary-800">{activity.name}</h4>
+                        <p className="text-sm text-neutral-600 mt-1">{activity.description}</p>
+                        <div className="flex items-center gap-4 mt-2 text-sm text-neutral-500">
+                          <span className="flex items-center">
+                            <Clock className="w-4 h-4 mr-1" />
+                            {activity.duration} min
+                          </span>
+                          <span className="flex items-center">
+                            £{activity.cost}
+                          </span>
+                          {activity.ratings && (
+                            <span className="flex items-center">
+                              <Star className="w-4 h-4 mr-1 text-accent-500" />
+                              {activity.ratings}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {selectedActivities.some(a => a.id === activity.id) && (
+                      <div className="absolute top-2 right-2 w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center text-white">
+                        <ChevronDown className="w-4 h-4" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="p-6 border-t border-neutral-200 bg-neutral-50">
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-neutral-600">
+                {selectedActivities.length} activities selected
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowActivityChoices(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleAddSelectedActivities}
+                  disabled={selectedActivities.length === 0}
+                >
+                  Add to Plan
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const SaveDialog = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -622,7 +798,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
 
       <div className="text-center text-sm text-neutral-500 mb-8 mt-6">
         <p>Information may not be accurate at time of plan generation.</p>
-        <p>Please double-check all details including opening hours, prices, and availability before your planned day.</p>
+        <p>Please double-check all details including opening hours, prices, an availability before your planned day.</p>
       </div>
     </div>
   );

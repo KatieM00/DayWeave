@@ -3,11 +3,11 @@ import { Loader } from '@googlemaps/js-api-loader';
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
 if (!GOOGLE_MAPS_API_KEY) {
-  throw new Error('Missing Google Maps API key');
+  console.warn('Google Maps API key not found. Some features may be limited.');
 }
 
 const loader = new Loader({
-  apiKey: GOOGLE_MAPS_API_KEY,
+  apiKey: GOOGLE_MAPS_API_KEY || '',
   version: 'weekly',
   libraries: ['places']
 });
@@ -47,6 +47,10 @@ export interface PlaceDetails {
 }
 
 export const searchPlaces = async (query: string, location: string): Promise<PlaceDetails[]> => {
+  if (!GOOGLE_MAPS_API_KEY) {
+    return [];
+  }
+
   const service = await initPlacesService();
 
   // First, geocode the location to get coordinates
@@ -104,6 +108,10 @@ export const searchPlaces = async (query: string, location: string): Promise<Pla
 };
 
 export const getPlaceDetails = async (placeId: string): Promise<PlaceDetails> => {
+  if (!GOOGLE_MAPS_API_KEY) {
+    throw new Error('Google Maps API key not configured');
+  }
+
   const service = await initPlacesService();
 
   return new Promise((resolve, reject) => {
@@ -154,6 +162,10 @@ export const getPlaceDetails = async (placeId: string): Promise<PlaceDetails> =>
 };
 
 export const getPlacePhoto = async (photoReference: string, maxWidth: number = 400): Promise<string> => {
+  if (!GOOGLE_MAPS_API_KEY) {
+    throw new Error('Google Maps API key not configured');
+  }
+
   const baseUrl = 'https://maps.googleapis.com/maps/api/place/photo';
   const url = `${baseUrl}?maxwidth=${maxWidth}&photo_reference=${photoReference}&key=${GOOGLE_MAPS_API_KEY}`;
   
