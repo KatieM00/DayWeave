@@ -1,6 +1,6 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // Pages
 import HomePage from './pages/HomePage';
@@ -14,28 +14,108 @@ import UserPreferencesPage from './pages/UserPreferencesPage';
 // Components
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
+import LoadingSpinner from './components/common/LoadingSpinner';
+
+// Protected Route Component
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// Public Route Component (redirects authenticated users)
+const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+function AppContent() {
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      
+      <main className="flex-grow">
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/surprise" element={<SurprisePlanPage />} />
+          <Route path="/plan" element={<DetailedPlanPage />} />
+          
+          {/* Public routes - redirect if authenticated */}
+          <Route 
+            path="/login" 
+            element={
+              <PublicRoute>
+                <LoginPage />
+              </PublicRoute>
+            } 
+          />
+          <Route 
+            path="/signup" 
+            element={
+              <PublicRoute>
+                <SignupPage />
+              </PublicRoute>
+            } 
+          />
+          
+          {/* Protected routes - require authentication */}
+          <Route 
+            path="/my-plans" 
+            element={
+              <ProtectedRoute>
+                <MyPlansPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/preferences" 
+            element={
+              <ProtectedRoute>
+                <UserPreferencesPage />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Catch all route */}
+          <Route path="*" element={<Navigate to="/\" replace />} />
+        </Routes>
+      </main>
+      
+      <Footer />
+    </div>
+  );
+}
 
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="flex flex-col min-h-screen">
-          <Header />
-          
-          <main className="flex-grow">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/surprise" element={<SurprisePlanPage />} />
-              <Route path="/plan" element={<DetailedPlanPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-              <Route path="/my-plans" element={<MyPlansPage />} />
-              <Route path="/preferences" element={<UserPreferencesPage />} />
-            </Routes>
-          </main>
-          
-          <Footer />
-        </div>
+        <AppContent />
       </Router>
     </AuthProvider>
   );
