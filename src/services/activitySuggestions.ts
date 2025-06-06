@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { generateActivitySuggestions } from './geminiService';
+import { generateActivitySuggestions } from './api';
 import type { Activity } from '../types';
 
 interface SuggestionParams {

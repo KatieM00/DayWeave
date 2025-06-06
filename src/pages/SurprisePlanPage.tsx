@@ -6,7 +6,7 @@ import ItineraryView from '../components/itinerary/ItineraryView';
 import ItineraryGenerator from '../components/common/ItineraryGenerator';
 import HomeButton from '../components/common/HomeButton';
 import { UserPreferences, DayPlan } from '../types';
-import { generateItinerary } from '../services/geminiService';
+import { generateItinerary, getWeatherForecast } from '../services/api';
 import { Link } from 'react-router-dom';
 
 const SurprisePlanPage: React.FC = () => {
@@ -20,12 +20,23 @@ const SurprisePlanPage: React.FC = () => {
     setError(null);
     
     try {
-      const plan = await generateItinerary({
-        location: preferences.startLocation,
-        date: preferences.planDate || new Date().toISOString().split('T')[0],
-        preferences,
-        surpriseMode: preferences.surpriseMode
-      });
+      const planDate = preferences.planDate || new Date().toISOString().split('T')[0];
+      
+      // Generate itinerary and weather forecast in parallel
+      const [plan, weatherForecast] = await Promise.all([
+        generateItinerary({
+          location: preferences.startLocation,
+          date: planDate,
+          preferences,
+          surpriseMode: preferences.surpriseMode
+        }),
+        getWeatherForecast(preferences.startLocation, planDate)
+      ]);
+      
+      // Add weather forecast to the plan
+      if (weatherForecast) {
+        plan.weatherForecast = weatherForecast;
+      }
       
       if (preferences.surpriseMode) {
         const initialReveal = Math.ceil((1 / plan.events.length) * 100);
@@ -90,7 +101,7 @@ const SurprisePlanPage: React.FC = () => {
         {dayPlan ? (
           <div className="mb-6">
             <div className="mb-6">
-              <Link to="/" className="inline-flex items-center text-primary-600 hover:text-primary-700">
+              <Link to="/\" className="inline-flex items-center text-primary-600 hover:text-primary-700">
                 <ArrowLeft className="w-4 h-4 mr-1" />
                 Back to Home
               </Link>

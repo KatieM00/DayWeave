@@ -7,7 +7,7 @@ import ItineraryGenerator from '../components/common/ItineraryGenerator';
 import HomeButton from '../components/common/HomeButton';
 import { UserPreferences, DayPlan } from '../types';
 import { Link } from 'react-router-dom';
-import { generateItinerary } from '../services/geminiService';
+import { generateItinerary, getWeatherForecast } from '../services/api';
 
 const DetailedPlanPage: React.FC = () => {
   const [dayPlan, setDayPlan] = useState<DayPlan | null>(null);
@@ -19,12 +19,23 @@ const DetailedPlanPage: React.FC = () => {
     setError(null);
     
     try {
-      const plan = await generateItinerary({
-        location: preferences.startLocation,
-        date: preferences.planDate || new Date().toISOString().split('T')[0],
-        preferences,
-        surpriseMode: false
-      });
+      const planDate = preferences.planDate || new Date().toISOString().split('T')[0];
+      
+      // Generate itinerary and weather forecast in parallel
+      const [plan, weatherForecast] = await Promise.all([
+        generateItinerary({
+          location: preferences.startLocation,
+          date: planDate,
+          preferences,
+          surpriseMode: false
+        }),
+        getWeatherForecast(preferences.startLocation, planDate)
+      ]);
+      
+      // Add weather forecast to the plan
+      if (weatherForecast) {
+        plan.weatherForecast = weatherForecast;
+      }
       
       setDayPlan(plan);
       window.scrollTo(0, 0);
@@ -60,7 +71,7 @@ const DetailedPlanPage: React.FC = () => {
         {dayPlan ? (
           <div className="mb-6">
             <div className="mb-6">
-              <Link to="/" className="inline-flex items-center text-primary-600 hover:text-primary-700">
+              <Link to="/\" className="inline-flex items-center text-primary-600 hover:text-primary-700">
                 <ArrowLeft className="w-4 h-4 mr-1" />
                 Back to Home
               </Link>

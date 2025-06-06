@@ -25,7 +25,7 @@ import { DayPlan, WeatherForecast, ItineraryEvent, Activity } from '../../types'
 import ItineraryItem from './ItineraryItem';
 import { generateTravelSegment } from '../../utils/mockData';
 import { getActivitySuggestions } from '../../services/activitySuggestions';
-import { searchPlaces, getPlaceDetails } from '../../services/googleMapsService';
+import { searchPlaces, getPlaceDetails } from '../../services/api';
 
 interface ItineraryViewProps {
   dayPlan: DayPlan;
