@@ -1,20 +1,27 @@
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '../types/database';
+import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+interface ImportMetaEnv {
+  VITE_SUPABASE_URL: string
+  VITE_SUPABASE_ANON_KEY: string
+}
 
-console.log('VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL);
-console.log('VITE_SUPABASE_ANON_KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY);
+interface ImportMeta {
+  env: ImportMetaEnv
+}
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 if (!supabaseUrl) {
-  console.error('VITE_SUPABASE_URL is missing from environment variables');
-  throw new Error('Missing VITE_SUPABASE_URL environment variable. Please check your .env file.');
+  throw new Error('Missing VITE_SUPABASE_URL environment variable')
 }
 
 if (!supabaseAnonKey) {
-  console.error('VITE_SUPABASE_ANON_KEY is missing from environment variables');
-  throw new Error('Missing VITE_SUPABASE_ANON_KEY environment variable. Please check your .env file.');
+  throw new Error('Missing VITE_SUPABASE_ANON_KEY environment variable')
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+// For debugging - remove this in production
+console.log('Supabase URL:', supabaseUrl ? 'Set' : 'Missing')
+console.log('Supabase Key:', supabaseAnonKey ? 'Set' : 'Missing')
