@@ -10,6 +10,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import MyPlansPage from './pages/MyPlansPage';
 import UserPreferencesPage from './pages/UserPreferencesPage';
+import AccountPage from './pages/AccountPage';
 
 // Components
 import Header from './components/layout/Header';
@@ -97,6 +98,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <UserPreferencesPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/account" 
+            element={
+              <ProtectedRoute>
+                <AccountPage />
               </ProtectedRoute>
             } 
           />
