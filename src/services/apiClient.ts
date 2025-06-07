@@ -57,33 +57,34 @@ class DayWeaveAPI {
     this.baseUrl = '/.netlify/functions';
   }
 
-  async generateDayPlan(location: string, preferences: any, weather: any = null): Promise<GeneratedDayPlan> {
-    try {
-      const response = await fetch(`${this.baseUrl}/generate-plan`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          location,
-          preferences,
-          weather
-        })
-      });
+async generateDayPlan(location: string, preferences: any, weather: any = null): Promise<GeneratedDayPlan> {
+  try {
+    const response = await fetch(`${this.baseUrl}/generate-plan`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`, // Add this line
+      },
+      body: JSON.stringify({
+        location,
+        preferences,
+        weather
+      })
+    });
 
-      if (!response.ok) {
-        throw new Error(`Plan generation failed: ${response.status}`);
-      }
-
-      const data: AIPlan = await response.json();
-      
-      // Convert AI response to your existing DayPlan format
-      return this.convertToDayPlan(data, location, preferences);
-    } catch (error) {
-      console.error('Error generating plan:', error);
-      throw error;
+    if (!response.ok) {
+      throw new Error(`Plan generation failed: ${response.status}`);
     }
+
+    const data: AIPlan = await response.json();
+    
+    // Convert AI response to your existing DayPlan format
+    return this.convertToDayPlan(data, location, preferences);
+  } catch (error) {
+    console.error('Error generating plan:', error);
+    throw error;
   }
+}
 
   private convertToDayPlan(aiData: AIPlan, location: string, preferences: any): GeneratedDayPlan {
     const allActivities = [

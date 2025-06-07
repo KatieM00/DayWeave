@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { MapPin, Users, Clock, Compass, Activity, Coffee, Calendar, Bot as Boot, Bike, Car, Bus, Train } from 'lucide-react';
 import Button from '../common/Button';
-import Input from '../common/Input';
 import Card from '../common/Card';
 import LocationInput from '../common/LocationInput';
 import { 
@@ -10,7 +9,7 @@ import {
   ActivityType,
   TransportMode,
   AgeRestriction,
-  TravelDistance
+  TravelDistance // I think this will be used to calculate how far away from location the user would like to travel
 } from '../../types';
 
 const generateTimeOptions = () => {
@@ -158,7 +157,7 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
     const allActivityValues = activityOptions.map(option => option.value);
     setPreferences(prev => ({
       ...prev,
-      activityTypes: allActivityValues
+      activityTypes: allActivityValues as ActivityType[]
     }));
   };
 
@@ -266,7 +265,7 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                 
                 <LocationInput
                   placeholder="Enter end location if different"
-                  value={preferences.endLocation}
+                  value={preferences.endLocation || ''}
                   onChange={(value) => handleChange('endLocation', value)}
                   fullWidth
                 />
@@ -332,10 +331,10 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                   {transportOptions.map((option) => (
                     <button
                       key={option.value}
-                      onClick={() => handleMultiSelectChange('transportModes', option.value, !preferences.transportModes?.includes(option.value))}
+                      onClick={() => handleMultiSelectChange('transportModes', option.value as TransportMode, !preferences.transportModes?.includes(option.value as TransportMode))}
                       className={`
                         relative flex flex-col items-center justify-center h-20 p-3 border-2 rounded-md transition-all
-                        ${preferences.transportModes?.includes(option.value) 
+                        ${preferences.transportModes?.includes(option.value as TransportMode) 
                           ? 'border-primary-500 bg-primary-50 text-primary-700' 
                           : 'border-neutral-300 bg-white text-neutral-700 hover:border-primary-300'}
                       `}
@@ -423,7 +422,7 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                         <option 
                           key={`end-${time}`} 
                           value={time}
-                          disabled={preferences.startTime && time <= preferences.startTime}
+                          disabled={!!preferences.startTime && time <= preferences.startTime}
                         >
                           {time}
                         </option>
@@ -487,7 +486,7 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                       key={option.value}
                       className={`
                         flex items-center space-x-2 p-3 border-2 rounded-md cursor-pointer transition-all block
-                        ${preferences.ageRestrictions?.includes(option.value) 
+                        ${preferences.ageRestrictions?.includes(option.value as AgeRestriction) 
                           ? 'border-primary-500 bg-primary-50 text-primary-700' 
                           : 'border-neutral-300 bg-white text-neutral-700 hover:border-primary-300'}
                       `}
@@ -495,7 +494,7 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                       <input
                         type="checkbox"
                         className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                        checked={preferences.ageRestrictions?.includes(option.value)}
+                        checked={preferences.ageRestrictions?.includes(option.value as AgeRestriction)}
                         onChange={(e) => handleMultiSelectChange('ageRestrictions', option.value, e.target.checked)}
                       />
                       <span>{option.label}</span>
@@ -532,10 +531,10 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                   {activityOptions.map((option) => (
                     <button
                       key={option.value}
-                      onClick={() => handleMultiSelectChange('activityTypes', option.value, !preferences.activityTypes?.includes(option.value))}
+                      onClick={() => handleMultiSelectChange('activityTypes', option.value as ActivityType, !preferences.activityTypes?.includes(option.value as ActivityType))}
                       className={`
                         p-4 border-2 rounded-lg text-left transition-all
-                        ${preferences.activityTypes?.includes(option.value)
+                        ${preferences.activityTypes?.includes(option.value as ActivityType)
                           ? 'border-primary-500 bg-primary-50 text-primary-700'
                           : 'border-neutral-300 hover:border-primary-300'}
                       `}

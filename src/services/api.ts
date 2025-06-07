@@ -36,6 +36,7 @@ export interface LLMItineraryRequest {
 
 export const generateItinerary = async (request: LLMItineraryRequest): Promise<DayPlan> => {
   try {
+    // Call your server-side function instead of Gemini directly
     const dayPlan = await callEdgeFunction('generate-itinerary', request);
     return dayPlan;
   } catch (error) {

@@ -57,7 +57,7 @@ export const searchPlaces = async (query: string, location: string): Promise<Pla
   const geocoder = new google.maps.Geocoder();
   const { results } = await new Promise<google.maps.GeocoderResponse>((resolve, reject) => {
     geocoder.geocode({ address: location }, (results, status) => {
-      if (status === 'OK') resolve({ results });
+      if (status === 'OK') resolve({ results: results ?? [] });
       else reject(new Error(`Geocoding failed: ${status}`));
     });
   });
@@ -71,7 +71,7 @@ export const searchPlaces = async (query: string, location: string): Promise<Pla
   // Then search for places near that location
   return new Promise((resolve, reject) => {
     const request: google.maps.places.PlaceSearchRequest = {
-      query,
+      keyword: query,
       location: locationCoords,
       radius: 5000 // 5km radius
     };
@@ -84,7 +84,7 @@ export const searchPlaces = async (query: string, location: string): Promise<Pla
           formatted_address: place.formatted_address!,
           rating: place.rating || 0,
           user_ratings_total: place.user_ratings_total || 0,
-          photos: place.photos?.map(photo => ({ photo_reference: photo.photo_reference! })) || [],
+          photos: place.photos?.map(photo => ({ photo_reference: photo.photo_reference ?? '' })) || [],
           opening_hours: {
             open_now: place.opening_hours?.isOpen() || false,
             weekday_text: place.opening_hours?.weekday_text || []
@@ -139,7 +139,7 @@ export const getPlaceDetails = async (placeId: string): Promise<PlaceDetails> =>
           formatted_address: place.formatted_address!,
           rating: place.rating || 0,
           user_ratings_total: place.user_ratings_total || 0,
-          photos: place.photos?.map(photo => ({ photo_reference: photo.photo_reference! })) || [],
+          photos: place.photos?.map(photo => ({ photo_reference: photo.photo_reference ?? '' })) || [],
           opening_hours: {
             open_now: place.opening_hours?.isOpen() || false,
             weekday_text: place.opening_hours?.weekday_text || []

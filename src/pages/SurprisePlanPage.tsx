@@ -92,7 +92,10 @@ const SurprisePlanPage: React.FC = () => {
   const getCurrentLocation = () => {
     if (!dayPlan?.events.length) return '';
     const lastEvent = dayPlan.events[dayPlan.events.length - 1];
-    return lastEvent.type === 'activity' ? lastEvent.data.location : '';
+    if (lastEvent.type === 'activity') {
+      return (lastEvent.data as { location?: string }).location || '';
+    }
+    return '';
   };
   
   return (

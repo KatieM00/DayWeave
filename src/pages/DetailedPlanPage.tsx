@@ -62,7 +62,10 @@ const DetailedPlanPage: React.FC = () => {
   const getCurrentLocation = () => {
     if (!dayPlan?.events.length) return '';
     const lastEvent = dayPlan.events[dayPlan.events.length - 1];
-    return lastEvent.type === 'activity' ? lastEvent.data.location : '';
+    if (lastEvent.type === 'activity' && 'location' in lastEvent.data) {
+      return lastEvent.data.location;
+    }
+    return '';
   };
   
   return (

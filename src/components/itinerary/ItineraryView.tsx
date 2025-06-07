@@ -21,7 +21,7 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import Card from '../common/Card';
 import Button from '../common/Button';
 import Input from '../common/Input';
-import { DayPlan, WeatherForecast, ItineraryEvent, Activity } from '../../types';
+import { DayPlan, WeatherForecast, ItineraryEvent, Activity, UserPreferences } from '../../types';
 import ItineraryItem from './ItineraryItem';
 import { generateTravelSegment } from '../../utils/mockData';
 import { getActivitySuggestions } from '../../services/activitySuggestions';
@@ -53,11 +53,12 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
     const lastEvent = dayPlan.events[dayPlan.events.length - 1];
     if (lastEvent.type === 'activity') {
       const finalDestination = dayPlan.preferences.endLocation || dayPlan.preferences.startLocation;
+      const activityData = lastEvent.data as Activity;
       const finalTravel = {
         ...generateTravelSegment(
-          lastEvent.data.location,
+          activityData.location,
           finalDestination,
-          lastEvent.data.endTime,
+          activityData.endTime,
           dayPlan.preferences.transportModes
         ),
         isEndOfDay: true
@@ -168,7 +169,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
             endTime: '',
             duration: 120,
             cost: details.price_level ? details.price_level * 25 : 25,
-            activityType: ['custom'],
+            activityType: ['custom'] as Activity['activityType'],
             address: details.formatted_address,
             ratings: details.rating,
             imageUrl: null
@@ -176,7 +177,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
         })
       );
 
-      setActivitySuggestions(prev => [...suggestions, ...prev]);
+      setActivitySuggestions(prev => [...(suggestions as Activity[]), ...prev]);
     } catch (error) {
       console.error('Error searching places:', error);
       setError('Failed to search for places. Please try again.');
@@ -705,29 +706,40 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
                               
                               <div className="ml-3 flex-grow">
                                 <div className="text-accent-800 font-medium">
-                                  Time to head {event.data.endLocation === dayPlan.preferences.startLocation ? 'back home' : 'to your destination'}!
+                                  Time to head {(event.type === 'travel' && isTravelSegment(event.data) && event.data.endLocation === dayPlan.preferences.startLocation) ? 'back home' : 'to your destination'}!
                                 </div>
                                 <div className="flex items-center text-sm text-neutral-600">
-                                  <span>{event.data.startTime} → {event.data.endTime}</span>
+                                  {'startTime' in event.data && 'endTime' in event.data && (
+                                    <span>{event.data.startTime} → {event.data.endTime}</span>
+                                  )}
                                   <span className="mx-2">•</span>
-                                  <span>{Math.floor(event.data.duration)} min</span>
+                                  {'duration' in event.data && (
+                                    <span>{Math.floor(event.data.duration)} min</span>
+                                  )}
                                   <span className="mx-2">•</span>
-                                  <span>{event.data.distance} miles</span>
+                                  {'distance' in event.data && (
+                                    <span>{event.data.distance} miles</span>
+                                  )}
                                 </div>
                               </div>
                               
-                              <a
-                                href="#"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  const url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(event.data.startLocation)}&destination=${encodeURIComponent(event.data.endLocation)}&travelmode=${event.data.mode}`;
-                                  window.open(url, '_blank');
-                                }}
-                                className="ml-2 text-accent-600 hover:text-accent-700 flex items-center"
-                              >
-                                <MapPin className="h-4 w-4 mr-1" />
-                                <span className="text-sm">Directions</span>
-                              </a>
+                              {event.type === 'travel' && isTravelSegment(event.data) ? (
+                                <a
+                                  href="#"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    let url = '';
+                                    if (isTravelSegment(event.data)) {
+                                      url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(event.data.startLocation)}&destination=${encodeURIComponent(event.data.endLocation)}&travelmode=${event.data.mode}`;
+                                    }
+                                    window.open(url, '_blank');
+                                  }}
+                                  className="ml-2 text-accent-600 hover:text-accent-700 flex items-center"
+                                >
+                                  <MapPin className="h-4 w-4 mr-1" />
+                                  <span className="text-sm">Directions</span>
+                                </a>
+                              ) : null}
                             </div>
                           </Card>
                         ) : (
@@ -786,7 +798,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
       
       <div className="mt-8 flex justify-center">
         <Button
-          variant="success"
+          variant="primary"
           size="lg"
           icon={<Save className="h-5 w-5" />}
           onClick={() => setShowSaveDialog(true)}
@@ -805,3 +817,47 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
 };
 
 export default ItineraryView;
+
+import type { TransportMode } from '../../types';
+
+// Define TravelSegment type locally if not exported from types
+type TravelSegment = {
+  id: string;
+  startLocation: string;
+  endLocation: string;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  distance: number;
+  mode: TransportMode;
+  cost: number;
+  isEndOfDay?: boolean;
+};
+
+function recalculateTravel(activities: Activity[], preferences: UserPreferences): TravelSegment[] {
+  // Generate travel segments between consecutive activities
+  const travels: TravelSegment[] = [];
+  for (let i = 0; i < activities.length - 1; i++) {
+    const from = activities[i].location;
+    const to = activities[i + 1].location;
+    const startTime = activities[i].endTime;
+    const travel = generateTravelSegment(
+      from,
+      to,
+      startTime,
+      preferences.transportModes
+    );
+    travels.push(travel);
+  }
+  return travels;
+}
+
+// Type guard for TravelSegment
+function isTravelSegment(data: any): data is TravelSegment {
+  return (
+    data &&
+    typeof data === 'object' &&
+    'endLocation' in data &&
+    typeof data.endLocation === 'string'
+  );
+}

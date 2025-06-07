@@ -1,5 +1,5 @@
 // Supabase Edge Function for weather data
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
+import { serve } from "https://deno.land/std@0.203.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
