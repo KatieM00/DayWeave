@@ -6,9 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-interface PlaceSearchRequest {
-  query: string;
-  location: string;
+interface PlaceDetailsRequest {
+  placeId: string;
 }
 
 serve(async (req) => {
@@ -18,7 +17,7 @@ serve(async (req) => {
   }
 
   try {
-    const { query, location }: PlaceSearchRequest = await req.json()
+    const { placeId }: PlaceDetailsRequest = await req.json()
 
     // Get API key from environment
     const apiKey = Deno.env.get('GOOGLE_API_KEY')
@@ -27,39 +26,27 @@ serve(async (req) => {
       throw new Error('Google Maps API key is not configured')
     }
 
-    console.log('Google Maps API key found, searching places...')
+    console.log('Google Maps API key found, getting place details...')
 
-    // First, geocode the location to get coordinates
-    const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location)}&key=${apiKey}`
-    const geocodeResponse = await fetch(geocodeUrl)
+    // Get place details from Google Places API
+    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,rating,user_ratings_total,photos,opening_hours,price_level,website,formatted_phone_number,geometry&key=${apiKey}`
     
-    if (!geocodeResponse.ok) {
-      throw new Error('Geocoding failed')
-    }
-
-    const geocodeData = await geocodeResponse.json()
-    if (geocodeData.status !== 'OK' || !geocodeData.results.length) {
-      throw new Error('Location not found')
-    }
-
-    const { lat, lng } = geocodeData.results[0].geometry.location
-
-    // Search for places using Google Places API
-    const placesUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&location=${lat},${lng}&radius=5000&key=${apiKey}`
-    const placesResponse = await fetch(placesUrl)
+    const response = await fetch(detailsUrl)
     
-    if (!placesResponse.ok) {
-      throw new Error('Places search failed')
+    if (!response.ok) {
+      throw new Error('Place details request failed')
     }
 
-    const placesData = await placesResponse.json()
+    const data = await response.json()
     
-    if (placesData.status !== 'OK') {
-      throw new Error(`Places API error: ${placesData.status}`)
+    if (data.status !== 'OK') {
+      throw new Error(`Places API error: ${data.status}`)
     }
 
-    // Transform the results to match our interface
-    const places = placesData.results.map((place: any) => ({
+    const place = data.result
+
+    // Transform the result to match our interface
+    const placeDetails = {
       place_id: place.place_id,
       name: place.name,
       formatted_address: place.formatted_address,
@@ -68,23 +55,23 @@ serve(async (req) => {
       photos: place.photos?.map((photo: any) => ({ photo_reference: photo.photo_reference })) || [],
       opening_hours: {
         open_now: place.opening_hours?.open_now || false,
-        weekday_text: []
+        weekday_text: place.opening_hours?.weekday_text || []
       },
       price_level: place.price_level || 0,
-      website: '',
-      formatted_phone_number: '',
+      website: place.website || '',
+      formatted_phone_number: place.formatted_phone_number || '',
       geometry: {
         location: {
           lat: place.geometry.location.lat,
           lng: place.geometry.location.lng
         }
       }
-    }))
+    }
 
-    console.log('Successfully searched places')
+    console.log('Successfully retrieved place details')
 
     return new Response(
-      JSON.stringify(places),
+      JSON.stringify(placeDetails),
       { 
         headers: { 
           ...corsHeaders, 
@@ -94,10 +81,10 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Error searching places:', error)
+    console.error('Error getting place details:', error)
     return new Response(
       JSON.stringify({ 
-        error: 'Failed to search places',
+        error: 'Failed to get place details',
         details: error.message,
         timestamp: new Date().toISOString()
       }),

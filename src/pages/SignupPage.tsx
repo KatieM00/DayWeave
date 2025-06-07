@@ -30,7 +30,7 @@ const SignupPage: React.FC = () => {
     confirmPassword: '',
     acceptTerms: false,
   });
-  const [errors, setErrors] = useState<Partial<Omit<SignupFormData, 'acceptTerms'> & { acceptTerms?: string; general?: string }>>({});
+  const [errors, setErrors] = useState<Partial<SignupFormData & { general: string }>>({});
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -62,20 +62,20 @@ const SignupPage: React.FC = () => {
   };
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<Omit<SignupFormData, 'acceptTerms'> & { acceptTerms?: string; general?: string }> = {};
-  
+    const newErrors: Partial<SignupFormData & { general: string }> = {};
+
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'Full name is required';
     } else if (formData.fullName.trim().length < 2) {
       newErrors.fullName = 'Full name must be at least 2 characters';
     }
-  
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-  
+
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 8) {
@@ -83,17 +83,17 @@ const SignupPage: React.FC = () => {
     } else if (getPasswordStrength(formData.password) < 3) {
       newErrors.password = 'Password is too weak. Include uppercase, lowercase, numbers, and special characters.';
     }
-  
+
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = 'Please confirm your password';
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
-  
+
     if (!formData.acceptTerms) {
       newErrors.acceptTerms = 'You must accept the terms of service';
     }
-  
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -107,7 +107,7 @@ const SignupPage: React.FC = () => {
     setErrors({});
     
     try {
-      const { error } = await signUp(formData.email, formData.password);
+      const { error } = await signUp(formData.email, formData.password, formData.fullName);
       
       if (error) {
         if (error.message.includes('already registered')) {

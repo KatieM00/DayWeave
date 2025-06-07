@@ -1,13 +1,12 @@
-import { dayWeaveAPI } from '../../services/apiClient';
 import React, { useState } from 'react';
-import { MapPin, Users, Compass, DollarSign, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { MapPin, LogIn, Users, Compass, DollarSign, Sparkles, Eye, EyeOff } from 'lucide-react';
 import Button from '../common/Button';
 import Input from '../common/Input';
 import Card from '../common/Card';
-import { UserPreferences, BudgetRange, ActivityVibe } from '../../types';
+import { UserPreferences, BudgetRange, ActivityVibe, TravelDistance } from '../../types';
 
 interface SurpriseFormProps {
-  onSubmit: (preferences: UserPreferences & { surpriseMode: boolean; generatedPlan: any }) => void;
+  onSubmit: (preferences: UserPreferences & { surpriseMode: boolean }) => void;
 }
 
 const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
@@ -21,7 +20,6 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(false);
 
   const handleChange = (field: keyof UserPreferences, value: any) => {
     setPreferences(prev => ({
@@ -65,37 +63,15 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
     }
   };
 
-const handleSubmit = async () => {
-  if (validateStep(step)) {
-    setLoading(true);
-    
-    try {
-      // Generate AI-powered plan
-      const aiPlan = await dayWeaveAPI.generateDayPlan(
-        preferences.startLocation,
-        preferences
-      );
-
+  const handleSubmit = () => {
+    if (validateStep(step)) {
       onSubmit({
         ...preferences,
-        surpriseMode: preferences.surpriseMode ?? false,
-        generatedPlan: aiPlan
+        surpriseMode: preferences.surpriseMode ?? false
       });
-    } catch (error) {
-      console.error('Error generating AI plan:', error);
-      
-      // Fallback to existing mock data if AI fails
-      const fallbackPlan = generateSurpriseDayPlan(preferences);
-      onSubmit({
-        ...preferences,
-        surpriseMode: preferences.surpriseMode ?? false,
-        generatedPlan: fallbackPlan
-      });
-    } finally {
-      setLoading(false);
     }
-  }
-};
+  };
+
   const renderStepContent = () => {
     switch (step) {
       case 1:
@@ -386,19 +362,21 @@ const handleSubmit = async () => {
             <div className="text-center text-sm text-neutral-600 mt-4">
               Note: You can switch between modes at any time during your trip.
             </div>
-
+            
             <Button
               variant="primary"
               size="lg"
               fullWidth
               onClick={handleSubmit}
-              disabled={preferences.surpriseMode === undefined || loading}
-              loading={loading}
+              disabled={preferences.surpriseMode === undefined}
             >
-              {loading ? 'Creating Your Adventure...' : 'Create My Adventure!'}
+              Create My Adventure!
             </Button>
           </div>
         );
+
+      default:
+        return null;
     }
   };
 
@@ -426,7 +404,3 @@ const handleSubmit = async () => {
 };
 
 export default SurpriseForm;
-
-function generateSurpriseDayPlan(preferences: UserPreferences & { surpriseMode?: boolean; }) {
-  throw new Error('Function not implemented.');
-}

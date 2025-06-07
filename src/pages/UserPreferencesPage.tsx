@@ -77,7 +77,6 @@ const UserPreferencesPage: React.FC = () => {
     loadPreferences();
     initializeMap();
     loadBudgetSummary();
-    // eslint-disable-next-line
   }, [user]);
 
   const loadPreferences = async () => {
@@ -118,14 +117,10 @@ const UserPreferencesPage: React.FC = () => {
       console.error('Error loading budget summary:', error);
     }
   };
-  // Import the loader at the top of your file:
-  // import { Loader } from "@googlemaps/js-api-loader";
 
   const initializeMap = async () => {
     try {
-      // Dynamically import the loader to avoid SSR issues
-      const { Loader } = await import('@googlemaps/js-api-loader');
-      const loader = new Loader({
+      const loader = new google.maps.plugins.loader.Loader({
         apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
         version: 'weekly',
         libraries: ['places']
@@ -135,8 +130,7 @@ const UserPreferencesPage: React.FC = () => {
       setMapLoaded(true);
 
       const input = document.getElementById('homeLocation') as HTMLInputElement;
-      if (!input) return;
-      const autocomplete = new window.google.maps.places.Autocomplete(input, {
+      const autocomplete = new google.maps.places.Autocomplete(input, {
         types: ['geocode']
       });
 
@@ -145,7 +139,7 @@ const UserPreferencesPage: React.FC = () => {
         if (place.formatted_address) {
           setPreferences(prev => ({
             ...prev,
-            homeLocation: place.formatted_address ?? ''
+            homeLocation: place.formatted_address
           }));
         }
       });
@@ -217,8 +211,6 @@ const UserPreferencesPage: React.FC = () => {
         budget: preferences.weeklyBudget
       });
 
-      const activityCategories = preferences.activities.map(a => ({ type: a.category }));
-
       const { error } = await supabase
         .from('user_preferences')
         .upsert({
@@ -229,17 +221,20 @@ const UserPreferencesPage: React.FC = () => {
       if (error) throw error;
 
       // Track budget changes
+      await trackBudget('weekly_budget', preferences.weeklyBudget);
+
       // Update activity suggestions
       const suggestions = await getActivitySuggestions({
         location: preferences.homeLocation,
-        categories: activityCategories,
+        categories: preferences.activities.map(a => a.category),
         maxBudget: preferences.weeklyBudget,
-      radius: preferences.searchRadius
-    });
+        radius: preferences.searchRadius
+      });
 
-    setSuggestions(suggestions.map((s: any) => typeof s === 'string' ? s : s.category ?? ''));
+      setSuggestions(suggestions);
 
-    alert('Preferences saved successfully!');
+      alert('Preferences saved successfully!');
+    } catch (error) {
       console.error('Error saving preferences:', error);
       alert('Failed to save preferences. Please try again.');
     } finally {

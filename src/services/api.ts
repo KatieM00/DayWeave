@@ -1,4 +1,45 @@
-import type { DayPlan, UserPreferences, Activity, WeatherForecast, ItineraryEvent, ActivityType } from '../types';
+import type { DayPlan, UserPreferences, Activity, WeatherForecast } from '../types';
+
+// Get the correct Supabase URL from environment variables
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_DATABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  throw new Error('Missing Supabase environment variables. Please check your .env file.');
+}
+
+// Extract the base URL (remove any trailing paths)
+const baseUrl = SUPABASE_URL.replace(/\/+$/, '');
+
+// Helper function to make authenticated requests to edge functions
+const callEdgeFunction = async (functionName: string, payload: any) => {
+  const url = `${baseUrl}/functions/v1/${functionName}`;
+  
+  console.log(`Calling edge function: ${url}`);
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Edge function error (${response.status}):`, errorText);
+      throw new Error(`Edge function failed: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error(`Error calling ${functionName}:`, error);
+    throw new Error(`Failed to call ${functionName}: ${error.message}`);
+  }
+};
 
 // Itinerary Generation
 export interface LLMItineraryRequest {
@@ -8,169 +49,137 @@ export interface LLMItineraryRequest {
   surpriseMode: boolean;
 }
 
-// Raw data interfaces for the API response
-interface RawActivity {
-  name?: string;
-  description?: string;
-  why_special?: string;
-  location?: string;
-  duration_minutes?: number;
-  cost_gbp?: number;
-  category?: string;
-  postcode?: string;
-}
-
-interface RawPlan {
-  morning?: RawActivity[];
-  afternoon?: RawActivity[];
-  evening?: RawActivity[];
-}
-
-interface RawData {
-  plan?: RawPlan;
-  total_cost?: number;
-  total_duration_hours?: number;
-}
-
 export const generateItinerary = async (request: LLMItineraryRequest): Promise<DayPlan> => {
   try {
-    console.log('🚀 Calling Netlify function with:', request);
+    console.log('Generating itinerary with request:', request);
     
-    const response = await fetch('/.netlify/functions/generate-plan', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
-    });
-
-    console.log('📥 Response status:', response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Error response:', errorText);
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
-    }
-
-    const rawData = await response.json() as RawData;
-    console.log('✅ Raw data from API:', rawData);
-
-    // Convert the API response to DayPlan format
-    const events: ItineraryEvent[] = [];
+    const result = await callEdgeFunction('generate-itinerary', request);
     
-    // Convert activities from the plan structure
-    if (rawData.plan) {
-      const allActivities = [
-        ...(rawData.plan.morning || []),
-        ...(rawData.plan.afternoon || []),
-        ...(rawData.plan.evening || [])
-      ];
-
-      console.log('📋 All activities:', allActivities);
-
-      allActivities.forEach((activity, index) => {
-        const startTime = calculateTime(index, activity.duration_minutes || 60);
-        const endTime = calculateTime(index, activity.duration_minutes || 60, true);
-        
-        events.push({
-          type: 'activity',
-          data: {
-            id: `activity-${index}`,
-            name: activity.name || 'Unknown Activity',
-            description: activity.description || activity.why_special || 'No description available',
-            location: activity.location || 'Unknown Location',
-            startTime: startTime,
-            endTime: endTime,
-            duration: activity.duration_minutes || 60,
-            cost: activity.cost_gbp || 0,
-            activityType: [(activity.category as ActivityType) || 'mixed'],
-            address: activity.postcode ? `${activity.location}, ${activity.postcode}` : (activity.location || 'Unknown Location'),
-            ratings: Math.round((Math.random() * 2 + 3.5) * 10) / 10,
-            imageUrl: null
-          }
-        });
-      });
+    if (result.error) {
+      throw new Error(result.error);
     }
-
-    const dayPlan: DayPlan = {
-      id: crypto.randomUUID(),
-      title: `AI-Generated Adventure in ${request.location}`,
-      date: request.date,
-      events: events,
-      totalCost: rawData.total_cost || 0,
-      totalDuration: (rawData.total_duration_hours || 0) * 60,
-      preferences: request.preferences,
-      revealProgress: request.surpriseMode ? 25 : 100,
-    };
-
-    console.log('✅ Converted dayPlan:', dayPlan);
-    console.log('📅 Events array:', events);
-    return dayPlan;
+    
+    return result;
   } catch (error) {
-    console.error('💥 Error generating itinerary:', error);
-    throw new Error('Failed to generate itinerary. Please try again.');
+    console.error('Error generating itinerary:', error);
+    throw new Error(`Failed to generate itinerary: ${error.message}`);
   }
 };
 
-// Helper function to calculate activity times
-const calculateTime = (index: number, duration: number, isEndTime: boolean = false): string => {
-  const startHour = 9; // 9 AM start
-  const bufferTime = 30; // 30 minutes between activities
-  
-  let totalMinutes = startHour * 60;
-  
-  // Calculate start time based on previous activities
-  for (let i = 0; i < index; i++) {
-    totalMinutes += duration + bufferTime;
+// Weather Forecast
+export const getWeatherForecast = async (location: string, date: string): Promise<WeatherForecast | undefined> => {
+  try {
+    console.log('Getting weather forecast for:', location, date);
+    
+    const result = await callEdgeFunction('get-weather', { location, date });
+    
+    if (result.error) {
+      console.warn('Weather forecast failed:', result.error);
+      return undefined; // Weather is optional, don't fail the whole request
+    }
+    
+    return result;
+  } catch (error) {
+    console.warn('Error fetching weather:', error);
+    // Return undefined instead of throwing to allow the app to continue without weather
+    return undefined;
   }
-  
-  // If calculating end time, add the current activity duration
-  if (isEndTime) {
-    totalMinutes += duration;
-  }
-  
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 };
 
-// Simple weather fallback
-export const getWeatherForecast = async (location: string): Promise<WeatherForecast | undefined> => {
-  console.log('Returning fallback weather for:', location);
-  return {
-    condition: 'Partly Cloudy',
-    temperature: 18,
-    precipitation: 20
-  };
-};
-
-// Simple activity suggestions fallback
+// Activity Suggestions
 export const generateActivitySuggestions = async (
   location: string, 
-  _preferences: UserPreferences
+  preferences: UserPreferences
 ): Promise<Activity[]> => {
-  console.log('Returning fallback activity suggestions for:', location);
-  
-  return [
-    {
-      id: 'fallback-1',
-      name: 'Local Walk',
-      description: 'Take a pleasant walk around the local area',
-      location: 'Local area',
-      startTime: '10:00',
-      endTime: '11:00',
-      duration: 60,
-      cost: 0,
-      activityType: ['outdoor'],
-      address: '',
-      ratings: 4.0,
-      imageUrl: null
+  try {
+    console.log('Generating activity suggestions for:', location);
+    
+    const result = await callEdgeFunction('generate-activity-suggestions', {
+      location,
+      preferences
+    });
+    
+    if (result.error) {
+      throw new Error(result.error);
     }
-  ];
+    
+    return Array.isArray(result) ? result : [];
+  } catch (error) {
+    console.error('Error generating activity suggestions:', error);
+    throw new Error(`Failed to generate activity suggestions: ${error.message}`);
+  }
 };
 
-// Simple places search fallback
-export const searchPlaces = async (_query: string, _location: string): Promise<any[]> => {
-  console.log('Places search not implemented, returning empty array');
-  return [];
+// Google Places API
+export interface PlaceDetails {
+  place_id: string;
+  name: string;
+  formatted_address: string;
+  rating: number;
+  user_ratings_total: number;
+  photos: { photo_reference: string }[];
+  opening_hours: {
+    open_now: boolean;
+    weekday_text: string[];
+  };
+  price_level: number;
+  website: string;
+  formatted_phone_number: string;
+  geometry: {
+    location: {
+      lat: number;
+      lng: number;
+    };
+  };
+}
+
+export const searchPlaces = async (query: string, location: string): Promise<PlaceDetails[]> => {
+  try {
+    console.log('Searching places:', query, 'near', location);
+    
+    const result = await callEdgeFunction('search-places', { query, location });
+    
+    if (result.error) {
+      throw new Error(result.error);
+    }
+    
+    return Array.isArray(result) ? result : [];
+  } catch (error) {
+    console.error('Error searching places:', error);
+    throw new Error(`Failed to search places: ${error.message}`);
+  }
+};
+
+export const getPlaceDetails = async (placeId: string): Promise<PlaceDetails> => {
+  try {
+    console.log('Getting place details for:', placeId);
+    
+    const result = await callEdgeFunction('get-place-details', { placeId });
+    
+    if (result.error) {
+      throw new Error(result.error);
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error getting place details:', error);
+    throw new Error(`Failed to get place details: ${error.message}`);
+  }
+};
+
+export const getPlacePhoto = async (photoReference: string, maxWidth: number = 400): Promise<string> => {
+  try {
+    console.log('Getting place photo:', photoReference);
+    
+    const result = await callEdgeFunction('get-place-photo', { photoReference, maxWidth });
+    
+    if (result.error) {
+      throw new Error(result.error);
+    }
+    
+    return result.photoUrl;
+  } catch (error) {
+    console.error('Error getting place photo:', error);
+    throw new Error(`Failed to get place photo: ${error.message}`);
+  }
 };

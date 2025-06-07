@@ -1,27 +1,5 @@
-// If running in Deno, ensure your editor supports Deno types (e.g., enable Deno extension in VSCode).
-// If running in Node.js, use a Node.js HTTP server instead:
-import { createServer } from 'http';
-
-const serve = (handler: (req: Request) => Promise<Response>) => {
-  const server = createServer(async (req, res) => {
-    const chunks: Buffer[] = [];
-    req.on('data', chunk => chunks.push(chunk));
-    req.on('end', async () => {
-      const body = Buffer.concat(chunks).toString();
-      const request = new Request(`http://${req.headers.host}${req.url}`, {
-        method: req.method,
-        headers: req.headers as any,
-        body: body || undefined,
-      });
-      const response = await handler(request);
-      res.writeHead(response.status, Object.fromEntries(response.headers.entries()));
-      const respBody = await response.text();
-      res.end(respBody);
-    });
-  });
-  server.listen(8000);
-};
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { GoogleGenerativeAI } from 'npm:@google/generative-ai@0.2.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -43,8 +21,17 @@ serve(async (req) => {
   try {
     const { location, preferences }: SuggestionsRequest = await req.json()
 
+    // Get API key from environment
+    const apiKey = Deno.env.get('GOOGLE_AI_API_KEY')
+    if (!apiKey) {
+      console.error('GOOGLE_AI_API_KEY environment variable is not set')
+      throw new Error('Google AI API key is not configured')
+    }
+
+    console.log('Google AI API key found, generating activity suggestions...')
+
     // Initialize Gemini AI with server-side API key
-    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '')
+    const genAI = new GoogleGenerativeAI(apiKey)
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" })
     
     const prompt = `Generate 5 activity suggestions for ${location} based on these preferences:
@@ -70,12 +57,42 @@ Return ONLY a JSON array of activities with this structure:
   }
 ]`
 
+    console.log('Generating activity suggestions with Gemini AI...')
+
     const result = await model.generateContent(prompt)
     const response = await result.response
     const text = response.text()
     
-    const cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-    const suggestions = JSON.parse(cleanText)
+    console.log('AI response received, parsing JSON...')
+    
+    let suggestions
+    try {
+      const cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+      suggestions = JSON.parse(cleanText)
+    } catch (parseError) {
+      console.error('JSON parsing error:', parseError)
+      console.error('Raw AI response:', text)
+      
+      // Return fallback suggestions if AI fails
+      suggestions = [
+        {
+          id: 'fallback-1',
+          name: 'Local Walk',
+          description: 'Take a pleasant walk around the local area',
+          location: 'Local area',
+          startTime: '10:00',
+          endTime: '11:00',
+          duration: 60,
+          cost: 0,
+          activityType: ['outdoor'],
+          address: '',
+          ratings: 4.0,
+          imageUrl: null
+        }
+      ]
+    }
+
+    console.log('Successfully generated activity suggestions')
 
     return new Response(
       JSON.stringify(suggestions),
@@ -90,7 +107,7 @@ Return ONLY a JSON array of activities with this structure:
   } catch (error) {
     console.error('Error generating activity suggestions:', error)
     
-    // Return fallback suggestions if AI fails
+    // Return fallback suggestions if everything fails
     const fallbackSuggestions = [
       {
         id: 'fallback-1',

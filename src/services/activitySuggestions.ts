@@ -2,11 +2,9 @@ import { supabase } from '../lib/supabase';
 import { generateActivitySuggestions } from './api';
 import type { Activity } from '../types';
 
-import type { ActivityType } from '../types';
-
 interface SuggestionParams {
   location: string;
-  categories: ActivityType[];
+  categories: string[];
   maxBudget: number;
   radius: number;
 }
@@ -30,9 +28,10 @@ export const getActivitySuggestions = async (params: SuggestionParams): Promise<
       return cachedData.suggestions as Activity[];
     }
 
+    // Generate new suggestions using AI
     const suggestions = await generateActivitySuggestions(params.location, {
       activityTypes: params.categories,
-      budgetRange: [{ min: 0, max: params.maxBudget }],
+      budgetRange: `0-${params.maxBudget}`,
       travelDistance: { value: params.radius, unit: 'miles' }
     });
 

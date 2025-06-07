@@ -294,8 +294,8 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
     <>
       <Card className={`mb-3 ${event.type === 'travel' ? 'border-l-4 border-secondary-400 bg-secondary-50' : ''}`}>
         {event.type === 'activity' 
-          ? renderActivityContent(event.data as ActivityType) 
-          : renderTravelContent(event.data as Travel)
+          ? renderActivityContent(event.data) 
+          : renderTravelContent(event.data)
         }
       </Card>
       {showDirectionsWarning && <DirectionsWarning />}

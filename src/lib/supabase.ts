@@ -11,8 +11,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
 export const authHelpers = {
-  signUp: (email: string, password: string) => {
-    return supabase.auth.signUp({ email, password });
+  signUp: (email: string, password: string, fullName?: string) => {
+    const options = fullName ? {
+      data: { full_name: fullName }
+    } : undefined;
+    
+    return supabase.auth.signUp({ 
+      email, 
+      password,
+      options
+    });
   },
   signIn: (email: string, password: string) => {
     return supabase.auth.signInWithPassword({ email, password });
