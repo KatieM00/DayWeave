@@ -1,3 +1,4 @@
+import { DayWeaveAPI } from '../../services/apiClient';
 import React, { useState } from 'react';
 import { MapPin, LogIn, Users, Compass, DollarSign, Sparkles, Eye, EyeOff } from 'lucide-react';
 import Button from '../common/Button';
@@ -20,6 +21,7 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (field: keyof UserPreferences, value: any) => {
     setPreferences(prev => ({
@@ -63,15 +65,37 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
     }
   };
 
-  const handleSubmit = () => {
-    if (validateStep(step)) {
+const handleSubmit = async () => {
+  if (validateStep(step)) {
+    setLoading(true);
+    
+    try {
+      // Generate AI-powered plan
+      const aiPlan = await DayWeaveAPI.generateDayPlan(
+        preferences.startLocation,
+        preferences
+      );
+
       onSubmit({
         ...preferences,
-        surpriseMode: preferences.surpriseMode ?? false
+        surpriseMode: preferences.surpriseMode ?? false,
+        generatedPlan: aiPlan
       });
+    } catch (error) {
+      console.error('Error generating AI plan:', error);
+      
+      // Fallback to existing mock data if AI fails
+      const fallbackPlan = generateSurpriseDayPlan(preferences);
+      onSubmit({
+        ...preferences,
+        surpriseMode: preferences.surpriseMode ?? false,
+        generatedPlan: fallbackPlan
+      });
+    } finally {
+      setLoading(false);
     }
-  };
-
+  }
+};
   const renderStepContent = () => {
     switch (step) {
       case 1:
@@ -362,21 +386,19 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
             <div className="text-center text-sm text-neutral-600 mt-4">
               Note: You can switch between modes at any time during your trip.
             </div>
-            
+
             <Button
               variant="primary"
               size="lg"
               fullWidth
               onClick={handleSubmit}
-              disabled={preferences.surpriseMode === undefined}
+              disabled={preferences.surpriseMode === undefined || loading}
+              loading={loading}
             >
-              Create My Adventure!
+              {loading ? 'Creating Your Adventure...' : 'Create My Adventure!'}
             </Button>
           </div>
         );
-
-      default:
-        return null;
     }
   };
 
