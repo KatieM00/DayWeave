@@ -736,6 +736,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
                             isRevealed={!isSurpriseMode || event.type === 'travel'} 
                             isSurpriseMode={isSurpriseMode}
                             isPreviouslyRevealed={index < visibleEvents.length - 1}
+                            planStartLocation={dayPlan.preferences.startLocation}
                           />
                         )}
                       </div>

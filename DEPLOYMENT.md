@@ -22,6 +22,7 @@ You'll need accounts and API keys for:
 ```env
 VITE_SUPABASE_DATABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your_anon_key_here
+VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
 ```
 
 ## Step 2: Database Migration
@@ -36,10 +37,29 @@ The database schema will be automatically applied when you deploy the edge funct
 2. **OpenWeatherMap**: https://openweathermap.org/api (free tier available)
 3. **Google Maps/Places**: https://console.cloud.google.com
    - Enable: Maps JavaScript API, Places API, Geocoding API
+   - **Important**: You need TWO Google API keys:
+     - One for client-side autocomplete (goes in `.env` as `VITE_GOOGLE_MAPS_API_KEY`)
+     - One for server-side geocoding (stored as Supabase secret `GOOGLE_API_KEY`)
+
+### Google Maps API Configuration
+
+For the **client-side API key** (`VITE_GOOGLE_MAPS_API_KEY`):
+1. In Google Cloud Console, create a new API key or use existing
+2. Restrict it to your domain(s) for security
+3. Enable these APIs:
+   - Maps JavaScript API
+   - Places API
+
+For the **server-side API key** (`GOOGLE_API_KEY`):
+1. Create a separate API key in Google Cloud Console
+2. Restrict it to server applications (no HTTP referrer restrictions)
+3. Enable these APIs:
+   - Geocoding API
+   - Places API
 
 ### Secure API Key Storage
 
-**⚠️ CRITICAL: Never put API keys in .env files or client-side code!**
+**⚠️ CRITICAL: Server-side API keys must never be in .env files or client-side code!**
 
 Install Supabase CLI and configure secrets:
 
@@ -56,7 +76,7 @@ supabase link --project-ref your-project-ref
 # Set API keys as secure secrets (server-side only)
 supabase secrets set GOOGLE_AI_API_KEY=your_google_ai_key_here
 supabase secrets set OPENWEATHER_API_KEY=your_openweather_key_here
-supabase secrets set GOOGLE_API_KEY=your_google_maps_key_here
+supabase secrets set GOOGLE_API_KEY=your_server_side_google_maps_key_here
 ```
 
 ## Step 4: Deploy Edge Functions
@@ -109,18 +129,20 @@ curl -X POST 'https://your-project.supabase.co/functions/v1/generate-itinerary' 
 3. Add environment variables in Netlify dashboard:
    - `VITE_SUPABASE_DATABASE_URL`: Your Supabase project URL
    - `VITE_SUPABASE_ANON_KEY`: Your Supabase anon key
+   - `VITE_GOOGLE_MAPS_API_KEY`: Your client-side Google Maps API key
 
-**🔒 Security Note**: Only add the VITE_ variables to Netlify. API keys should only exist in Supabase secrets.
+**🔒 Security Note**: Only add the VITE_ variables to Netlify. Server-side API keys should only exist in Supabase secrets.
 
 ## Step 7: Verification
 
 After deployment, test these features:
 
 1. **User Authentication**: Sign up/sign in should work
-2. **Itinerary Generation**: Both surprise and detailed planning
-3. **Weather Data**: Should show real weather forecasts
-4. **Place Search**: Should find real venues and restaurants
-5. **Plan Saving**: Save and retrieve plans from database
+2. **Location Autocomplete**: Should suggest real places as you type
+3. **Itinerary Generation**: Both surprise and detailed planning
+4. **Weather Data**: Should show real weather forecasts
+5. **Place Search**: Should find real venues and restaurants
+6. **Plan Saving**: Save and retrieve plans from database
 
 ## Troubleshooting
 
@@ -135,12 +157,20 @@ After deployment, test these features:
    - Verify `OPENWEATHER_API_KEY` is set correctly
    - Check your OpenWeatherMap API quota
 
-3. **"Failed to search places"**
-   - Ensure `GOOGLE_API_KEY` is set in Supabase secrets
-   - Verify Google Places API is enabled in Google Cloud Console
+3. **"Failed to search places" / "Location not found"**
+   - Ensure `GOOGLE_API_KEY` is set in Supabase secrets (server-side)
+   - Ensure `VITE_GOOGLE_MAPS_API_KEY` is set in environment (client-side)
+   - Verify Google Places API and Geocoding API are enabled in Google Cloud Console
    - Check API quotas and billing
+   - Make sure users are selecting locations from autocomplete suggestions
 
-4. **Database connection issues**
+4. **Location autocomplete not working**
+   - Check that `VITE_GOOGLE_MAPS_API_KEY` is correctly set
+   - Verify Maps JavaScript API and Places API are enabled
+   - Check browser console for API key errors
+   - Ensure API key is not restricted to wrong domains
+
+5. **Database connection issues**
    - Verify `VITE_SUPABASE_DATABASE_URL` and `VITE_SUPABASE_ANON_KEY` are correct
    - Check that RLS policies are properly configured
 
@@ -159,12 +189,25 @@ supabase db ping
 
 ## Security Checklist
 
-- ✅ API keys stored only in Supabase secrets
+- ✅ Server-side API keys stored only in Supabase secrets
+- ✅ Client-side API keys properly restricted by domain
 - ✅ No sensitive data in .env files
-- ✅ No API keys in client-side code
+- ✅ No server-side API keys in client-side code
 - ✅ CORS properly configured on edge functions
 - ✅ RLS enabled on all database tables
 - ✅ Only public Supabase credentials in frontend
+
+## API Key Summary
+
+**Client-side (in .env file):**
+- `VITE_SUPABASE_DATABASE_URL`: Supabase project URL
+- `VITE_SUPABASE_ANON_KEY`: Supabase anonymous key
+- `VITE_GOOGLE_MAPS_API_KEY`: Google Maps API key for autocomplete
+
+**Server-side (Supabase secrets only):**
+- `GOOGLE_AI_API_KEY`: Google AI/Gemini API key
+- `OPENWEATHER_API_KEY`: OpenWeatherMap API key
+- `GOOGLE_API_KEY`: Google Maps API key for geocoding/places
 
 ## Support
 
@@ -174,5 +217,6 @@ If you encounter issues:
 2. Review Supabase function logs
 3. Verify all API keys are valid and have proper quotas
 4. Ensure all required APIs are enabled in Google Cloud Console
+5. Test location autocomplete by typing in location fields
 
-The application should now be fully functional with real API connections!
+The application should now be fully functional with real API connections and proper location validation!

@@ -60,15 +60,15 @@ Generate a JSON response with this exact structure:
       "type": "activity",
       "data": {
         "id": "unique_id",
-        "name": "Activity name",
+        "name": "EXACT venue name as it appears on Google Maps",
         "description": "Detailed description",
-        "location": "Specific venue name",
+        "location": "EXACT venue name for Google Maps search",
         "startTime": "HH:MM",
         "endTime": "HH:MM", 
         "duration": minutes_as_number,
         "cost": cost_in_pounds,
         "activityType": ["outdoor", "culture"],
-        "address": "Full address",
+        "address": "Full street address if known",
         "ratings": 4.5,
         "imageUrl": null
       }
@@ -77,8 +77,8 @@ Generate a JSON response with this exact structure:
       "type": "travel",
       "data": {
         "id": "travel_id",
-        "startLocation": "Previous location",
-        "endLocation": "Next location", 
+        "startLocation": "Previous exact venue name",
+        "endLocation": "Next exact venue name", 
         "startTime": "HH:MM",
         "endTime": "HH:MM",
         "duration": minutes_as_number,
@@ -92,17 +92,20 @@ Generate a JSON response with this exact structure:
   "totalDuration": total_minutes
 }
 
-REQUIREMENTS:
+CRITICAL REQUIREMENTS:
+- Use EXACT venue names as they appear on Google Maps for better search results
+- Include real, well-known venues and restaurants in ${location}
+- For location field, use the exact business name (e.g. "The Shard", "Borough Market", "Tate Modern")
 - Include 4-6 activities with travel between them
-- Use real venue names and accurate addresses for ${location}
-- Calculate realistic travel times and costs
+- Calculate realistic travel times and costs based on ${location} geography
 - Include mix of activities based on user preferences
 - For surprise mode: focus on hidden gems and unique experiences
-- Ensure activities are open on ${date}
+- Ensure activities are typically open on ${date}
 - Keep within specified budget range
 - Include meal options if meal preferences selected
-- Set imageUrl to null - do not generate image URLs
-- Return ONLY valid JSON, no additional text`
+- Set imageUrl to null - Google Maps integration will handle images
+- Return ONLY valid JSON, no additional text
+- Make venue names specific and searchable (avoid generic terms like "local café")`
 
     console.log('Generating content with Gemini AI...')
     
