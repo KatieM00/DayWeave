@@ -39,7 +39,16 @@ serve(async (req) => {
 
     const geocodeData = await geocodeResponse.json()
     if (geocodeData.status !== 'OK' || !geocodeData.results.length) {
-      throw new Error('Location not found')
+      console.log('Location not found, returning empty results')
+      return new Response(
+        JSON.stringify([]),
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
+        }
+      )
     }
 
     const { lat, lng } = geocodeData.results[0].geometry.location
