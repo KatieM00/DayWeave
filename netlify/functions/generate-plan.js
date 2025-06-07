@@ -2,7 +2,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Helper function to clean JSON response
+// Improved JSON cleaning function
 function cleanJsonResponse(text) {
   // Remove any markdown code block markers
   let cleaned = text.replace(/```json\s*|\s*```/g, '');
@@ -11,11 +11,13 @@ function cleanJsonResponse(text) {
   cleaned = cleaned.replace(/[""]/g, '"');
   cleaned = cleaned.replace(/['']/g, "'");
   
-  // Escape unescaped quotes within string values
-  // This regex finds strings and escapes single quotes within them
+  // Fix the main issue: replace single quotes with double quotes in JSON keys/values
+  // But be careful not to break contractions inside string values
+  
+  // First, let's properly escape any actual single quotes in string values
   cleaned = cleaned.replace(/"([^"]*?)"/g, (match, content) => {
-    // Escape single quotes within the string content
-    const escapedContent = content.replace(/'/g, "\\'");
+    // Replace single quotes inside string content with escaped single quotes
+    const escapedContent = content.replace(/'/g, "'"); // Keep single quotes as-is inside strings
     return `"${escapedContent}"`;
   });
   
@@ -23,6 +25,40 @@ function cleanJsonResponse(text) {
   cleaned = cleaned.trim();
   
   return cleaned;
+}
+
+// Alternative approach: Use a more robust JSON fixer
+function fixJsonString(jsonString) {
+  try {
+    // First try to parse as-is
+    return JSON.parse(jsonString);
+  } catch (error) {
+    console.log('Initial parse failed, attempting to fix JSON...');
+    
+    // Remove markdown code blocks
+    let fixed = jsonString.replace(/```json\s*|\s*```/g, '');
+    
+    // Replace smart quotes
+    fixed = fixed.replace(/[""]/g, '"');
+    fixed = fixed.replace(/['']/g, "'");
+    
+    // Try parsing again
+    try {
+      return JSON.parse(fixed);
+    } catch (error2) {
+      console.log('Second parse failed, trying alternative approach...');
+      
+      // Last resort: replace problematic characters more aggressively
+      fixed = fixed.replace(/'/g, "'"); // Ensure single quotes are not escaped
+      
+      try {
+        return JSON.parse(fixed);
+      } catch (error3) {
+        console.error('All JSON parsing attempts failed');
+        throw new Error('Could not parse AI response as valid JSON');
+      }
+    }
+  }
 }
 
 // Validate and sanitize the parsed plan
@@ -104,56 +140,59 @@ exports.handler = async (event, context) => {
 - Travel distance: ${preferences.travelDistance?.value} ${preferences.travelDistance?.unit}
 - Activity vibes: ${preferences.activityVibe || 'mixed'}
 
-Generate a JSON response with this EXACT structure (no markdown, no extra text):
+CRITICAL INSTRUCTIONS:
+- Return ONLY valid JSON (no markdown code blocks)
+- Use ONLY double quotes for all strings
+- DO NOT use apostrophes or single quotes anywhere
+- Replace any contractions (like "it's" with "it is", "don't" with "do not")
+- Use "of" instead of possessives (like "Museum of London" instead of "London's Museum")
+
+Generate a JSON response with this EXACT structure:
 {
   "plan": {
     "morning": [
       {
-        "name": "Activity Name",
-        "location": "Full Address",
-        "postcode": "Postcode",
-        "description": "Brief description",
+        "name": "Activity Name Here",
+        "location": "Full Address Here",
+        "postcode": "Postcode Here",
+        "description": "Brief description without any apostrophes",
         "duration_minutes": 90,
         "cost_gbp": 15.50,
-        "category": "culture|outdoor|food|shopping|entertainment",
-        "why_special": "What makes this special"
+        "category": "culture",
+        "why_special": "What makes this special without apostrophes"
       }
     ],
     "afternoon": [
       {
-        "name": "Activity Name",
-        "location": "Full Address", 
-        "postcode": "Postcode",
-        "description": "Brief description",
+        "name": "Activity Name Here",
+        "location": "Full Address Here", 
+        "postcode": "Postcode Here",
+        "description": "Brief description without any apostrophes",
         "duration_minutes": 120,
         "cost_gbp": 25.00,
-        "category": "culture|outdoor|food|shopping|entertainment",
-        "why_special": "What makes this special"
+        "category": "outdoor",
+        "why_special": "What makes this special without apostrophes"
       }
     ],
     "evening": [
       {
-        "name": "Activity Name",
-        "location": "Full Address",
-        "postcode": "Postcode", 
-        "description": "Brief description",
+        "name": "Activity Name Here",
+        "location": "Full Address Here",
+        "postcode": "Postcode Here", 
+        "description": "Brief description without any apostrophes",
         "duration_minutes": 120,
         "cost_gbp": 35.00,
-        "category": "culture|outdoor|food|shopping|entertainment",
-        "why_special": "What makes this special"
+        "category": "food",
+        "why_special": "What makes this special without apostrophes"
       }
     ]
   },
   "total_cost": 75.50,
   "total_duration_hours": 5.5,
-  "special_notes": "Any special considerations"
+  "special_notes": "Any special considerations without apostrophes"
 }
 
-IMPORTANT: 
-- Use only double quotes in JSON
-- Do NOT use apostrophes in any text - replace with "of" or rephrase
-- Ensure all string values are properly escaped
-- Return only valid JSON, no other text`;
+Remember: NO apostrophes, NO single quotes, NO markdown - only pure JSON with double quotes!`;
 
     console.log('Calling Gemini API...');
     const result = await model.generateContent(prompt);
@@ -162,16 +201,25 @@ IMPORTANT:
     
     console.log('Raw AI response:', text);
     
-    const cleanedJson = cleanJsonResponse(text);
-    console.log('Cleaned JSON:', cleanedJson);
-
+    // Use the improved JSON fixer
     let parsedPlan;
     try {
-      parsedPlan = JSON.parse(cleanedJson);
+      parsedPlan = fixJsonString(text);
+      console.log('Successfully parsed JSON');
     } catch (parseError) {
       console.error('JSON parse error:', parseError);
       console.error('Raw AI response:', text);
-      throw new Error('Failed to parse AI response as JSON');
+      
+      // Return a fallback response
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ 
+          error: 'Failed to generate plan',
+          details: 'AI response could not be parsed as valid JSON',
+          raw_response: text.substring(0, 500) // First 500 chars for debugging
+        })
+      };
     }
 
     // Validate and sanitize the plan
