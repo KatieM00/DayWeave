@@ -1,144 +1,183 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { GoogleGenerativeAI } from 'npm:@google/generative-ai@0.2.1'
+// Supabase Edge Function for itinerary generation
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PUT, DELETE',
 }
 
-interface ItineraryRequest {
-  location: string;
-  date: string;
-  preferences: any;
-  surpriseMode: boolean;
+interface Activity {
+  id: string
+  name: string
+  description: string
+  location: string
+  startTime: string
+  endTime: string
+  duration: number
+  cost: number
+  activityType: string[]
+  imageUrl?: string
+  address?: string
+  contactInfo?: string
+  ratings?: number
 }
 
-serve(async (req) => {
-  // Handle CORS preflight requests
+interface Travel {
+  id: string
+  startLocation: string
+  endLocation: string
+  startTime: string
+  endTime: string
+  duration: number
+  mode: string
+  cost: number
+  distance: number
+}
+
+interface ItineraryEvent {
+  type: 'activity' | 'travel'
+  data: Activity | Travel
+}
+
+function generateUniqueId(): string {
+  return Math.random().toString(36).substr(2, 9)
+}
+
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { location, date, preferences, surpriseMode }: ItineraryRequest = await req.json()
-
-    // Initialize Gemini AI with server-side API key
-    const genAI = new GoogleGenerativeAI(Deno.env.get('GOOGLE_AI_API_KEY') || '')
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" })
-
-    const prompt = `You are an expert local travel guide creating a day itinerary for ${location} on ${date}.
-
-User Preferences:
-- Start Location: ${preferences.startLocation}
-- Group Size: ${preferences.groupSize} people
-- Budget: ${preferences.budgetRange}
-- Activities: ${preferences.activityTypes?.join(', ') || 'Any'}
-- Transport: ${preferences.transportModes?.join(', ') || 'Any'}
-- Time: ${preferences.startTime || '09:00'} to ${preferences.endTime || '21:00'}
-- Surprise Mode: ${surpriseMode}
-${preferences.mealPreferences ? `
-- Meal Preferences:
-  * Morning Coffee: ${preferences.mealPreferences.includeCoffee}
-  * Lunch: ${preferences.mealPreferences.includeLunch}
-  * Dinner: ${preferences.mealPreferences.includeDinner}` : ''}
-
-Generate a JSON response with this exact structure:
-{
-  "title": "Engaging day plan title",
-  "events": [
-    {
-      "type": "activity",
-      "data": {
-        "id": "unique_id",
-        "name": "Activity name",
-        "description": "Detailed description",
-        "location": "Specific venue name",
-        "startTime": "HH:MM",
-        "endTime": "HH:MM", 
-        "duration": minutes_as_number,
-        "cost": cost_in_pounds,
-        "activityType": ["outdoor", "culture"],
-        "address": "Full address",
-        "ratings": 4.5,
-        "imageUrl": null
-      }
-    },
-    {
-      "type": "travel",
-      "data": {
-        "id": "travel_id",
-        "startLocation": "Previous location",
-        "endLocation": "Next location", 
-        "startTime": "HH:MM",
-        "endTime": "HH:MM",
-        "duration": minutes_as_number,
-        "mode": "walking",
-        "cost": cost_in_pounds,
-        "distance": distance_in_miles
-      }
-    }
-  ],
-  "totalCost": total_pounds,
-  "totalDuration": total_minutes
-}
-
-REQUIREMENTS:
-- Include 4-6 activities with travel between them
-- Use real venue names and accurate addresses for ${location}
-- Calculate realistic travel times and costs
-- Include mix of activities based on user preferences
-- For surprise mode: focus on hidden gems and unique experiences
-- Ensure activities are open on ${date}
-- Keep within specified budget range
-- Include meal options if meal preferences selected
-- Set imageUrl to null - do not generate image URLs
-- Return ONLY valid JSON, no additional text`
-
-    const result = await model.generateContent(prompt)
-    const response = await result.response
-    const text = response.text()
+    const { preferences, planData } = await req.json()
     
-    let itineraryData
-    try {
-      const cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-      itineraryData = JSON.parse(cleanText)
-    } catch (parseError) {
-      console.error('JSON parsing error:', parseError)
-      throw new Error('Invalid JSON response from AI')
+    if (!preferences || !planData) {
+      return new Response(
+        JSON.stringify({ error: 'Preferences and plan data are required' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
-    
+
+    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
+
+    if (!GEMINI_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: 'AI service unavailable' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    console.log('Generating itinerary for:', preferences.startLocation)
+
+    // Create itinerary events from plan data
+    const events: ItineraryEvent[] = []
+    let currentTime = '09:00' // Default start time
+
+    // Helper function to add minutes to time
+    const addMinutes = (time: string, minutes: number): string => {
+      const [hours, mins] = time.split(':').map(Number)
+      const totalMinutes = hours * 60 + mins + minutes
+      const newHours = Math.floor(totalMinutes / 60) % 24
+      const newMins = totalMinutes % 60
+      return `${newHours.toString().padStart(2, '0')}:${newMins.toString().padStart(2, '0')}`
+    }
+
+    // Process each time period
+    const periods = ['morning', 'afternoon', 'evening']
+    let previousLocation = preferences.startLocation
+
+    periods.forEach((period) => {
+      if (planData.plan[period] && Array.isArray(planData.plan[period])) {
+        planData.plan[period].forEach((activityData: any) => {
+          // Add travel if not the first activity
+          if (previousLocation !== activityData.location) {
+            const travelDuration = 30 // Default 30 minutes travel time
+            const travelEndTime = addMinutes(currentTime, travelDuration)
+            
+            const travel: Travel = {
+              id: generateUniqueId(),
+              startLocation: previousLocation,
+              endLocation: activityData.location,
+              startTime: currentTime,
+              endTime: travelEndTime,
+              duration: travelDuration,
+              mode: 'walking',
+              cost: 0,
+              distance: 1.5
+            }
+
+            events.push({ type: 'travel', data: travel })
+            currentTime = travelEndTime
+          }
+
+          // Add activity
+          const endTime = addMinutes(currentTime, activityData.duration_minutes)
+          
+          const activity: Activity = {
+            id: generateUniqueId(),
+            name: activityData.name,
+            description: activityData.description,
+            location: activityData.location,
+            startTime: currentTime,
+            endTime: endTime,
+            duration: activityData.duration_minutes,
+            cost: activityData.cost_gbp,
+            activityType: [activityData.category],
+            address: activityData.location,
+            ratings: 4.5 // Default rating
+          }
+
+          events.push({ type: 'activity', data: activity })
+          
+          currentTime = endTime
+          previousLocation = activityData.location
+        })
+      }
+    })
+
+    // Calculate totals
+    const totalCost = events.reduce((sum, event) => sum + event.data.cost, 0)
+    const totalDuration = events.reduce((sum, event) => sum + event.data.duration, 0)
+
+    // Create the full day plan
     const dayPlan = {
-      id: crypto.randomUUID(),
-      date,
-      ...itineraryData,
-      preferences,
-      revealProgress: surpriseMode ? 20 : 100
+      id: generateUniqueId(),
+      title: `${preferences.startLocation} Adventure`,
+      date: new Date().toISOString().split('T')[0],
+      events: events,
+      totalCost: totalCost,
+      totalDuration: totalDuration,
+      preferences: preferences,
+      revealProgress: preferences.surpriseMode ? 0 : 100
     }
+
+    console.log('Itinerary generated successfully')
 
     return new Response(
       JSON.stringify(dayPlan),
       { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
 
   } catch (error) {
-    console.error('Error generating itinerary:', error)
+    console.error('Itinerary generation error:', error)
+    
     return new Response(
       JSON.stringify({ 
         error: 'Failed to generate itinerary',
-        details: error.message 
+        details: error instanceof Error ? error.message : 'Unknown error'
       }),
       { 
-        status: 500,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
   }

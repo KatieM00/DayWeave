@@ -1,17 +1,79 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-export const handler = async (event, context) => {
+// Helper function to clean JSON response
+function cleanJsonResponse(text) {
+  // Remove any markdown code block markers
+  let cleaned = text.replace(/```json\s*|\s*```/g, '');
+  
+  // Replace smart quotes with regular quotes
+  cleaned = cleaned.replace(/[""]/g, '"');
+  cleaned = cleaned.replace(/['']/g, "'");
+  
+  // Escape unescaped quotes within string values
+  // This regex finds strings and escapes single quotes within them
+  cleaned = cleaned.replace(/"([^"]*?)"/g, (match, content) => {
+    // Escape single quotes within the string content
+    const escapedContent = content.replace(/'/g, "\\'");
+    return `"${escapedContent}"`;
+  });
+  
+  // Trim whitespace
+  cleaned = cleaned.trim();
+  
+  return cleaned;
+}
+
+// Validate and sanitize the parsed plan
+function validatePlan(plan) {
+  if (!plan || !plan.plan) {
+    throw new Error('Invalid plan structure');
+  }
+
+  const sanitizedPlan = {
+    plan: {},
+    total_cost: plan.total_cost || 0,
+    total_duration_hours: plan.total_duration_hours || 0,
+    special_notes: plan.special_notes || ''
+  };
+
+  // Process each time period
+  ['morning', 'afternoon', 'evening'].forEach(period => {
+    if (plan.plan[period] && Array.isArray(plan.plan[period])) {
+      sanitizedPlan.plan[period] = plan.plan[period].map(activity => ({
+        name: activity.name || 'Unknown Activity',
+        location: activity.location || '',
+        postcode: activity.postcode || '',
+        description: activity.description || '',
+        duration_minutes: activity.duration_minutes || 60,
+        cost_gbp: activity.cost_gbp || 0,
+        category: activity.category || 'general',
+        why_special: activity.why_special || ''
+      }));
+    }
+  });
+
+  return sanitizedPlan;
+}
+
+exports.handler = async (event, context) => {
+  console.log('Generate plan function called');
+  
+  // Add CORS headers
   const headers = {
-    'Access-Control-Allow-Origin': 'https://dayweave.com',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Content-Type': 'application/json'
   };
 
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
+    return {
+      statusCode: 200,
+      headers,
+      body: ''
+    };
   }
 
   if (event.httpMethod !== 'POST') {
@@ -23,163 +85,114 @@ export const handler = async (event, context) => {
   }
 
   try {
-    const { location, preferences, weather } = JSON.parse(event.body);
+    const { preferences } = JSON.parse(event.body);
+    console.log('Preferences received:', preferences);
 
-    if (!location || !preferences) {
+    if (!preferences) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: 'Missing required parameters' })
+        body: JSON.stringify({ error: 'Preferences are required' })
       };
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    // More specific prompt to ensure valid JSON
-    const prompt = `Create a day plan for ${location}, UK. You MUST respond with ONLY valid JSON, no other text.
+    const prompt = `Create a detailed day plan for someone in ${preferences.startLocation} with these preferences:
+- Group size: ${preferences.groupSize}
+- Budget: ${preferences.budgetRange}
+- Travel distance: ${preferences.travelDistance?.value} ${preferences.travelDistance?.unit}
+- Activity vibes: ${preferences.activityVibe || 'mixed'}
 
-User preferences: Group size ${preferences.groupSize}, Budget ${preferences.budgetRange}, Vibe ${preferences.activityVibe || 'mixed'}
-
-Return this exact JSON structure:
+Generate a JSON response with this EXACT structure (no markdown, no extra text):
 {
   "plan": {
     "morning": [
       {
         "name": "Activity Name",
-        "location": "Specific location in ${location}",
-        "postcode": "UK postcode if known or empty string",
+        "location": "Full Address",
+        "postcode": "Postcode",
         "description": "Brief description",
         "duration_minutes": 90,
-        "cost_gbp": 10.50,
-        "category": "food/culture/outdoor/indoor",
-        "why_special": "Why this is recommended"
+        "cost_gbp": 15.50,
+        "category": "culture|outdoor|food|shopping|entertainment",
+        "why_special": "What makes this special"
       }
     ],
     "afternoon": [
       {
         "name": "Activity Name",
-        "location": "Specific location in ${location}",
-        "postcode": "UK postcode if known or empty string", 
+        "location": "Full Address", 
+        "postcode": "Postcode",
         "description": "Brief description",
         "duration_minutes": 120,
-        "cost_gbp": 15.00,
-        "category": "food/culture/outdoor/indoor",
-        "why_special": "Why this is recommended"
+        "cost_gbp": 25.00,
+        "category": "culture|outdoor|food|shopping|entertainment",
+        "why_special": "What makes this special"
       }
     ],
     "evening": [
       {
         "name": "Activity Name",
-        "location": "Specific location in ${location}",
-        "postcode": "UK postcode if known or empty string",
-        "description": "Brief description", 
+        "location": "Full Address",
+        "postcode": "Postcode", 
+        "description": "Brief description",
         "duration_minutes": 120,
-        "cost_gbp": 25.00,
-        "category": "food/culture/outdoor/indoor",
-        "why_special": "Why this is recommended"
+        "cost_gbp": 35.00,
+        "category": "culture|outdoor|food|shopping|entertainment",
+        "why_special": "What makes this special"
       }
     ]
   },
-  "total_cost": 50.50,
-  "total_duration_hours": 6.5,
-  "special_notes": "Weather or seasonal notes"
+  "total_cost": 75.50,
+  "total_duration_hours": 5.5,
+  "special_notes": "Any special considerations"
 }
 
-Remember: ONLY return valid JSON, no markdown, no backticks, no explanation text.`;
+IMPORTANT: 
+- Use only double quotes in JSON
+- Do NOT use apostrophes in any text - replace with "of" or rephrase
+- Ensure all string values are properly escaped
+- Return only valid JSON, no other text`;
 
+    console.log('Calling Gemini API...');
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    let text = response.text();
+    const text = response.text();
     
-    // Clean up the response - remove markdown formatting if present
-    text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    console.log('Raw AI response:', text);
     
-    // Try to extract JSON from the response
-    let jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('No JSON found in AI response');
-    }
-    
-    let cleanJson = jsonMatch[0];
-    
-    // Fix common JSON formatting issues
-    cleanJson = cleanJson
-      .replace(/'/g, '"')  // Replace single quotes with double quotes
-      .replace(/,\s*}/g, '}')  // Remove trailing commas
-      .replace(/,\s*]/g, ']')  // Remove trailing commas in arrays
-      .replace(/([{,]\s*)(\w+):/g, '$1"$2":'); // Quote unquoted property names
-    
-    console.log('Cleaned JSON:', cleanJson); // Debug log
-    
+    const cleanedJson = cleanJsonResponse(text);
+    console.log('Cleaned JSON:', cleanedJson);
+
+    let parsedPlan;
     try {
-      const planData = JSON.parse(cleanJson);
-      
-      // Validate the structure
-      if (!planData.plan || !planData.plan.morning || !planData.plan.afternoon || !planData.plan.evening) {
-        throw new Error('Invalid plan structure');
-      }
-      
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify(planData)
-      };
+      parsedPlan = JSON.parse(cleanedJson);
     } catch (parseError) {
       console.error('JSON parse error:', parseError);
       console.error('Raw AI response:', text);
       throw new Error('Failed to parse AI response as JSON');
     }
 
-  } catch (error) {
-    console.error('Gemini function error:', error);
-    
-    // Enhanced fallback plan
-    const parsedBody = JSON.parse(event.body);
-    const location = parsedBody.location || 'London';
-    const preferences = parsedBody.preferences || {};
-    
-    const fallbackPlan = {
-      plan: {
-        morning: [{
-          name: "Local Coffee & Breakfast",
-          location: `${location} city centre`,
-          postcode: "",
-          description: "Start your day at a highly-rated local café with fresh pastries and artisan coffee",
-          duration_minutes: 60,
-          cost_gbp: 8.50,
-          category: "food",
-          why_special: "Perfect way to fuel up and get a feel for the local morning atmosphere"
-        }],
-        afternoon: [{
-          name: "Historic Walking Discovery",
-          location: `${location} historic district`,
-          postcode: "",
-          description: "Self-guided exploration of historical landmarks and hidden architectural gems",
-          duration_minutes: 150,
-          cost_gbp: 0,
-          category: "culture",
-          why_special: "Uncover stories and viewpoints that most tourists miss - completely free"
-        }],
-        evening: [{
-          name: "Traditional Pub Experience",
-          location: `${location} old town`,
-          postcode: "",
-          description: "Authentic British pub with local ales, seasonal menu, and friendly atmosphere",
-          duration_minutes: 120,
-          cost_gbp: 24.00,
-          category: "food",
-          why_special: "Experience genuine local culture and meet locals over traditional British fare"
-        }]
-      },
-      total_cost: 32.50,
-      total_duration_hours: 5.5,
-      special_notes: "This is a reliable backup plan. All activities are weather-flexible and suitable for different group sizes."
-    };
+    // Validate and sanitize the plan
+    const validatedPlan = validatePlan(parsedPlan);
+    console.log('Plan generated successfully');
 
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify(fallbackPlan)
+      body: JSON.stringify(validatedPlan)
+    };
+
+  } catch (error) {
+    console.error('Gemini function error:', error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ 
+        error: 'Failed to generate plan',
+        details: error.message 
+      })
     };
   }
 };

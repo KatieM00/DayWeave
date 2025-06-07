@@ -1,119 +1,122 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+// Supabase Edge Function for weather data
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PUT, DELETE',
 }
 
-interface WeatherRequest {
-  location: string;
-  date: string;
+interface WeatherData {
+  condition: string
+  temperature: number
+  icon: string
+  precipitation: number
+  windSpeed: number
+  humidity: number
+  description: string
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { location, date }: WeatherRequest = await req.json()
-
-    // Get coordinates for the location using a geocoding service
-    let lat: number, lon: number
-
-    try {
-      // Use OpenWeatherMap's geocoding API
-      const geocodeUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(location)}&limit=1&appid=${Deno.env.get('OPENWEATHER_API_KEY')}`
-      const geocodeResponse = await fetch(geocodeUrl)
-      
-      if (geocodeResponse.ok) {
-        const geocodeData = await geocodeResponse.json()
-        if (geocodeData.length > 0) {
-          lat = geocodeData[0].lat
-          lon = geocodeData[0].lon
-        } else {
-          throw new Error('Location not found')
-        }
-      } else {
-        throw new Error('Geocoding failed')
-      }
-    } catch (error) {
-      console.error('Geocoding error:', error)
-      // Fallback to London coordinates
-      lat = 51.5074
-      lon = -0.1278
-    }
-
-    // Get weather forecast from OpenWeatherMap
-    const weatherUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${Deno.env.get('OPENWEATHER_API_KEY')}&units=metric`
+    const { location } = await req.json()
     
-    const response = await fetch(weatherUrl)
-    if (!response.ok) {
-      throw new Error(`Weather API error: ${response.status}`)
-    }
-
-    const data = await response.json()
-    
-    // Find forecast for the specified date
-    const targetDate = new Date(date)
-    const forecast = data.list.find((item: any) => {
-      const forecastDate = new Date(item.dt * 1000)
-      return forecastDate.toDateString() === targetDate.toDateString()
-    })
-
-    let weatherForecast
-    if (forecast) {
-      weatherForecast = {
-        condition: forecast.weather[0].description,
-        temperature: Math.round(forecast.main.temp),
-        icon: forecast.weather[0].icon,
-        precipitation: forecast.pop ? Math.round(forecast.pop * 100) : 0,
-        windSpeed: Math.round(forecast.wind.speed * 3.6) // Convert m/s to km/h
-      }
-    } else {
-      // Return current weather if no forecast for specific date
-      const currentWeatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${Deno.env.get('OPENWEATHER_API_KEY')}&units=metric`
-      const currentResponse = await fetch(currentWeatherUrl)
-      
-      if (currentResponse.ok) {
-        const currentData = await currentResponse.json()
-        weatherForecast = {
-          condition: currentData.weather[0].description,
-          temperature: Math.round(currentData.main.temp),
-          icon: currentData.weather[0].icon,
-          precipitation: 0,
-          windSpeed: Math.round(currentData.wind.speed * 3.6)
+    if (!location) {
+      return new Response(
+        JSON.stringify({ error: 'Location is required' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
-      } else {
-        weatherForecast = null
-      }
+      )
     }
+
+    const OPENWEATHER_API_KEY = Deno.env.get('OPENWEATHER_API_KEY')
+
+    if (!OPENWEATHER_API_KEY) {
+      console.error('OpenWeather API key not configured')
+      return new Response(
+        JSON.stringify({ error: 'Weather service unavailable' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    console.log(`Fetching weather for: ${location}`)
+
+    // Get coordinates from location name
+    const geocodeUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(location)}&limit=1&appid=${OPENWEATHER_API_KEY}`
+    
+    const geocodeResponse = await fetch(geocodeUrl)
+    if (!geocodeResponse.ok) {
+      throw new Error(`Geocoding failed: ${geocodeResponse.status}`)
+    }
+    
+    const geocodeData = await geocodeResponse.json()
+    
+    if (!geocodeData || geocodeData.length === 0) {
+      console.error(`No coordinates found for location: ${location}`)
+      return new Response(
+        JSON.stringify({ error: 'Location not found' }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    const { lat, lon } = geocodeData[0]
+    console.log(`Coordinates found: ${lat}, ${lon}`)
+
+    // Get current weather
+    const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=metric`
+    
+    const weatherResponse = await fetch(weatherUrl)
+    if (!weatherResponse.ok) {
+      throw new Error(`Weather API failed: ${weatherResponse.status}`)
+    }
+    
+    const weatherData = await weatherResponse.json()
+    console.log('Weather data received:', weatherData)
+
+    // Transform the data
+    const result: WeatherData = {
+      condition: weatherData.weather[0]?.main || 'Unknown',
+      temperature: Math.round(weatherData.main?.temp || 0),
+      icon: weatherData.weather[0]?.icon || '01d',
+      precipitation: Math.round((weatherData.rain?.['1h'] || weatherData.snow?.['1h'] || 0) * 100) / 100,
+      windSpeed: Math.round((weatherData.wind?.speed || 0) * 3.6 * 10) / 10, // Convert m/s to km/h
+      humidity: weatherData.main?.humidity || 0,
+      description: weatherData.weather[0]?.description || 'No description available'
+    }
+
+    console.log('Transformed weather data:', result)
 
     return new Response(
-      JSON.stringify(weatherForecast),
+      JSON.stringify(result),
       { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
 
   } catch (error) {
-    console.error('Error fetching weather:', error)
+    console.error('Weather function error:', error)
+    
     return new Response(
       JSON.stringify({ 
-        error: 'Failed to fetch weather',
-        details: error.message 
+        error: 'Failed to fetch weather data',
+        details: error instanceof Error ? error.message : 'Unknown error'
       }),
       { 
-        status: 500,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
   }
