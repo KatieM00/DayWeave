@@ -183,3 +183,22 @@ export const getPlacePhoto = async (photoReference: string, maxWidth: number = 4
     throw new Error(`Failed to get place photo: ${error.message}`);
   }
 };
+
+// Legacy API compatibility - redirect old calls to new functions
+export class PlanGenerator {
+  async generateDayPlan(preferences: any): Promise<DayPlan> {
+    console.log('Legacy generateDayPlan called, redirecting to generateItinerary');
+    
+    const request: LLMItineraryRequest = {
+      location: preferences.startLocation || preferences.location,
+      date: preferences.planDate || new Date().toISOString().split('T')[0],
+      preferences,
+      surpriseMode: preferences.surpriseMode || false
+    };
+    
+    return await generateItinerary(request);
+  }
+}
+
+// Export singleton instance for backward compatibility
+export const planGenerator = new PlanGenerator();
