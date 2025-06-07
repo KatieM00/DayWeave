@@ -35,88 +35,145 @@ export const handler = async (event, context) => {
 
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const prompt = `
-    You are a UK travel expert. Create a detailed day plan for ${location}, UK.
-    
-    User preferences: ${JSON.stringify(preferences)}
-    ${weather ? `Weather: ${JSON.stringify(weather)}` : ''}
-    
-    Requirements:
-    - Include exact UK postcodes where possible
-    - Realistic travel times between locations
-    - Pricing in GBP
-    - Mix popular attractions with hidden gems
-    - Focus on accessibility via UK transport
-    
-    Return only valid JSON:
-    {
-      "plan": {
-        "morning": [{"name": "", "location": "", "postcode": "", "description": "", "duration_minutes": 0, "cost_gbp": 0, "category": "", "why_special": ""}],
-        "afternoon": [{"name": "", "location": "", "postcode": "", "description": "", "duration_minutes": 0, "cost_gbp": 0, "category": "", "why_special": ""}],
-        "evening": [{"name": "", "location": "", "postcode": "", "description": "", "duration_minutes": 0, "cost_gbp": 0, "category": "", "why_special": ""}]
-      },
-      "total_cost": 0,
-      "total_duration_hours": 0,
-      "special_notes": ""
-    }`;
+    // More specific prompt to ensure valid JSON
+    const prompt = `Create a day plan for ${location}, UK. You MUST respond with ONLY valid JSON, no other text.
+
+User preferences: Group size ${preferences.groupSize}, Budget ${preferences.budgetRange}, Vibe ${preferences.activityVibe || 'mixed'}
+
+Return this exact JSON structure:
+{
+  "plan": {
+    "morning": [
+      {
+        "name": "Activity Name",
+        "location": "Specific location in ${location}",
+        "postcode": "UK postcode if known or empty string",
+        "description": "Brief description",
+        "duration_minutes": 90,
+        "cost_gbp": 10.50,
+        "category": "food/culture/outdoor/indoor",
+        "why_special": "Why this is recommended"
+      }
+    ],
+    "afternoon": [
+      {
+        "name": "Activity Name",
+        "location": "Specific location in ${location}",
+        "postcode": "UK postcode if known or empty string", 
+        "description": "Brief description",
+        "duration_minutes": 120,
+        "cost_gbp": 15.00,
+        "category": "food/culture/outdoor/indoor",
+        "why_special": "Why this is recommended"
+      }
+    ],
+    "evening": [
+      {
+        "name": "Activity Name",
+        "location": "Specific location in ${location}",
+        "postcode": "UK postcode if known or empty string",
+        "description": "Brief description", 
+        "duration_minutes": 120,
+        "cost_gbp": 25.00,
+        "category": "food/culture/outdoor/indoor",
+        "why_special": "Why this is recommended"
+      }
+    ]
+  },
+  "total_cost": 50.50,
+  "total_duration_hours": 6.5,
+  "special_notes": "Weather or seasonal notes"
+}
+
+Remember: ONLY return valid JSON, no markdown, no backticks, no explanation text.`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    const text = response.text();
+    let text = response.text();
     
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const planData = JSON.parse(jsonMatch[0]);
+    // Clean up the response - remove markdown formatting if present
+    text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    
+    // Try to extract JSON from the response
+    let jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('No JSON found in AI response');
+    }
+    
+    let cleanJson = jsonMatch[0];
+    
+    // Fix common JSON formatting issues
+    cleanJson = cleanJson
+      .replace(/'/g, '"')  // Replace single quotes with double quotes
+      .replace(/,\s*}/g, '}')  // Remove trailing commas
+      .replace(/,\s*]/g, ']')  // Remove trailing commas in arrays
+      .replace(/([{,]\s*)(\w+):/g, '$1"$2":'); // Quote unquoted property names
+    
+    console.log('Cleaned JSON:', cleanJson); // Debug log
+    
+    try {
+      const planData = JSON.parse(cleanJson);
+      
+      // Validate the structure
+      if (!planData.plan || !planData.plan.morning || !planData.plan.afternoon || !planData.plan.evening) {
+        throw new Error('Invalid plan structure');
+      }
+      
       return {
         statusCode: 200,
         headers,
         body: JSON.stringify(planData)
       };
-    } else {
-      throw new Error('No valid JSON in AI response');
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      console.error('Raw AI response:', text);
+      throw new Error('Failed to parse AI response as JSON');
     }
 
   } catch (error) {
     console.error('Gemini function error:', error);
     
-    // Fallback plan for UK locations
-    const { location } = JSON.parse(event.body);
+    // Enhanced fallback plan
+    const parsedBody = JSON.parse(event.body);
+    const location = parsedBody.location || 'London';
+    const preferences = parsedBody.preferences || {};
+    
     const fallbackPlan = {
       plan: {
         morning: [{
           name: "Local Coffee & Breakfast",
           location: `${location} city centre`,
           postcode: "",
-          description: "Start your day at a highly-rated local café",
+          description: "Start your day at a highly-rated local café with fresh pastries and artisan coffee",
           duration_minutes: 60,
           cost_gbp: 8.50,
           category: "food",
-          why_special: "Support local business and fuel up for adventures"
+          why_special: "Perfect way to fuel up and get a feel for the local morning atmosphere"
         }],
         afternoon: [{
-          name: "Historic City Walk",
-          location: `${location} historic quarter`,
+          name: "Historic Walking Discovery",
+          location: `${location} historic district`,
           postcode: "",
-          description: "Self-guided tour of historical landmarks",
-          duration_minutes: 120,
+          description: "Self-guided exploration of historical landmarks and hidden architectural gems",
+          duration_minutes: 150,
           cost_gbp: 0,
           category: "culture",
-          why_special: "Free way to discover hidden stories and architecture"
+          why_special: "Uncover stories and viewpoints that most tourists miss - completely free"
         }],
         evening: [{
           name: "Traditional Pub Experience",
           location: `${location} old town`,
           postcode: "",
-          description: "Authentic British pub with local ales and seasonal menu",
-          duration_minutes: 90,
-          cost_gbp: 22.00,
+          description: "Authentic British pub with local ales, seasonal menu, and friendly atmosphere",
+          duration_minutes: 120,
+          cost_gbp: 24.00,
           category: "food",
-          why_special: "Experience genuine local culture and cuisine"
+          why_special: "Experience genuine local culture and meet locals over traditional British fare"
         }]
       },
-      total_cost: 30.50,
+      total_cost: 32.50,
       total_duration_hours: 5.5,
-      special_notes: "This is a fallback plan. Weather and personal preferences may require adjustments."
+      special_notes: "This is a reliable backup plan. All activities are weather-flexible and suitable for different group sizes."
     };
 
     return {
