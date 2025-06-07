@@ -120,13 +120,13 @@ export const searchPlaces = async (query: string, location: string): Promise<Pla
   }
 };
 
-export const getPlaceDetails = async (placeId: string): Promise<PlaceDetails> => {
+export const getPlaceDetails = async (_placeId: string): Promise<PlaceDetails> => {
   // For now, we'll implement a basic version
   // In a full implementation, you'd create another edge function for place details
   throw new Error('Place details not implemented yet');
 };
 
-export const getPlacePhoto = async (photoReference: string, maxWidth: number = 400): Promise<string> => {
+export const getPlacePhoto = async (_photoReference: string): Promise<string> => {
   // For now, we'll implement a basic version
   // In a full implementation, you'd create another edge function for place photos
   throw new Error('Place photos not implemented yet');

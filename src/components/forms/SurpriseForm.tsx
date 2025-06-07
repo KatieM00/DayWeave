@@ -1,13 +1,13 @@
-import { DayWeaveAPI } from '../../services/apiClient';
+import { dayWeaveAPI } from '../../services/apiClient';
 import React, { useState } from 'react';
-import { MapPin, LogIn, Users, Compass, DollarSign, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { MapPin, Users, Compass, DollarSign, Sparkles, Eye, EyeOff } from 'lucide-react';
 import Button from '../common/Button';
 import Input from '../common/Input';
 import Card from '../common/Card';
-import { UserPreferences, BudgetRange, ActivityVibe, TravelDistance } from '../../types';
+import { UserPreferences, BudgetRange, ActivityVibe } from '../../types';
 
 interface SurpriseFormProps {
-  onSubmit: (preferences: UserPreferences & { surpriseMode: boolean }) => void;
+  onSubmit: (preferences: UserPreferences & { surpriseMode: boolean; generatedPlan: any }) => void;
 }
 
 const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
@@ -71,7 +71,7 @@ const handleSubmit = async () => {
     
     try {
       // Generate AI-powered plan
-      const aiPlan = await DayWeaveAPI.generateDayPlan(
+      const aiPlan = await dayWeaveAPI.generateDayPlan(
         preferences.startLocation,
         preferences
       );
@@ -426,3 +426,7 @@ const handleSubmit = async () => {
 };
 
 export default SurpriseForm;
+
+function generateSurpriseDayPlan(preferences: UserPreferences & { surpriseMode?: boolean; }) {
+  throw new Error('Function not implemented.');
+}
