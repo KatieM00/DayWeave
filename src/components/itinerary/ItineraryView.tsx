@@ -25,7 +25,7 @@ import { DayPlan, WeatherForecast, ItineraryEvent, Activity, UserPreferences } f
 import ItineraryItem from './ItineraryItem';
 import { generateTravelSegment } from '../../utils/mockData';
 import { getActivitySuggestions } from '../../services/activitySuggestions';
-import { searchPlaces, getPlaceDetails } from '../../services/api';
+import { searchPlaces } from '../../services/api';
 
 interface ItineraryViewProps {
   dayPlan: DayPlan;
@@ -861,3 +861,25 @@ function isTravelSegment(data: any): data is TravelSegment {
     typeof data.endLocation === 'string'
   );
 }
+interface PlaceDetails {
+  name: string;
+  formatted_address: string;
+  rating: number;
+  price_level?: number;
+}
+
+async function getPlaceDetails(place_id: string): Promise<PlaceDetails> {
+  try {
+    // TODO: Replace with actual API call using place_id
+    console.log(`Fetching details for place: ${place_id}`);
+    return {
+      name: 'Place Name',
+      formatted_address: 'Place Address',
+      rating: 4.5
+    };
+  } catch (error) {
+    console.error(`Error fetching details for place ${place_id}:`, error);
+    throw error;
+  }
+}
+
