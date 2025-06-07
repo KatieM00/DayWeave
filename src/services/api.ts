@@ -36,11 +36,29 @@ export interface LLMItineraryRequest {
 
 export const generateItinerary = async (request: LLMItineraryRequest): Promise<DayPlan> => {
   try {
-    // Call your server-side function instead of Gemini directly
-    const dayPlan = await callEdgeFunction('generate-itinerary', request);
+    console.log('🚀 Calling Netlify function with:', request);
+    
+    const response = await fetch('/.netlify/functions/generate-plan', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+
+    console.log('📥 Response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Error response:', errorText);
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    const dayPlan = await response.json();
+    console.log('✅ Success:', dayPlan);
     return dayPlan;
   } catch (error) {
-    console.error('Error generating itinerary:', error);
+    console.error('💥 Error generating itinerary:', error);
     throw new Error('Failed to generate itinerary. Please try again.');
   }
 };
