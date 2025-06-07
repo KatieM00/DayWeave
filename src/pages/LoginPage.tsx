@@ -23,7 +23,7 @@ const LoginPage: React.FC = () => {
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: '',
-    rememberMe: false,
+    rememberMe: false, // Default to false - user must explicitly choose to remember
   });
   const [errors, setErrors] = useState<Partial<LoginFormData & { general: string }>>({});
 
@@ -61,7 +61,7 @@ const LoginPage: React.FC = () => {
     setErrors({});
     
     try {
-      const { error } = await signIn(formData.email, formData.password);
+      const { error } = await signIn(formData.email, formData.password, formData.rememberMe);
       
       if (error) {
         if (error.message.includes('Invalid login credentials')) {

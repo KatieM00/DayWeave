@@ -7,7 +7,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ data: any; error: AuthError | null }>;
-  signIn: (email: string, password: string) => Promise<{ data: any; error: AuthError | null }>;
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ data: any; error: AuthError | null }>;
   signOut: () => Promise<{ error: AuthError | null }>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
 }
@@ -24,15 +24,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
+    // Get initial session - only check if user explicitly chose to remember
     const getInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.error('Error getting session:', error);
         } else {
-          setSession(session);
-          setUser(session?.user ?? null);
+          // Only restore session if it was explicitly saved (has remember flag)
+          const rememberMe = localStorage.getItem('dayweave_remember_me');
+          if (session && rememberMe === 'true') {
+            setSession(session);
+            setUser(session?.user ?? null);
+          } else {
+            // Clear any existing session if user didn't choose to remember
+            if (session) {
+              await supabase.auth.signOut();
+            }
+            setSession(null);
+            setUser(null);
+          }
         }
       } catch (error) {
         console.error('Error in getInitialSession:', error);
@@ -55,6 +66,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log('User signed in:', session?.user?.email);
         } else if (event === 'SIGNED_OUT') {
           console.log('User signed out');
+          // Clear remember me flag on sign out
+          localStorage.removeItem('dayweave_remember_me');
         }
         
         setLoading(false);
@@ -76,10 +89,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, rememberMe: boolean = false) => {
     setLoading(true);
     try {
       const result = await authHelpers.signIn(email, password);
+      
+      // Set remember me flag based on user choice
+      if (rememberMe) {
+        localStorage.setItem('dayweave_remember_me', 'true');
+      } else {
+        localStorage.removeItem('dayweave_remember_me');
+      }
+      
       return result;
     } finally {
       setLoading(false);
@@ -90,6 +111,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(true);
     try {
       const result = await authHelpers.signOut();
+      
+      // Clear remember me flag
+      localStorage.removeItem('dayweave_remember_me');
+      
       return result;
     } finally {
       setLoading(false);
