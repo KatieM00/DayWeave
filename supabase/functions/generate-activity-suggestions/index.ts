@@ -1,5 +1,27 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { GoogleGenerativeAI } from 'npm:@google/generative-ai@0.2.1'
+// If running in Deno, ensure your editor supports Deno types (e.g., enable Deno extension in VSCode).
+// If running in Node.js, use a Node.js HTTP server instead:
+import { createServer } from 'http';
+
+const serve = (handler: (req: Request) => Promise<Response>) => {
+  const server = createServer(async (req, res) => {
+    const chunks: Buffer[] = [];
+    req.on('data', chunk => chunks.push(chunk));
+    req.on('end', async () => {
+      const body = Buffer.concat(chunks).toString();
+      const request = new Request(`http://${req.headers.host}${req.url}`, {
+        method: req.method,
+        headers: req.headers as any,
+        body: body || undefined,
+      });
+      const response = await handler(request);
+      res.writeHead(response.status, Object.fromEntries(response.headers.entries()));
+      const respBody = await response.text();
+      res.end(respBody);
+    });
+  });
+  server.listen(8000);
+};
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,7 +44,7 @@ serve(async (req) => {
     const { location, preferences }: SuggestionsRequest = await req.json()
 
     // Initialize Gemini AI with server-side API key
-    const genAI = new GoogleGenerativeAI(Deno.env.get('GOOGLE_AI_API_KEY') || '')
+    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '')
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" })
     
     const prompt = `Generate 5 activity suggestions for ${location} based on these preferences:
