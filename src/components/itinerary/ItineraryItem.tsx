@@ -32,52 +32,96 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
 
   // Load Google Maps data when component mounts or expands
   useEffect(() => {
+    console.log('🔍 ItineraryItem useEffect triggered:', {
+      expanded,
+      eventType: event.type,
+      hasGoogleMapsData: !!googleMapsData,
+      loadingMapsData,
+      activityName: event.type === 'activity' ? event.data.name : 'N/A',
+      planStartLocation
+    });
+
     if (expanded && event.type === 'activity' && !googleMapsData && !loadingMapsData) {
+      console.log('✅ Conditions met for loading Google Maps data - calling loadGoogleMapsData()');
       loadGoogleMapsData();
+    } else {
+      console.log('❌ Conditions NOT met for loading Google Maps data:', {
+        expanded,
+        isActivity: event.type === 'activity',
+        hasGoogleMapsData: !!googleMapsData,
+        loadingMapsData
+      });
     }
   }, [expanded, event]);
 
   const loadGoogleMapsData = async () => {
-    if (event.type !== 'activity') return;
+    if (event.type !== 'activity') {
+      console.log('❌ Not an activity event, skipping Google Maps data load');
+      return;
+    }
     
+    console.log('🚀 Starting loadGoogleMapsData...');
     setLoadingMapsData(true);
+    
     try {
       const activity = event.data as ActivityType;
+      console.log('📍 About to search places with:', {
+        activityName: activity.name,
+        planStartLocation,
+        activityLocation: activity.location
+      });
       
-      // Search for the place using the plan's start location for geocoding context
-      const places = await searchPlaces(activity.name, planStartLocation);
+      // Search for the place using activity.location (the exact venue name) instead of activity.name
+      console.log('🔍 Calling searchPlaces API...');
+      const places = await searchPlaces(activity.location, planStartLocation);
+      console.log('📍 searchPlaces response:', places);
       
       if (places.length > 0) {
         const place = places[0];
+        console.log('🏢 Found place, getting details for place_id:', place.place_id);
         
         // Get detailed place information
+        console.log('📋 Calling getPlaceDetails API...');
         const details = await getPlaceDetails(place.place_id);
+        console.log('📋 getPlaceDetails response:', details);
         
         // Load photos if available
         const photoUrls: string[] = [];
         if (details.photos && details.photos.length > 0) {
+          console.log(`📸 Found ${details.photos.length} photos, loading up to 5...`);
+          
           // Load up to 5 photos
-          const photoPromises = details.photos.slice(0, 5).map(async (photo) => {
+          const photoPromises = details.photos.slice(0, 5).map(async (photo, index) => {
             try {
+              console.log(`📸 Loading photo ${index + 1}:`, photo.photo_reference);
               const photoUrl = await getPlacePhoto(photo.photo_reference, 600);
+              console.log(`✅ Photo ${index + 1} loaded:`, photoUrl);
               return photoUrl;
             } catch (error) {
-              console.error('Error loading photo:', error);
+              console.error(`❌ Error loading photo ${index + 1}:`, error);
               return null;
             }
           });
           
           const photos = await Promise.all(photoPromises);
-          photoUrls.push(...photos.filter(url => url !== null) as string[]);
+          const validPhotos = photos.filter(url => url !== null) as string[];
+          photoUrls.push(...validPhotos);
+          console.log(`📸 Successfully loaded ${validPhotos.length} photos`);
+        } else {
+          console.log('📸 No photos available for this place');
         }
         
         setGoogleMapsData(details);
         setMapsImages(photoUrls);
+        console.log('✅ Google Maps data loaded successfully');
+      } else {
+        console.log('❌ No places found for activity:', activity.name);
       }
     } catch (error) {
-      console.error('Error loading Google Maps data:', error);
+      console.error('❌ Error loading Google Maps data:', error);
     } finally {
       setLoadingMapsData(false);
+      console.log('🏁 loadGoogleMapsData completed');
     }
   };
 
