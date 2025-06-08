@@ -11,6 +11,7 @@ import SignupPage from './pages/SignupPage';
 import MyPlansPage from './pages/MyPlansPage';
 import UserPreferencesPage from './pages/UserPreferencesPage';
 import AccountPage from './pages/AccountPage';
+import SharedPlanPage from './pages/SharedPlanPage';
 
 // Components
 import Header from './components/layout/Header';
@@ -65,6 +66,9 @@ function AppContent() {
           <Route path="/" element={<HomePage />} />
           <Route path="/surprise" element={<SurprisePlanPage />} />
           <Route path="/plan" element={<DetailedPlanPage />} />
+          
+          {/* Shared plan route - public access */}
+          <Route path="/share/:shareableLinkId" element={<SharedPlanPage />} />
           
           {/* Public routes - redirect if authenticated */}
           <Route 

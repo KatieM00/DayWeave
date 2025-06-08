@@ -1,4 +1,5 @@
 import type { DayPlan, UserPreferences, Activity, WeatherForecast } from '../types';
+import { supabase } from '../lib/supabase';
 
 // Get the correct Supabase URL from environment variables
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_DATABASE_URL;
@@ -18,11 +19,17 @@ const callEdgeFunction = async (functionName: string, payload: any) => {
   console.log(`Calling edge function: ${url}`);
   
   try {
+    // Get the current session to use the authenticated user's token
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    // Use the session token if available, otherwise fall back to anonymous key
+    const authToken = session?.access_token || SUPABASE_ANON_KEY;
+    
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Authorization': `Bearer ${authToken}`,
       },
       body: JSON.stringify(payload),
     });
@@ -181,6 +188,30 @@ export const getPlacePhoto = async (photoReference: string, maxWidth: number = 4
   } catch (error) {
     console.error('Error getting place photo:', error);
     throw new Error(`Failed to get place photo: ${error.message}`);
+  }
+};
+
+// Plan Sharing
+export interface SharePlanResponse {
+  shareableUrl: string;
+  shareableLinkId: string;
+  planTitle: string;
+}
+
+export const generateShareableLink = async (planId: string): Promise<SharePlanResponse> => {
+  try {
+    console.log('Generating shareable link for plan:', planId);
+    
+    const result = await callEdgeFunction('share-plan', { planId });
+    
+    if (result.error) {
+      throw new Error(result.error);
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error generating shareable link:', error);
+    throw new Error(`Failed to generate shareable link: ${error.message}`);
   }
 };
 

@@ -167,6 +167,41 @@ export const usePlans = () => {
     }
   };
 
+  const getPlanByShareableLinkId = async (shareableLinkId: string): Promise<DayPlan | null> => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data, error: fetchError } = await supabase
+        .from('plans')
+        .select('*')
+        .eq('shareable_link_id', shareableLinkId)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+      if (!data) return null;
+
+      // Transform database row to DayPlan object
+      return {
+        id: data.id,
+        title: data.title,
+        date: data.date,
+        events: data.events as any,
+        totalCost: data.total_cost,
+        totalDuration: data.total_duration,
+        preferences: data.preferences as any,
+        weatherForecast: data.weather_forecast as any,
+        revealProgress: data.reveal_progress || 100
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch shared plan';
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     error,
@@ -175,5 +210,6 @@ export const usePlans = () => {
     deletePlan,
     getUserPlans,
     getPlanById,
+    getPlanByShareableLinkId,
   };
 };

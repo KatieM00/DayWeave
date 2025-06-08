@@ -56,12 +56,18 @@ VITE_GOOGLE_MAPS_API_KEY=your_client_side_google_maps_api_key
 
 ### 2. Google Maps API Setup
 
-#### Client-side API Key (VITE_GOOGLE_MAPS_API_KEY)
+#### Step 1: Create Client-side API Key (VITE_GOOGLE_MAPS_API_KEY)
 1. Go to [Google Cloud Console](https://console.cloud.google.com)
-2. Create a new API key or use existing
-3. **CRITICAL**: Configure HTTP referrer restrictions properly:
-   - Navigate to APIs & Services → Credentials
-   - Select your API key
+2. Create a new project or select existing
+3. Enable these APIs:
+   - **Maps JavaScript API**
+   - **Places API**
+4. Create a new API key:
+   - Go to APIs & Services → Credentials
+   - Click "Create Credentials" → "API Key"
+   - Copy the key for your `.env` file
+5. **CRITICAL**: Configure HTTP referrer restrictions:
+   - Click on your newly created API key
    - Under "Application restrictions", select "HTTP referrers (web sites)"
    - Add these referrers:
      - `localhost:*` (for local development)
@@ -70,24 +76,23 @@ VITE_GOOGLE_MAPS_API_KEY=your_client_side_google_maps_api_key
      - `*.netlify.app/*` (for Netlify deployment)
      - `yourdomain.com/*` (replace with your actual domain)
      - `*.yourdomain.com/*` (for subdomains)
-4. Enable these APIs:
-   - Maps JavaScript API
-   - Places API
+   - Save the changes
+
+#### Step 2: Create Server-side API Key (GOOGLE_API_KEY)
+1. In the same Google Cloud project, create another API key
+2. Enable these APIs:
+   - **Geocoding API**
+   - **Places API**
+3. **Important**: Leave this key unrestricted (no HTTP referrer restrictions)
+4. This key will be stored as a Supabase secret (never in `.env`)
 
 **🚨 Fixing RefererNotAllowedMapError**: 
-If you encounter this error, the solution is simple:
-1. Copy the URL from the error message
+If you encounter this error:
+1. Copy the URL from the error message in your browser console
 2. Go to Google Cloud Console → APIs & Services → Credentials
 3. Select your `VITE_GOOGLE_MAPS_API_KEY`
 4. Add the URL to the HTTP referrers list with `/*` at the end
-5. Save the changes
-
-#### Server-side API Key (GOOGLE_API_KEY)
-1. Create a separate API key in Google Cloud Console
-2. Restrict it to server applications (no HTTP referrer restrictions)
-3. Enable these APIs:
-   - Geocoding API
-   - Places API
+5. Save the changes and refresh your page
 
 ### 3. Secure API Key Configuration
 
@@ -99,6 +104,9 @@ npm install -g supabase
 
 # Login to Supabase
 supabase login
+
+# Link to your project (get project ref from Supabase dashboard)
+supabase link --project-ref your-project-ref
 
 # Set your API keys as secrets (server-side only)
 supabase secrets set GOOGLE_AI_API_KEY=your_google_ai_key
@@ -204,21 +212,38 @@ All edge functions are automatically secured and handle CORS properly.
      5. Save changes and refresh your page
    - **Prevention**: Add common development URLs like `localhost:*`, `*.webcontainer-api.io/*`
 
-2. **Location autocomplete not working**
-   - Check that `VITE_GOOGLE_MAPS_API_KEY` is set correctly
-   - Verify Maps JavaScript API and Places API are enabled
-   - Ensure API key is not restricted to wrong domains
-   - Check browser console for specific error messages
+2. **"Google Maps API key not configured"**
+   - Check that `VITE_GOOGLE_MAPS_API_KEY` is set in your `.env` file
+   - Ensure the API key is valid and not expired
+   - Verify Maps JavaScript API and Places API are enabled in Google Cloud Console
 
-3. **"Location not found" errors**
+3. **Location autocomplete not working**
+   - Verify `VITE_GOOGLE_MAPS_API_KEY` is correctly configured
+   - Check browser console for specific error messages
+   - Ensure API key is not restricted to wrong domains
+   - Make sure Maps JavaScript API and Places API are enabled
+
+4. **"Location not found" errors**
    - Make sure users select from autocomplete suggestions
    - Verify server-side `GOOGLE_API_KEY` is set in Supabase secrets
    - Check Google Cloud Console for API quotas
 
-4. **Venue photos not loading**
+5. **Venue photos not loading**
    - Verify `GOOGLE_API_KEY` is configured in Supabase secrets
    - Check Places API is enabled and has quota
    - Some venues may not have photos available
+
+## API Key Summary
+
+**Client-side (in .env file):**
+- `VITE_SUPABASE_DATABASE_URL`: Supabase project URL
+- `VITE_SUPABASE_ANON_KEY`: Supabase anonymous key
+- `VITE_GOOGLE_MAPS_API_KEY`: Google Maps API key for autocomplete
+
+**Server-side (Supabase secrets only):**
+- `GOOGLE_AI_API_KEY`: Google AI/Gemini API key
+- `OPENWEATHER_API_KEY`: OpenWeatherMap API key
+- `GOOGLE_API_KEY`: Google Maps API key for geocoding/places
 
 ## Contributing
 

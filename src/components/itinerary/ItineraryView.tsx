@@ -15,7 +15,9 @@ import {
   Clock,
   Home,
   Search,
-  Star
+  Star,
+  Copy,
+  Check
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import Card from '../common/Card';
@@ -25,7 +27,8 @@ import { DayPlan, WeatherForecast, ItineraryEvent, Activity } from '../../types'
 import ItineraryItem from './ItineraryItem';
 import { generateTravelSegment } from '../../utils/mockData';
 import { getActivitySuggestions } from '../../services/activitySuggestions';
-import { searchPlaces, getPlaceDetails } from '../../services/api';
+import { searchPlaces, getPlaceDetails, generateShareableLink } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface ItineraryViewProps {
   dayPlan: DayPlan;
@@ -46,6 +49,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   onSavePlan,
   onUpdatePlan
 }) => {
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [showActivityChoices, setShowActivityChoices] = useState(false);
   const [selectedActivities, setSelectedActivities] = useState<Activity[]>([]);
@@ -67,6 +71,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
     return dayPlan.events;
   });
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
   const [planName, setPlanName] = useState(
     `${dayPlan.preferences.startLocation} - ${new Date(dayPlan.date).toLocaleDateString('en-GB', { 
       month: 'long', 
@@ -80,6 +85,9 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [activitySuggestions, setActivitySuggestions] = useState<Activity[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [shareableUrl, setShareableUrl] = useState<string>('');
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   useEffect(() => {
     if (showActivityChoices) {
@@ -304,6 +312,41 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
     setShowActivityChoices(false);
   };
 
+  const handleGenerateShareableLink = async () => {
+    if (!user) {
+      alert('Please log in to share your plan.');
+      return;
+    }
+
+    if (!dayPlan.id) {
+      alert('Please save your plan first before sharing.');
+      return;
+    }
+
+    setIsGeneratingLink(true);
+    try {
+      const result = await generateShareableLink(dayPlan.id);
+      setShareableUrl(result.shareableUrl);
+      setShowShareDialog(true);
+    } catch (error) {
+      console.error('Error generating shareable link:', error);
+      alert('Failed to generate shareable link. Please try again.');
+    } finally {
+      setIsGeneratingLink(false);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareableUrl);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy link:', error);
+      alert('Failed to copy link to clipboard');
+    }
+  };
+
   const WeatherCard = ({ forecast }: { forecast: WeatherForecast }) => (
     <Card className="bg-gradient-to-br from-secondary-100 to-secondary-50 mb-4">
       <div className="flex justify-between items-center">
@@ -502,39 +545,6 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-2">
-              Share options
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setShareOption('link')}
-                className={`
-                  p-4 border-2 rounded-lg flex flex-col items-center gap-2 transition-all
-                  ${shareOption === 'link' 
-                    ? 'border-primary-500 bg-primary-50 text-primary-700' 
-                    : 'border-neutral-200 hover:border-primary-300 text-neutral-700'}
-                `}
-              >
-                <Link className="w-6 h-6" />
-                <span className="text-sm font-medium">Share Link</span>
-              </button>
-
-              <button
-                onClick={() => setShareOption('pdf')}
-                className={`
-                  p-4 border-2 rounded-lg flex flex-col items-center gap-2 transition-all
-                  ${shareOption === 'pdf' 
-                    ? 'border-primary-500 bg-primary-50 text-primary-700' 
-                    : 'border-neutral-200 hover:border-primary-300 text-neutral-700'}
-                `}
-              >
-                <Download className="w-6 h-6" />
-                <span className="text-sm font-medium">Export PDF</span>
-              </button>
-            </div>
-          </div>
-
           <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-neutral-200">
             <Button
               variant="outline"
@@ -546,15 +556,78 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
               variant="primary"
               onClick={() => {
                 onSavePlan?.();
-                if (shareOption === 'link') {
-                  onSharePlan?.();
-                } else {
-                  onExportPDF?.();
-                }
                 setShowSaveDialog(false);
               }}
             >
-              Confirm & Save
+              Save Plan
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+
+  const ShareDialog = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-lg">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-semibold text-primary-800">Share Your Plan</h3>
+          <button 
+            onClick={() => setShowShareDialog(false)}
+            className="text-neutral-500 hover:text-neutral-700"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
+              Shareable Link
+            </label>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                value={shareableUrl}
+                readOnly
+                fullWidth
+                className="bg-neutral-50"
+              />
+              <Button
+                variant={linkCopied ? "primary" : "outline"}
+                onClick={handleCopyLink}
+                icon={linkCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              >
+                {linkCopied ? 'Copied!' : 'Copy'}
+              </Button>
+            </div>
+            <p className="text-sm text-neutral-600 mt-2">
+              Anyone with this link can view your plan (but not edit it).
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-6 border-t border-neutral-200">
+            <Button
+              variant="outline"
+              onClick={() => setShowShareDialog(false)}
+            >
+              Close
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({
+                    title: dayPlan.title,
+                    text: `Check out this day plan: ${dayPlan.title}`,
+                    url: shareableUrl,
+                  });
+                } else {
+                  handleCopyLink();
+                }
+              }}
+            >
+              Share
             </Button>
           </div>
         </div>
@@ -570,7 +643,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
         <div className="mb-4 pb-4 border-b border-neutral-200">
           <div className="flex justify-between items-start mb-4">
             <h2 className="text-2xl font-bold text-primary-800">{dayPlan.title}</h2>
-            {!isSurpriseMode && (
+            {!isSurpriseMode && onUpdatePlan && (
               <Button
                 variant="outline"
                 size="sm"
@@ -617,7 +690,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
         </div>
         
         <div className="flex gap-2">
-          {isSurpriseMode && onSavePlan && (
+          {onSavePlan && (
             <Button
               variant="primary"
               size="sm"
@@ -632,7 +705,9 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
             variant="outline"
             size="sm"
             icon={<Share2 className="h-4 w-4" />}
-            onClick={onSharePlan}
+            onClick={user && dayPlan.id ? handleGenerateShareableLink : onSharePlan}
+            loading={isGeneratingLink}
+            disabled={isGeneratingLink}
           >
             Share
           </Button>
@@ -784,22 +859,25 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
 
       {showActivityChoices && <ActivityOverlay />}
       {showSaveDialog && <SaveDialog />}
+      {showShareDialog && <ShareDialog />}
       
-      <div className="mt-8 flex justify-center">
-        <Button
-          variant="success"
-          size="lg"
-          icon={<Save className="h-5 w-5" />}
-          onClick={() => setShowSaveDialog(true)}
-          className="bg-green-600 hover:bg-green-700 text-white"
-        >
-          Save Day Plan
-        </Button>
-      </div>
+      {onSavePlan && (
+        <div className="mt-8 flex justify-center">
+          <Button
+            variant="success"
+            size="lg"
+            icon={<Save className="h-5 w-5" />}
+            onClick={() => setShowSaveDialog(true)}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            Save Day Plan
+          </Button>
+        </div>
+      )}
 
       <div className="text-center text-sm text-neutral-500 mb-8 mt-6">
         <p>Information may not be accurate at time of plan generation.</p>
-        <p>Please double-check all details including opening hours, prices, an availability before your planned day.</p>
+        <p>Please double-check all details including opening hours, prices, and availability before your planned day.</p>
       </div>
     </div>
   );
