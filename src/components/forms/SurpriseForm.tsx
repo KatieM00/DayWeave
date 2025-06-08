@@ -3,6 +3,7 @@ import { MapPin, LogIn, Users, Compass, DollarSign, Sparkles, Eye, EyeOff } from
 import Button from '../common/Button';
 import Input from '../common/Input';
 import Card from '../common/Card';
+import LocationInput from '../common/LocationInput';
 import { UserPreferences, BudgetRange, ActivityVibe, TravelDistance } from '../../types';
 
 interface SurpriseFormProps {
@@ -50,7 +51,7 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
     const newErrors: Record<string, string> = {};
 
     if (currentStep === 1 && !preferences.startLocation.trim()) {
-      newErrors.startLocation = 'Please enter your starting location';
+      newErrors.startLocation = 'Please select a location from the autocomplete suggestions for best results.';
     }
 
     setErrors(newErrors);
@@ -87,15 +88,17 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
                 <span>Where are you starting your adventure from today?</span>
               </div>
               
-              <Input
-                type="text"
-                placeholder="Enter city, town, or postcode"
+              <LocationInput
+                placeholder="Start typing a city, town, or postcode..."
                 value={preferences.startLocation}
-                onChange={(e) => handleChange('startLocation', e.target.value)}
+                onChange={(value) => handleChange('startLocation', value)}
                 error={errors.startLocation}
                 fullWidth
-                className="text-lg"
               />
+              
+              <p className="text-sm text-neutral-600">
+                💡 Tip: Use the autocomplete suggestions for the best surprise recommendations. Try "London", "Edinburgh", or your local area.
+              </p>
             </div>
             
             <Button

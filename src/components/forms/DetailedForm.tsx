@@ -167,7 +167,7 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
     
     if (currentStep === 1) {
       if (!preferences.startLocation.trim()) {
-        newErrors.startLocation = 'Starting location is required';
+        newErrors.startLocation = 'Starting location is required. Please select a location from the autocomplete suggestions.';
       }
       if (!preferences.transportModes?.length) {
         newErrors.transportModes = 'Please select at least one way to get around';
@@ -250,12 +250,16 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                 </div>
                 
                 <LocationInput
-                  placeholder="Enter city, town, or postcode"
+                  placeholder="Start typing a city, town, or postcode..."
                   value={preferences.startLocation}
                   onChange={(value) => handleChange('startLocation', value)}
                   error={errors.startLocation}
                   fullWidth
                 />
+                
+                <p className="text-sm text-neutral-600">
+                  💡 Tip: Use the autocomplete suggestions for best results. Try typing "London", "Manchester", or your postcode.
+                </p>
               </div>
               
               <div className="space-y-2">
@@ -265,11 +269,15 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                 </div>
                 
                 <LocationInput
-                  placeholder="Enter end location if different"
+                  placeholder="Enter end location if different from start"
                   value={preferences.endLocation}
                   onChange={(value) => handleChange('endLocation', value)}
                   fullWidth
                 />
+                
+                <p className="text-sm text-neutral-500">
+                  Leave blank if you want to return to your starting location.
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -689,7 +697,7 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                 </Button>
                 
                 <p className="mt-4 text-sm text-neutral-600">
-                  We'll create a personalized itinerary based on your preferences
+                  We'll create a personalized itinerary based on your preferences using real venues and locations.
                 </p>
               </div>
             </div>

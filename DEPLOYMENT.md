@@ -45,10 +45,22 @@ The database schema will be automatically applied when you deploy the edge funct
 
 For the **client-side API key** (`VITE_GOOGLE_MAPS_API_KEY`):
 1. In Google Cloud Console, create a new API key or use existing
-2. Restrict it to your domain(s) for security
+2. **CRITICAL**: Configure HTTP referrer restrictions properly:
+   - Go to Google Cloud Console → APIs & Services → Credentials
+   - Select your API key for `VITE_GOOGLE_MAPS_API_KEY`
+   - Under "Application restrictions", select "HTTP referrers (web sites)"
+   - Add these referrers:
+     - `localhost:*` (for local development)
+     - `127.0.0.1:*` (for local development)
+     - `*.webcontainer-api.io/*` (for WebContainer environments)
+     - `*.netlify.app/*` (for Netlify deployment)
+     - `yourdomain.com/*` (replace with your actual domain)
+     - `*.yourdomain.com/*` (for subdomains)
 3. Enable these APIs:
    - Maps JavaScript API
    - Places API
+
+**🚨 RefererNotAllowedMapError Fix**: If you see this error, you need to add your current URL to the allowed referrers list. The error message will show the exact URL that needs to be authorized.
 
 For the **server-side API key** (`GOOGLE_API_KEY`):
 1. Create a separate API key in Google Cloud Console
@@ -148,29 +160,42 @@ After deployment, test these features:
 
 ### Common Issues
 
-1. **"Failed to generate itinerary"**
+1. **"RefererNotAllowedMapError" - Google Maps API Error**
+   - **Cause**: Your current URL is not authorized to use the Google Maps API key
+   - **Solution**: 
+     1. Go to [Google Cloud Console](https://console.cloud.google.com)
+     2. Navigate to APIs & Services → Credentials
+     3. Select your `VITE_GOOGLE_MAPS_API_KEY` API key
+     4. Under "Application restrictions", select "HTTP referrers (web sites)"
+     5. Add the URL from the error message to the allowed referrers list
+     6. Include a wildcard `*` at the end (e.g., `https://your-url.com/*`)
+     7. For development, also add: `localhost:*`, `127.0.0.1:*`, `*.webcontainer-api.io/*`
+   - **Note**: The error message will show the exact URL that needs authorization
+
+2. **"Failed to generate itinerary"**
    - Check that `GOOGLE_AI_API_KEY` is set in Supabase secrets
    - Verify the edge function deployed successfully
    - Check function logs in Supabase dashboard
 
-2. **"Weather forecast failed"**
+3. **"Weather forecast failed"**
    - Verify `OPENWEATHER_API_KEY` is set correctly
    - Check your OpenWeatherMap API quota
 
-3. **"Failed to search places" / "Location not found"**
+4. **"Failed to search places" / "Location not found"**
    - Ensure `GOOGLE_API_KEY` is set in Supabase secrets (server-side)
    - Ensure `VITE_GOOGLE_MAPS_API_KEY` is set in environment (client-side)
    - Verify Google Places API and Geocoding API are enabled in Google Cloud Console
    - Check API quotas and billing
    - Make sure users are selecting locations from autocomplete suggestions
 
-4. **Location autocomplete not working**
+5. **Location autocomplete not working**
    - Check that `VITE_GOOGLE_MAPS_API_KEY` is correctly set
    - Verify Maps JavaScript API and Places API are enabled
    - Check browser console for API key errors
    - Ensure API key is not restricted to wrong domains
+   - **Most common**: Add your current domain to the API key's HTTP referrer restrictions
 
-5. **Database connection issues**
+6. **Database connection issues**
    - Verify `VITE_SUPABASE_DATABASE_URL` and `VITE_SUPABASE_ANON_KEY` are correct
    - Check that RLS policies are properly configured
 
@@ -218,5 +243,6 @@ If you encounter issues:
 3. Verify all API keys are valid and have proper quotas
 4. Ensure all required APIs are enabled in Google Cloud Console
 5. Test location autocomplete by typing in location fields
+6. **For RefererNotAllowedMapError**: Add your current URL to the Google Maps API key restrictions
 
 The application should now be fully functional with real API connections and proper location validation!
