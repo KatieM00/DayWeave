@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
@@ -17,6 +17,7 @@ interface SignupFormData {
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signUp, user, loading: authLoading } = useAuth();
   
   const [isLoading, setIsLoading] = useState(false);
@@ -32,12 +33,37 @@ const SignupPage: React.FC = () => {
   });
   const [errors, setErrors] = useState<Partial<SignupFormData & { general: string }>>({});
 
-  // Redirect if already authenticated
+  // Handle successful authentication - redirect back to where they came from
   useEffect(() => {
     if (user && !authLoading) {
-      navigate('/', { replace: true });
+      // Get the return URL from location state or default to current page
+      const from = (location.state as any)?.from;
+      
+      if (from && from.pathname) {
+        // User came from a specific page, go back there
+        console.log('Redirecting back to:', from.pathname);
+        navigate(from.pathname, { replace: true });
+      } else {
+        // Check if they were on a plan page before auth
+        const currentPlan = sessionStorage.getItem('dayweave_current_plan');
+        if (currentPlan) {
+          try {
+            const planData = JSON.parse(currentPlan);
+            if (planData.currentUrl && planData.currentUrl !== window.location.href) {
+              console.log('Redirecting back to plan page:', planData.currentUrl);
+              window.location.href = planData.currentUrl;
+              return;
+            }
+          } catch (error) {
+            console.error('Error parsing stored plan data:', error);
+          }
+        }
+        
+        // Default: stay on current page if already authenticated
+        console.log('User authenticated, staying on current page');
+      }
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, location]);
 
   const getPasswordStrength = (password: string) => {
     let strength = 0;
@@ -155,6 +181,47 @@ const SignupPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center">
         <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  // If user is already authenticated, show a message instead of redirecting
+  if (user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 py-12 px-4">
+        <div className="container mx-auto max-w-md">
+          <Card>
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-primary-800 mb-4">Already Signed In</h1>
+              <p className="text-neutral-600 mb-6">
+                You're already signed in as {user.email}
+              </p>
+              <div className="space-y-3">
+                <Button
+                  variant="primary"
+                  fullWidth
+                  onClick={() => {
+                    const from = (location.state as any)?.from;
+                    if (from && from.pathname) {
+                      navigate(from.pathname, { replace: true });
+                    } else {
+                      navigate('/', { replace: true });
+                    }
+                  }}
+                >
+                  Continue
+                </Button>
+                <Button
+                  variant="outline"
+                  fullWidth
+                  onClick={() => navigate('/my-plans')}
+                >
+                  View My Plans
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     );
   }

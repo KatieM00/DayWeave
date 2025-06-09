@@ -81,7 +81,8 @@ const SurprisePlanPage: React.FC = () => {
   };
 
   const handleSavePlan = () => {
-    alert('This would save the plan to your account in the full application!');
+    // This will be handled by the ItineraryView component now
+    console.log('Save plan triggered');
   };
 
   const handleUpdatePlan = (updatedPlan: DayPlan) => {

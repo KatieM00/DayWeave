@@ -65,11 +65,15 @@ export const usePlans = () => {
         .from('plans')
         .update(updateData)
         .eq('id', planId)
-        .select()
-        .single();
+        .select();
 
       if (updateError) throw updateError;
-      return data;
+      
+      if (!data || data.length === 0) {
+        throw new Error('Plan not found or you do not have permission to update it');
+      }
+      
+      return data[0];
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update plan';
       setError(message);

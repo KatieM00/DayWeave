@@ -51,7 +51,7 @@ VITE_GOOGLE_MAPS_API_KEY=your_client_side_google_maps_api_key
 ```
 
 **⚠️ IMPORTANT**: You need TWO Google Maps API keys:
-- `VITE_GOOGLE_MAPS_API_KEY`: For client-side location autocomplete (goes in `.env`)
+- `VITE_GOOGLE_MAPS_API_KEY`: For client-side location autocomplete and geocoding (goes in `.env`)
 - `GOOGLE_API_KEY`: For server-side geocoding and places search (Supabase secret only)
 
 ### 2. Google Maps API Setup
@@ -62,6 +62,7 @@ VITE_GOOGLE_MAPS_API_KEY=your_client_side_google_maps_api_key
 3. Enable these APIs:
    - **Maps JavaScript API**
    - **Places API**
+   - **Geocoding API** (required for current location features)
 4. Create a new API key:
    - Go to APIs & Services → Credentials
    - Click "Create Credentials" → "API Key"
@@ -76,6 +77,13 @@ VITE_GOOGLE_MAPS_API_KEY=your_client_side_google_maps_api_key
      - `*.netlify.app/*` (for Netlify deployment)
      - `yourdomain.com/*` (replace with your actual domain)
      - `*.yourdomain.com/*` (for subdomains)
+   - Save the changes
+6. **CRITICAL**: Configure API restrictions:
+   - Under "API restrictions", select "Restrict key"
+   - Enable these APIs:
+     - **Maps JavaScript API**
+     - **Places API**
+     - **Geocoding API**
    - Save the changes
 
 #### Step 2: Create Server-side API Key (GOOGLE_API_KEY)
@@ -93,6 +101,14 @@ If you encounter this error:
 3. Select your `VITE_GOOGLE_MAPS_API_KEY`
 4. Add the URL to the HTTP referrers list with `/*` at the end
 5. Save the changes and refresh your page
+
+**🚨 Fixing Geocoding Service Error**: 
+If you see "This API key is not authorized to use this service":
+1. Go to Google Cloud Console → APIs & Services → Credentials
+2. Select your `VITE_GOOGLE_MAPS_API_KEY`
+3. Under "API restrictions", ensure "Geocoding API" is enabled
+4. If using "Restrict key", add "Geocoding API" to the allowed APIs list
+5. Save changes and wait a few minutes for propagation
 
 ### 3. Secure API Key Configuration
 
@@ -212,23 +228,33 @@ All edge functions are automatically secured and handle CORS properly.
      5. Save changes and refresh your page
    - **Prevention**: Add common development URLs like `localhost:*`, `*.webcontainer-api.io/*`
 
-2. **"Google Maps API key not configured"**
+2. **"Geocoding Service: This API key is not authorized to use this service"**
+   - **Cause**: The client-side Google Maps API key doesn't have Geocoding API enabled
+   - **Quick Fix**:
+     1. Go to [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials
+     2. Select your `VITE_GOOGLE_MAPS_API_KEY`
+     3. Under "API restrictions", ensure "Geocoding API" is enabled
+     4. If using "Restrict key", add "Geocoding API" to the allowed APIs list
+     5. Save changes and wait a few minutes for propagation
+   - **Note**: This API is required for current location detection features
+
+3. **"Google Maps API key not configured"**
    - Check that `VITE_GOOGLE_MAPS_API_KEY` is set in your `.env` file
    - Ensure the API key is valid and not expired
    - Verify Maps JavaScript API and Places API are enabled in Google Cloud Console
 
-3. **Location autocomplete not working**
+4. **Location autocomplete not working**
    - Verify `VITE_GOOGLE_MAPS_API_KEY` is correctly configured
    - Check browser console for specific error messages
    - Ensure API key is not restricted to wrong domains
    - Make sure Maps JavaScript API and Places API are enabled
 
-4. **"Location not found" errors**
+5. **"Location not found" errors**
    - Make sure users select from autocomplete suggestions
    - Verify server-side `GOOGLE_API_KEY` is set in Supabase secrets
    - Check Google Cloud Console for API quotas
 
-5. **Venue photos not loading**
+6. **Venue photos not loading**
    - Verify `GOOGLE_API_KEY` is configured in Supabase secrets
    - Check Places API is enabled and has quota
    - Some venues may not have photos available
@@ -238,7 +264,7 @@ All edge functions are automatically secured and handle CORS properly.
 **Client-side (in .env file):**
 - `VITE_SUPABASE_DATABASE_URL`: Supabase project URL
 - `VITE_SUPABASE_ANON_KEY`: Supabase anonymous key
-- `VITE_GOOGLE_MAPS_API_KEY`: Google Maps API key for autocomplete
+- `VITE_GOOGLE_MAPS_API_KEY`: Google Maps API key for autocomplete and geocoding
 
 **Server-side (Supabase secrets only):**
 - `GOOGLE_AI_API_KEY`: Google AI/Gemini API key

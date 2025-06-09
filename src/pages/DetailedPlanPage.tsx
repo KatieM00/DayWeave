@@ -55,6 +55,11 @@ const DetailedPlanPage: React.FC = () => {
     alert('This would generate a downloadable PDF in the full application!');
   };
 
+  const handleSavePlan = () => {
+    // This will be handled by the ItineraryView component now
+    console.log('Save plan triggered');
+  };
+
   const handleUpdatePlan = (updatedPlan: DayPlan) => {
     setDayPlan(updatedPlan);
   };
@@ -89,6 +94,7 @@ const DetailedPlanPage: React.FC = () => {
               isSurpriseMode={false}
               onSharePlan={handleSharePlan}
               onExportPDF={handleExportPDF}
+              onSavePlan={handleSavePlan}
               onUpdatePlan={handleUpdatePlan}
             />
           </div>

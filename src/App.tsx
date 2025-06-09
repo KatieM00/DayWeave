@@ -37,9 +37,9 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
-// Public Route Component (redirects authenticated users)
+// Public Route Component - NO AUTOMATIC REDIRECTS
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { loading } = useAuth();
 
   if (loading) {
     return (
@@ -49,10 +49,7 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     );
   }
 
-  if (user) {
-    return <Navigate to="/" replace />;
-  }
-
+  // Always render the children - no automatic redirects
   return <>{children}</>;
 };
 
@@ -70,7 +67,7 @@ function AppContent() {
           {/* Shared plan route - public access */}
           <Route path="/share/:shareableLinkId" element={<SharedPlanPage />} />
           
-          {/* Public routes - redirect if authenticated */}
+          {/* Public routes - NO automatic redirects */}
           <Route 
             path="/login" 
             element={

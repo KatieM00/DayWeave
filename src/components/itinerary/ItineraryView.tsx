@@ -23,12 +23,14 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import Card from '../common/Card';
 import Button from '../common/Button';
 import Input from '../common/Input';
+import AuthPrompt from '../common/AuthPrompt';
 import { DayPlan, WeatherForecast, ItineraryEvent, Activity } from '../../types';
 import ItineraryItem from './ItineraryItem';
 import { generateTravelSegment } from '../../utils/mockData';
 import { getActivitySuggestions } from '../../services/activitySuggestions';
 import { searchPlaces, getPlaceDetails, generateShareableLink } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { usePlans } from '../../hooks/usePlans';
 
 interface ItineraryViewProps {
   dayPlan: DayPlan;
@@ -50,6 +52,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   onUpdatePlan
 }) => {
   const { user } = useAuth();
+  const { savePlan, updatePlan, loading: plansLoading } = usePlans();
   const [isEditing, setIsEditing] = useState(false);
   const [showActivityChoices, setShowActivityChoices] = useState(false);
   const [selectedActivities, setSelectedActivities] = useState<Activity[]>([]);
@@ -72,6 +75,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   });
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [planName, setPlanName] = useState(
     `${dayPlan.preferences.startLocation} - ${new Date(dayPlan.date).toLocaleDateString('en-GB', { 
       month: 'long', 
@@ -88,6 +92,54 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   const [shareableUrl, setShareableUrl] = useState<string>('');
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [authAction, setAuthAction] = useState<'save' | 'share' | null>(null);
+
+  // Store the current plan data in sessionStorage to preserve it during auth flow
+  useEffect(() => {
+    const planData = {
+      dayPlan,
+      events,
+      planName,
+      revealProgress,
+      currentUrl: window.location.href
+    };
+    sessionStorage.setItem('dayweave_current_plan', JSON.stringify(planData));
+  }, [dayPlan, events, planName, revealProgress]);
+
+  // Handle post-authentication actions
+  useEffect(() => {
+    if (user && authAction) {
+      // User just authenticated, perform the pending action
+      if (authAction === 'save') {
+        handleSavePlanAfterAuth();
+      } else if (authAction === 'share') {
+        handleSharePlanAfterAuth();
+      }
+      setAuthAction(null);
+    }
+  }, [user, authAction]);
+
+  // Restore plan data after authentication (if needed)
+  useEffect(() => {
+    if (user) {
+      const storedPlan = sessionStorage.getItem('dayweave_current_plan');
+      if (storedPlan) {
+        try {
+          const planData = JSON.parse(storedPlan);
+          // Only restore if we're on the same URL and the plan data is valid
+          if (planData.currentUrl === window.location.href && planData.dayPlan) {
+            setEvents(planData.events || dayPlan.events);
+            setPlanName(planData.planName || planName);
+            setRevealProgress(planData.revealProgress || 0);
+          }
+        } catch (error) {
+          console.error('Error restoring plan data:', error);
+        }
+      }
+    }
+  }, [user, dayPlan]);
 
   useEffect(() => {
     if (showActivityChoices) {
@@ -312,20 +364,99 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
     setShowActivityChoices(false);
   };
 
-  const handleGenerateShareableLink = async () => {
+  const handleSavePlan = async () => {
     if (!user) {
-      alert('Please log in to share your plan.');
+      setAuthAction('save');
+      setShowAuthPrompt(true);
       return;
     }
 
-    if (!dayPlan.id) {
+    await handleSavePlanAfterAuth();
+  };
+
+  const handleSavePlanAfterAuth = async (): Promise<string | null> => {
+    setIsSaving(true);
+    try {
+      const planToSave = {
+        ...dayPlan,
+        title: planName,
+        events
+      };
+
+      let savedPlanId: string;
+
+      if (dayPlan.id) {
+        // Update existing plan
+        await updatePlan(dayPlan.id, planToSave);
+        savedPlanId = dayPlan.id;
+      } else {
+        // Save new plan
+        const savedPlan = await savePlan(planToSave);
+        savedPlanId = savedPlan?.id || '';
+        
+        // Update the dayPlan with the new ID so sharing works
+        if (onUpdatePlan && savedPlan) {
+          onUpdatePlan({
+            ...planToSave,
+            id: savedPlan.id
+          });
+        }
+      }
+
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+      setShowSaveDialog(false);
+      
+      // Clear stored plan data after successful save
+      sessionStorage.removeItem('dayweave_current_plan');
+      
+      // Call the original onSavePlan if provided
+      onSavePlan?.();
+
+      return savedPlanId;
+    } catch (error) {
+      console.error('Error saving plan:', error);
+      alert('Failed to save plan. Please try again.');
+      return null;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSharePlan = async () => {
+    if (!user) {
+      setAuthAction('share');
+      setShowAuthPrompt(true);
+      return;
+    }
+
+    await handleSharePlanAfterAuth();
+  };
+
+  const handleSharePlanAfterAuth = async () => {
+    let planIdToShare = dayPlan.id;
+
+    if (!planIdToShare) {
+      // If plan isn't saved yet, save it first
+      planIdToShare = await handleSavePlanAfterAuth();
+      if (!planIdToShare) {
+        alert('Failed to save plan. Please try again before sharing.');
+        return;
+      }
+    }
+
+    await handleGenerateShareableLink(planIdToShare);
+  };
+
+  const handleGenerateShareableLink = async (planId: string) => {
+    if (!planId) {
       alert('Please save your plan first before sharing.');
       return;
     }
 
     setIsGeneratingLink(true);
     try {
-      const result = await generateShareableLink(dayPlan.id);
+      const result = await generateShareableLink(planId);
       setShareableUrl(result.shareableUrl);
       setShowShareDialog(true);
     } catch (error) {
@@ -345,6 +476,26 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
       console.error('Failed to copy link:', error);
       alert('Failed to copy link to clipboard');
     }
+  };
+
+  const recalculateTravel = (activities: Activity[], preferences: any) => {
+    const travels: any[] = [];
+    
+    for (let i = 0; i < activities.length - 1; i++) {
+      const currentActivity = activities[i];
+      const nextActivity = activities[i + 1];
+      
+      const travel = generateTravelSegment(
+        currentActivity.location,
+        nextActivity.location,
+        currentActivity.endTime,
+        preferences.transportModes
+      );
+      
+      travels.push(travel);
+    }
+    
+    return travels;
   };
 
   const WeatherCard = ({ forecast }: { forecast: WeatherForecast }) => (
@@ -554,12 +705,11 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
             </Button>
             <Button
               variant="primary"
-              onClick={() => {
-                onSavePlan?.();
-                setShowSaveDialog(false);
-              }}
+              onClick={handleSavePlan}
+              loading={isSaving}
+              disabled={isSaving || !planName.trim()}
             >
-              Save Plan
+              {isSaving ? 'Saving...' : 'Save Plan'}
             </Button>
           </div>
         </div>
@@ -639,6 +789,16 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
 
   return (
     <div className="max-w-2xl w-full mx-auto">
+      {/* Success notification */}
+      {saveSuccess && (
+        <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fadeIn">
+          <div className="flex items-center">
+            <Check className="w-5 h-5 mr-2" />
+            Plan saved successfully!
+          </div>
+        </div>
+      )}
+
       <Card className="mb-4">
         <div className="mb-4 pb-4 border-b border-neutral-200">
           <div className="flex justify-between items-start mb-4">
@@ -690,22 +850,21 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
         </div>
         
         <div className="flex gap-2">
-          {onSavePlan && (
-            <Button
-              variant="primary"
-              size="sm"
-              icon={<Save className="h-4 w-4" />}
-              onClick={() => setShowSaveDialog(true)}
-            >
-              Save Plan
-            </Button>
-          )}
+          <Button
+            variant="primary"
+            size="sm"
+            icon={<Save className="h-4 w-4" />}
+            onClick={() => setShowSaveDialog(true)}
+            loading={isSaving}
+          >
+            Save Plan
+          </Button>
           
           <Button
             variant="outline"
             size="sm"
             icon={<Share2 className="h-4 w-4" />}
-            onClick={user && dayPlan.id ? handleGenerateShareableLink : onSharePlan}
+            onClick={handleSharePlan}
             loading={isGeneratingLink}
             disabled={isGeneratingLink}
           >
@@ -861,19 +1020,18 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
       {showSaveDialog && <SaveDialog />}
       {showShareDialog && <ShareDialog />}
       
-      {onSavePlan && (
-        <div className="mt-8 flex justify-center">
-          <Button
-            variant="success"
-            size="lg"
-            icon={<Save className="h-5 w-5" />}
-            onClick={() => setShowSaveDialog(true)}
-            className="bg-green-600 hover:bg-green-700 text-white"
-          >
-            Save Day Plan
-          </Button>
-        </div>
-      )}
+      <AuthPrompt
+        isOpen={showAuthPrompt}
+        onClose={() => {
+          setShowAuthPrompt(false);
+          setAuthAction(null);
+        }}
+        title={authAction === 'save' ? "Save Your Plan" : "Share Your Plan"}
+        message={authAction === 'save' 
+          ? "Sign in to save your day plan and access it anytime. You'll also be able to share your plans with friends!"
+          : "Sign in to share your day plan with friends and family. Your plan will be saved automatically when you create a shareable link."
+        }
+      />
 
       <div className="text-center text-sm text-neutral-500 mb-8 mt-6">
         <p>Information may not be accurate at time of plan generation.</p>
