@@ -31,6 +31,7 @@ export const usePlans = () => {
           preferences: plan.preferences as any,
           weather_forecast: plan.weatherForecast || null,
           reveal_progress: plan.revealProgress || 100,
+          is_public: false, // Default to private
         })
         .select()
         .single();
@@ -176,14 +177,27 @@ export const usePlans = () => {
       setLoading(true);
       setError(null);
 
+      console.log('Fetching shared plan with ID:', shareableLinkId);
+
+      // Use the public query that doesn't require authentication
       const { data, error: fetchError } = await supabase
         .from('plans')
         .select('*')
         .eq('shareable_link_id', shareableLinkId)
+        .eq('is_public', true)
         .maybeSingle();
 
-      if (fetchError) throw fetchError;
-      if (!data) return null;
+      if (fetchError) {
+        console.error('Error fetching shared plan:', fetchError);
+        throw fetchError;
+      }
+      
+      if (!data) {
+        console.log('No shared plan found with ID:', shareableLinkId);
+        return null;
+      }
+
+      console.log('Successfully fetched shared plan:', data.title);
 
       // Transform database row to DayPlan object
       return {
@@ -200,6 +214,7 @@ export const usePlans = () => {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to fetch shared plan';
       setError(message);
+      console.error('Error in getPlanByShareableLinkId:', err);
       throw err;
     } finally {
       setLoading(false);

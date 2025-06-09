@@ -50,7 +50,7 @@ serve(async (req) => {
     // First, verify the plan exists and belongs to the user
     const { data: plan, error: fetchError } = await supabase
       .from('plans')
-      .select('id, user_id, title, shareable_link_id')
+      .select('id, user_id, title, shareable_link_id, is_public')
       .eq('id', planId)
       .eq('user_id', user.id)
       .single()
@@ -72,10 +72,13 @@ serve(async (req) => {
       
       console.log('Generated new shareable link ID:', shareableLinkId)
 
-      // Update the plan with the new shareable link ID
+      // Update the plan with the new shareable link ID and make it public
       const { error: updateError } = await supabase
         .from('plans')
-        .update({ shareable_link_id: shareableLinkId })
+        .update({ 
+          shareable_link_id: shareableLinkId,
+          is_public: true
+        })
         .eq('id', planId)
         .eq('user_id', user.id)
 
@@ -83,12 +86,24 @@ serve(async (req) => {
         console.error('Error updating plan with shareable link:', updateError)
         throw new Error('Failed to generate shareable link')
       }
+    } else if (!plan.is_public) {
+      // If shareable link exists but plan is not public, make it public
+      const { error: updateError } = await supabase
+        .from('plans')
+        .update({ is_public: true })
+        .eq('id', planId)
+        .eq('user_id', user.id)
+
+      if (updateError) {
+        console.error('Error making plan public:', updateError)
+        throw new Error('Failed to make plan shareable')
+      }
     }
 
     // Construct the shareable URL
-    // In production, this would be your actual domain
-    const baseUrl = req.headers.get('origin') || 'https://your-app-domain.com'
-    const shareableUrl = `${baseUrl}/share/${shareableLinkId}`
+    // Get the origin from the request headers
+    const origin = req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/') || 'https://your-app-domain.com'
+    const shareableUrl = `${origin}/share/${shareableLinkId}`
 
     console.log('Successfully generated shareable link:', shareableUrl)
 
