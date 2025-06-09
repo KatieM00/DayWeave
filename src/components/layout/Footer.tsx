@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
@@ -19,17 +20,18 @@ const Footer: React.FC = () => {
             <div>
               <h4 className="text-accent-300 font-medium mb-3">Quick Links</h4>
               <ul className="space-y-2">
-                <li><a href="/" className="text-neutral-300 hover:text-white transition-colors">Home</a></li>
-                <li><a href="/my-plans" className="text-neutral-300 hover:text-white transition-colors">My Plans</a></li>
-                <li><a href="/about" className="text-neutral-300 hover:text-white transition-colors">About</a></li>
+                <li><Link to="/" className="text-neutral-300 hover:text-white transition-colors">Home</Link></li>
+                <li><Link to="/my-plans" className="text-neutral-300 hover:text-white transition-colors">My Plans</Link></li>
+                <li><Link to="/about" className="text-neutral-300 hover:text-white transition-colors">About</Link></li>
               </ul>
             </div>
             
             <div>
               <h4 className="text-accent-300 font-medium mb-3">Legal</h4>
               <ul className="space-y-2">
-                <li><a href="/terms" className="text-neutral-300 hover:text-white transition-colors">Terms of Service</a></li>
-                <li><a href="/privacy" className="text-neutral-300 hover:text-white transition-colors">Privacy Policy</a></li>
+                <li><Link to="/legal" className="text-neutral-300 hover:text-white transition-colors">Legal Information</Link></li>
+                <li><Link to="/terms" className="text-neutral-300 hover:text-white transition-colors">Terms of Service</Link></li>
+                <li><Link to="/privacy" className="text-neutral-300 hover:text-white transition-colors">Privacy Policy</Link></li>
               </ul>
             </div>
             
@@ -47,6 +49,11 @@ const Footer: React.FC = () => {
         <div className="mt-8 pt-8 border-t border-neutral-700 text-center text-neutral-400 text-sm">
           <p>© {currentYear} DayWeave. All rights reserved.</p>
           <p className="mt-1">Information provided may not be accurate at time of plan generation. Please double-check all details before your planned day.</p>
+          <p className="mt-2">
+            <Link to="/legal" className="text-accent-300 hover:text-accent-200 underline">
+              View Legal Information & Disclaimers
+            </Link>
+          </p>
         </div>
       </div>
     </footer>

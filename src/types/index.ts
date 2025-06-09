@@ -34,6 +34,10 @@ export type ActivityVibe =
   | 'adventurous' 
   | 'cultural' 
   | 'active'
+  | 'romantic'
+  | 'thrill-seeking'
+  | 'mindful'
+  | 'luxurious'
   | 'mixed';
 
 export type AgeRestriction = 
@@ -86,6 +90,9 @@ export interface Activity {
   imageUrl?: string | null;
   contactInfo?: string;
   bookingLink?: string;
+  bookingRequired?: boolean;
+  bookingAdvice?: string;
+  ticketProvider?: string;
 }
 
 export interface Travel {
@@ -99,6 +106,9 @@ export interface Travel {
   cost: number;
   distance: number;
   isEndOfDay?: boolean;
+  bookingLink?: string;
+  bookingRequired?: boolean;
+  bookingAdvice?: string;
 }
 
 export interface WeatherForecast {

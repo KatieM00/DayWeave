@@ -64,7 +64,7 @@ const Header: React.FC = () => {
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
-            <nav className="flex space-x-6 mr-6">
+            <nav className="flex space-x-6">
               <Link 
                 to="/" 
                 className="hover:text-accent-300 transition-colors duration-200"
@@ -87,40 +87,8 @@ const Header: React.FC = () => {
               </Link>
             </nav>
 
+            {/* User Authentication */}
             <div className="flex items-center space-x-3">
-              {/* Currency Selector */}
-              <div className="relative">
-                <button
-                  onClick={() => setCurrencyDropdownOpen(!currencyDropdownOpen)}
-                  className="flex items-center space-x-1 text-white hover:text-accent-300 transition-colors duration-200 py-2 px-3 rounded-lg hover:bg-white/10"
-                >
-                  <Globe className="w-4 h-4" />
-                  <span className="text-lg">{currentCurrency.flag}</span>
-                  <span className="text-sm font-medium">{selectedCurrency}</span>
-                </button>
-
-                {currencyDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50 animate-fadeIn border border-neutral-200">
-                    {currencies.map((currency) => (
-                      <button
-                        key={currency.symbol}
-                        onClick={() => {
-                          setCurrency(currency.symbol);
-                          setCurrencyDropdownOpen(false);
-                        }}
-                        className={`w-full flex items-center px-4 py-2 text-sm hover:bg-neutral-50 transition-colors duration-200 ${
-                          selectedCurrency === currency.symbol ? 'bg-primary-50 text-primary-700' : 'text-neutral-700'
-                        }`}
-                      >
-                        <span className="text-lg mr-3">{currency.flag}</span>
-                        <span className="font-medium mr-2">{currency.symbol}</span>
-                        <span className="text-xs">{currency.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
               {user ? (
                 <UserDropdown userName={getUserName()} />
               ) : (
@@ -145,6 +113,39 @@ const Header: React.FC = () => {
                     </Button>
                   </Link>
                 </>
+              )}
+            </div>
+
+            {/* Currency Selector - Last position */}
+            <div className="relative">
+              <button
+                onClick={() => setCurrencyDropdownOpen(!currencyDropdownOpen)}
+                className="flex items-center space-x-2 text-white hover:text-accent-300 transition-colors duration-200 py-2 px-3 rounded-lg hover:bg-white/10 border border-white/20"
+              >
+                <Globe className="w-4 h-4" />
+                <span className="text-lg">{currentCurrency.flag}</span>
+                <span className="text-sm font-medium">{selectedCurrency}</span>
+              </button>
+
+              {currencyDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50 animate-fadeIn border border-neutral-200">
+                  {currencies.map((currency) => (
+                    <button
+                      key={currency.symbol}
+                      onClick={() => {
+                        setCurrency(currency.symbol);
+                        setCurrencyDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center px-4 py-2 text-sm hover:bg-neutral-50 transition-colors duration-200 ${
+                        selectedCurrency === currency.symbol ? 'bg-primary-50 text-primary-700' : 'text-neutral-700'
+                      }`}
+                    >
+                      <span className="text-lg mr-3">{currency.flag}</span>
+                      <span className="font-medium mr-2">{currency.symbol}</span>
+                      <span className="text-xs">{currency.name}</span>
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
           </div>
@@ -190,6 +191,30 @@ const Header: React.FC = () => {
               >
                 About
               </Link>
+              
+              {/* Currency Selector for Mobile */}
+              <div className="pt-2 border-t border-white/20">
+                <div className="text-accent-300 font-medium mb-2 text-sm">Currency</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {currencies.map((currency) => (
+                    <button
+                      key={currency.symbol}
+                      onClick={() => {
+                        setCurrency(currency.symbol);
+                        closeMobileMenu();
+                      }}
+                      className={`flex items-center p-2 rounded-md transition-colors duration-200 text-sm ${
+                        selectedCurrency === currency.symbol 
+                          ? 'bg-white/20 text-accent-300' 
+                          : 'text-white hover:bg-white/10'
+                      }`}
+                    >
+                      <span className="text-base mr-2">{currency.flag}</span>
+                      <span className="font-medium">{currency.symbol}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
               
               <div className="pt-4 border-t border-white/20">
                 {user ? (

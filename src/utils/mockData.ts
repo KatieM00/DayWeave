@@ -45,6 +45,12 @@ export const generateTravelSegment = (
   // Calculate cost (only for driving/taxi)
   const cost = mode === 'driving' ? Math.round(distance * 0.5 * 100) / 100 : 0;
   
+  // Determine if booking is required for this transport mode
+  const bookingRequired = mode === 'train' || (mode === 'bus' && distance > 10);
+  const bookingLink = bookingRequired ? 
+    (mode === 'train' ? 'https://www.trainline.com' : 'https://www.nationalexpress.com') : 
+    undefined;
+  
   return {
     id: `travel-${startTime}-${endTime}`.replace(/:/g, ''),
     startLocation,
@@ -54,7 +60,10 @@ export const generateTravelSegment = (
     duration: durationMinutes,
     mode,
     cost,
-    distance
+    distance,
+    bookingRequired,
+    bookingLink,
+    bookingAdvice: bookingRequired ? 'Book in advance for better prices' : undefined
   };
 };
 
@@ -98,7 +107,7 @@ export const recalculateTravel = (
   return travels;
 };
 
-// Sample activities with UK locations and pound sterling
+// Sample activities with UK locations and pound sterling - now with booking information
 export const mockActivities: Activity[] = [
   {
     id: '1',
@@ -113,7 +122,8 @@ export const mockActivities: Activity[] = [
     imageUrl: 'https://images.pexels.com/photos/6205791/pexels-photo-6205791.jpeg',
     address: '123 High Street, Brighton, BN1 1AA',
     contactInfo: '01273 123 456',
-    ratings: 4.7
+    ratings: 4.7,
+    bookingRequired: false
   },
   {
     id: '2',
@@ -128,7 +138,8 @@ export const mockActivities: Activity[] = [
     imageUrl: 'https://images.pexels.com/photos/1578750/pexels-photo-1578750.jpeg',
     address: 'Seven Sisters Country Park, Exceat, Seaford, BN25 4AD',
     contactInfo: '01323 423 197',
-    ratings: 4.9
+    ratings: 4.9,
+    bookingRequired: false
   },
   {
     id: '3',
@@ -143,7 +154,10 @@ export const mockActivities: Activity[] = [
     imageUrl: 'https://images.pexels.com/photos/5490901/pexels-photo-5490901.jpeg',
     address: '45 Market Street, Brighton, BN1 1HH',
     contactInfo: '01273 987 654',
-    ratings: 4.5
+    ratings: 4.5,
+    bookingRequired: true,
+    bookingLink: 'https://www.opentable.co.uk/the-garden-kitchen',
+    bookingAdvice: 'Booking recommended, especially for weekend lunch. Walk-ins accepted subject to availability.'
   },
   {
     id: '4',
@@ -159,7 +173,9 @@ export const mockActivities: Activity[] = [
     bookingLink: 'https://brightonmuseums.org.uk/brighton/tickets',
     address: 'Royal Pavilion Gardens, Brighton, BN1 1EE',
     contactInfo: '01273 290 900',
-    ratings: 4.6
+    ratings: 4.6,
+    bookingRequired: true,
+    bookingAdvice: 'Advance booking recommended for special exhibitions. General admission tickets available on the day.'
   },
   {
     id: '5',
@@ -174,7 +190,8 @@ export const mockActivities: Activity[] = [
     imageUrl: 'https://images.pexels.com/photos/635279/pexels-photo-635279.jpeg',
     address: 'Brighton Beach, Brighton, BN1 1NB',
     contactInfo: '',
-    ratings: 4.8
+    ratings: 4.8,
+    bookingRequired: false
   },
   {
     id: '6',
@@ -190,7 +207,10 @@ export const mockActivities: Activity[] = [
     bookingLink: 'https://www.saltroom-restaurant.co.uk/book',
     address: '106 Kings Road, Brighton, BN1 2FU',
     contactInfo: '01273 929 488',
-    ratings: 4.7
+    ratings: 4.7,
+    bookingRequired: true,
+    bookingAdvice: 'Essential to book in advance, especially for dinner. Popular restaurant with limited walk-in availability.',
+    ticketProvider: 'Direct booking via restaurant website'
   }
 ];
 

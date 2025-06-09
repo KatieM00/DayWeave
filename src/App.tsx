@@ -14,6 +14,7 @@ import UserPreferencesPage from './pages/UserPreferencesPage';
 import AccountPage from './pages/AccountPage';
 import SharedPlanPage from './pages/SharedPlanPage';
 import AboutPage from './pages/AboutPage';
+import LegalPage from './pages/LegalPage';
 
 // Components
 import Header from './components/layout/Header';
@@ -66,6 +67,7 @@ function AppContent() {
           <Route path="/surprise" element={<SurprisePlanPage />} />
           <Route path="/plan" element={<DetailedPlanPage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/legal" element={<LegalPage />} />
           
           {/* Shared plan route - public access */}
           <Route path="/share/:shareableLinkId" element={<SharedPlanPage />} />

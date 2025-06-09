@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Users, Clock, Compass, Activity, Coffee, Calendar, Bot as Boot, Bike, Car, Bus, Train, Plus, Sparkles } from 'lucide-react';
+import { MapPin, Users, Clock, Compass, Activity, Coffee, Calendar, Bot as Boot, Bike, Car, Bus, Train, Plus, Sparkles, Heart, Zap, Leaf, Gem } from 'lucide-react';
 import Button from '../common/Button';
 import Input from '../common/Input';
 import Card from '../common/Card';
@@ -76,6 +76,10 @@ const vibeOptions = [
   { value: 'adventurous', label: 'Adventurous', icon: <Compass className="h-6 w-6" /> },
   { value: 'cultural', label: 'Cultural', icon: <Activity className="h-6 w-6" /> },
   { value: 'active', label: 'Active', icon: <Users className="h-6 w-6" /> },
+  { value: 'romantic', label: 'Romantic', icon: <Heart className="h-6 w-6" /> },
+  { value: 'thrill-seeking', label: 'Thrill-seeking', icon: <Zap className="h-6 w-6" /> },
+  { value: 'mindful', label: 'Mindful', icon: <Leaf className="h-6 w-6" /> },
+  { value: 'luxurious', label: 'Luxurious', icon: <Gem className="h-6 w-6" /> },
 ];
 
 const activityOptions = [
@@ -576,16 +580,14 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                   </Button>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-sm text-neutral-700">Start Time</label>
-                    </div>
+                    <label className="block text-sm text-neutral-700 mb-2">Start Time</label>
                     <div className="flex gap-2">
                       <select
                         value={preferences.startTime ? convertTo12Hour(preferences.startTime).time : ''}
                         onChange={(e) => handleTimeChange('startTime', e.target.value)}
-                        className="flex-1 border-2 border-neutral-300 rounded-md p-2 focus:border-primary-500 focus:outline-none"
+                        className="flex-1 border-2 border-neutral-300 rounded-md p-2 focus:border-primary-500 focus:outline-none text-sm md:text-base"
                       >
                         <option value="">Select time</option>
                         {timeOptions.map((time) => (
@@ -598,14 +600,18 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                         <button
                           type="button"
                           onClick={() => handleAmPmChange('startTime', 'AM')}
-                          className={`px-3 py-2 text-sm ${startTimeAmPm === 'AM' ? 'bg-primary-500 text-white' : 'bg-white text-neutral-700'}`}
+                          className={`px-2 md:px-3 py-2 text-xs md:text-sm font-medium transition-colors ${
+                            startTimeAmPm === 'AM' ? 'bg-primary-500 text-white' : 'bg-white text-neutral-700 hover:bg-neutral-50'
+                          }`}
                         >
                           AM
                         </button>
                         <button
                           type="button"
                           onClick={() => handleAmPmChange('startTime', 'PM')}
-                          className={`px-3 py-2 text-sm ${startTimeAmPm === 'PM' ? 'bg-primary-500 text-white' : 'bg-white text-neutral-700'}`}
+                          className={`px-2 md:px-3 py-2 text-xs md:text-sm font-medium transition-colors ${
+                            startTimeAmPm === 'PM' ? 'bg-primary-500 text-white' : 'bg-white text-neutral-700 hover:bg-neutral-50'
+                          }`}
                         >
                           PM
                         </button>
@@ -617,12 +623,12 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                   </div>
                   
                   <div>
-                    <label className="block text-sm text-neutral-700 mb-1">End Time</label>
+                    <label className="block text-sm text-neutral-700 mb-2">End Time</label>
                     <div className="flex gap-2">
                       <select
                         value={preferences.endTime ? convertTo12Hour(preferences.endTime).time : ''}
                         onChange={(e) => handleTimeChange('endTime', e.target.value)}
-                        className="flex-1 border-2 border-neutral-300 rounded-md p-2 focus:border-primary-500 focus:outline-none"
+                        className="flex-1 border-2 border-neutral-300 rounded-md p-2 focus:border-primary-500 focus:outline-none text-sm md:text-base"
                       >
                         <option value="">Select time</option>
                         {timeOptions.map((time) => (
@@ -635,14 +641,18 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                         <button
                           type="button"
                           onClick={() => handleAmPmChange('endTime', 'AM')}
-                          className={`px-3 py-2 text-sm ${endTimeAmPm === 'AM' ? 'bg-primary-500 text-white' : 'bg-white text-neutral-700'}`}
+                          className={`px-2 md:px-3 py-2 text-xs md:text-sm font-medium transition-colors ${
+                            endTimeAmPm === 'AM' ? 'bg-primary-500 text-white' : 'bg-white text-neutral-700 hover:bg-neutral-50'
+                          }`}
                         >
                           AM
                         </button>
                         <button
                           type="button"
                           onClick={() => handleAmPmChange('endTime', 'PM')}
-                          className={`px-3 py-2 text-sm ${endTimeAmPm === 'PM' ? 'bg-primary-500 text-white' : 'bg-white text-neutral-700'}`}
+                          className={`px-2 md:px-3 py-2 text-xs md:text-sm font-medium transition-colors ${
+                            endTimeAmPm === 'PM' ? 'bg-primary-500 text-white' : 'bg-white text-neutral-700 hover:bg-neutral-50'
+                          }`}
                         >
                           PM
                         </button>
@@ -801,14 +811,14 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                         key={option.value}
                         onClick={() => handleVibeToggle(option.value as ActivityVibe)}
                         className={`
-                          p-4 border-2 rounded-lg text-left transition-all flex items-center gap-3
+                          h-28 sm:h-32 p-4 border-2 rounded-lg text-left transition-all flex flex-col items-center justify-center gap-2
                           ${isSelected
                             ? 'border-primary-500 bg-primary-50 text-primary-700'
                             : 'border-neutral-300 hover:border-primary-300'}
                         `}
                       >
                         {option.icon}
-                        <span className="font-medium">{option.label}</span>
+                        <span className="text-base sm:text-lg font-semibold text-center">{option.label}</span>
                       </button>
                     );
                   })}

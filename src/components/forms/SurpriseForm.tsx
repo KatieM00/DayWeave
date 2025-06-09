@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, LogIn, Users, Compass, DollarSign, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { MapPin, LogIn, Users, Compass, DollarSign, Sparkles, Eye, EyeOff, Heart, Zap, Leaf, Gem, Activity } from 'lucide-react';
 import Button from '../common/Button';
 import Input from '../common/Input';
 import Card from '../common/Card';
@@ -166,15 +166,17 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
       case 3:
         return (
           <div className="space-y-6 animate-fadeIn">
-            <h2 className="text-2xl font-bold text-primary-800 text-center mb-8">
-              How far shall we roam?
-            </h2>
-            
-            <div className="space-y-6">
-              <div className="flex justify-center gap-3 mb-6">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-primary-800 mb-4">
+                How far shall we roam?
+              </h2>
+              
+              {/* Miles/Hours toggle inline with question */}
+              <div className="flex justify-center gap-3">
                 <Button
                   variant={preferences.travelDistance.unit === 'miles' ? 'primary' : 'outline'}
                   onClick={() => handleChange('travelDistance', { ...preferences.travelDistance, unit: 'miles' })}
+                  size="sm"
                 >
                   Miles
                 </Button>
@@ -182,23 +184,81 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
                 <Button
                   variant={preferences.travelDistance.unit === 'hours' ? 'primary' : 'outline'}
                   onClick={() => handleChange('travelDistance', { ...preferences.travelDistance, unit: 'hours' })}
+                  size="sm"
                 >
                   Hours
                 </Button>
               </div>
-              
-              <div className="grid grid-cols-4 gap-3">
-                {[1, 5, 10, 15, 20, 25].map((value) => (
-                  <Button
-                    key={value}
-                    variant={preferences.travelDistance.value === value ? 'primary' : 'outline'}
-                    onClick={() => handleChange('travelDistance', { ...preferences.travelDistance, value })}
-                    className={value > 15 ? 'col-span-2' : ''}
-                  >
-                    {value} {preferences.travelDistance.unit}
-                  </Button>
-                ))}
+            </div>
+            
+            <div className="space-y-4">
+              {/* Distance options in the requested layout */}
+              <div className="space-y-3">
+                {/* Line 1: 1, 2, 3, 4, 5 */}
+                <div className="grid grid-cols-5 gap-2 sm:gap-3">
+                  {[1, 2, 3, 4, 5].map((value) => (
+                    <Button
+                      key={value}
+                      variant={preferences.travelDistance.value === value ? 'primary' : 'outline'}
+                      onClick={() => handleChange('travelDistance', { ...preferences.travelDistance, value })}
+                      className="h-12 sm:h-14 flex items-center justify-center text-base sm:text-lg font-semibold min-w-0"
+                    >
+                      {value}
+                    </Button>
+                  ))}
+                </div>
+                
+                {/* Line 2: 5-8, 8-11, 11-14 */}
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                  {[
+                    { value: 6.5, label: '5 - 8' },
+                    { value: 9.5, label: '8 - 11' },
+                    { value: 12.5, label: '11 - 14' }
+                  ].map((option) => (
+                    <Button
+                      key={option.value}
+                      variant={preferences.travelDistance.value === option.value ? 'primary' : 'outline'}
+                      onClick={() => handleChange('travelDistance', { ...preferences.travelDistance, value: option.value })}
+                      className="h-12 sm:h-14 flex items-center justify-center text-base sm:text-lg font-semibold"
+                    >
+                      {option.label}
+                    </Button>
+                  ))}
+                </div>
+                
+                {/* Line 3: 15-20, 20-24, Over 24 */}
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                  {[
+                    { value: 17.5, label: '15 - 20' },
+                    { value: 22, label: '20 - 24' },
+                    { value: 25, label: 'Over 24' }
+                  ].map((option) => (
+                    <Button
+                      key={option.value}
+                      variant={preferences.travelDistance.value === option.value ? 'primary' : 'outline'}
+                      onClick={() => handleChange('travelDistance', { ...preferences.travelDistance, value: option.value })}
+                      className="h-12 sm:h-14 flex items-center justify-center text-base sm:text-lg font-semibold"
+                    >
+                      {option.label}
+                    </Button>
+                  ))}
+                </div>
               </div>
+              
+              {/* Display selected value */}
+              {preferences.travelDistance.value > 0 && (
+                <div className="text-center text-sm sm:text-base text-neutral-600 bg-neutral-50 p-3 rounded-lg">
+                  Selected: <span className="font-medium text-primary-600">
+                    {preferences.travelDistance.value === 25 ? 'Over 24' : 
+                     preferences.travelDistance.value === 22 ? '20 - 24' :
+                     preferences.travelDistance.value === 17.5 ? '15 - 20' :
+                     preferences.travelDistance.value === 12.5 ? '11 - 14' :
+                     preferences.travelDistance.value === 9.5 ? '8 - 11' :
+                     preferences.travelDistance.value === 6.5 ? '5 - 8' :
+                     preferences.travelDistance.value} {preferences.travelDistance.unit}
+                  </span>
+                </div>
+              )}
             </div>
             
             <Button
@@ -206,6 +266,7 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
               size="lg"
               fullWidth
               onClick={nextStep}
+              disabled={preferences.travelDistance.value === 0}
             >
               Next
             </Button>
@@ -275,12 +336,16 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
               Choose as many as you like!
             </p>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               {[
                 { value: 'relaxing', label: 'Relaxing', icon: Sparkles },
                 { value: 'adventurous', label: 'Adventurous', icon: Compass },
-                { value: 'cultural', label: 'Cultural', icon: Sparkles },
+                { value: 'cultural', label: 'Cultural', icon: Activity },
                 { value: 'active', label: 'Active', icon: Users },
+                { value: 'romantic', label: 'Romantic', icon: Heart },
+                { value: 'thrill-seeking', label: 'Thrill-seeking', icon: Zap },
+                { value: 'mindful', label: 'Mindful', icon: Leaf },
+                { value: 'luxurious', label: 'Luxurious', icon: Gem },
               ].map((option) => {
                 const Icon = option.icon;
                 const isSelected = Array.isArray(preferences.activityVibe) && 
@@ -292,10 +357,10 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
                     variant={isSelected ? 'primary' : 'outline'}
                     size="lg"
                     onClick={() => handleVibeToggle(option.value as ActivityVibe)}
-                    className="aspect-square flex flex-col items-center justify-center gap-2"
+                    className="h-28 sm:h-32 flex flex-col items-center justify-center gap-2"
                   >
                     <Icon className="h-8 w-8" />
-                    <span>{option.label}</span>
+                    <span className="text-base sm:text-lg font-semibold">{option.label}</span>
                   </Button>
                 );
               })}

@@ -70,7 +70,11 @@ Generate a JSON response with this exact structure:
         "activityType": ["outdoor", "culture"],
         "address": "Full street address if known",
         "ratings": 4.5,
-        "imageUrl": null
+        "imageUrl": null,
+        "bookingRequired": true_or_false,
+        "bookingLink": "https://booking-url.com" or null,
+        "bookingAdvice": "Specific booking advice" or null,
+        "ticketProvider": "Provider name" or null
       }
     },
     {
@@ -84,13 +88,24 @@ Generate a JSON response with this exact structure:
         "duration": minutes_as_number,
         "mode": "walking",
         "cost": cost_in_pounds,
-        "distance": distance_in_miles
+        "distance": distance_in_miles,
+        "bookingRequired": true_or_false,
+        "bookingLink": "https://booking-url.com" or null,
+        "bookingAdvice": "Booking advice for transport" or null
       }
     }
   ],
   "totalCost": total_pounds,
   "totalDuration": total_minutes
 }
+
+BOOKING REQUIREMENTS - Include booking information for:
+- Cinema/Theatre: Set bookingRequired=true, provide booking links (Odeon, Vue, Cineworld, etc.)
+- Restaurants: Set bookingRequired=true for popular restaurants, provide OpenTable/restaurant website
+- Museums/Attractions: Include booking links for timed entry venues
+- Train/Bus travel: Include booking links for advance tickets when cost-effective
+- Concert venues: Include ticket booking links
+- Tours: Include tour operator booking links
 
 CRITICAL REQUIREMENTS:
 - Use EXACT venue names as they appear on Google Maps for better search results
@@ -104,6 +119,8 @@ CRITICAL REQUIREMENTS:
 - Keep within specified budget range
 - Include meal options if meal preferences selected
 - Set imageUrl to null - Google Maps integration will handle images
+- Add booking information where appropriate with real booking URLs when possible
+- For bookingAdvice, provide specific guidance like "Book 2-3 days in advance" or "Walk-ins available but booking recommended"
 - Return ONLY valid JSON, no additional text
 - Make venue names specific and searchable (avoid generic terms like "local café")`
 

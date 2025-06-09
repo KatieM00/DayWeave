@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, MapPin, DollarSign, ChevronDown, ChevronUp, Activity, AlertTriangle, Camera, Star, Phone, Globe, Navigation } from 'lucide-react';
+import { Clock, MapPin, DollarSign, ChevronDown, ChevronUp, Activity, AlertTriangle, Camera, Star, Phone, Globe, Navigation, ExternalLink, Calendar, CreditCard } from 'lucide-react';
 import type { Activity as ActivityType, Travel, ItineraryEvent } from '../../types';
 import Card from '../common/Card';
 import Button from '../common/Button';
@@ -156,6 +156,25 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
     setCurrentImageIndex((prev) => (prev - 1 + mapsImages.length) % mapsImages.length);
   };
 
+  const getBookingButtonText = (activity: ActivityType) => {
+    if (activity.activityType.includes('movies')) return 'Book Tickets';
+    if (activity.activityType.includes('theatre')) return 'Book Show';
+    if (activity.activityType.includes('food')) return 'Make Reservation';
+    if (activity.activityType.includes('music')) return 'Buy Tickets';
+    if (activity.activityType.includes('tourist')) return 'Book Entry';
+    return 'Book Now';
+  };
+
+  const getBookingIcon = (activity: ActivityType) => {
+    if (activity.activityType.includes('movies') || activity.activityType.includes('theatre') || activity.activityType.includes('music')) {
+      return <CreditCard className="w-4 h-4" />;
+    }
+    if (activity.activityType.includes('food')) {
+      return <Calendar className="w-4 h-4" />;
+    }
+    return <ExternalLink className="w-4 h-4" />;
+  };
+
   const DirectionsWarning = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg p-6 max-w-md w-full animate-fadeIn">
@@ -253,10 +272,44 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Booking requirement notice in collapsed view - simple and clean */}
+        {activity.bookingRequired && !expanded && (
+          <div className="mt-3 flex items-center gap-2 text-amber-700 bg-amber-50 px-3 py-2 rounded-md border border-amber-200">
+            <Calendar className="h-4 w-4 flex-shrink-0" />
+            <span className="text-sm font-medium">Booking required</span>
+          </div>
+        )}
         
         {expanded && (
           <div className="mt-4 pt-4 border-t border-neutral-200">
             <p className="text-neutral-700 mb-4">{activity.description}</p>
+
+            {/* Detailed booking information in expanded view */}
+            {activity.bookingRequired && (
+              <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <Calendar className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex-grow">
+                    <p className="text-sm font-medium text-amber-800 mb-2">Booking Required</p>
+                    <p className="text-sm text-amber-700 mb-3">
+                      {activity.bookingAdvice || 'This activity requires advance booking. We recommend booking as soon as possible to secure your spot.'}
+                    </p>
+                    {activity.bookingLink && (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        icon={getBookingIcon(activity)}
+                        onClick={() => window.open(activity.bookingLink, '_blank')}
+                        className="bg-amber-600 hover:bg-amber-700 text-white border-amber-600"
+                      >
+                        {getBookingButtonText(activity)}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
             
             {/* Google Maps Images Gallery */}
             {mapsImages.length > 0 && (
@@ -362,6 +415,13 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
                 </div>
               )}
               
+              {activity.ticketProvider && (
+                <div>
+                  <h4 className="text-sm font-medium text-neutral-700 mb-1">Ticket Provider</h4>
+                  <p className="text-sm text-neutral-600">{activity.ticketProvider}</p>
+                </div>
+              )}
+              
               {googleMapsData?.opening_hours && (
                 <div className="md:col-span-2">
                   <h4 className="text-sm font-medium text-neutral-700 mb-1">Opening Hours</h4>
@@ -407,7 +467,7 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
               )}
             </div>
             
-            <div className="flex gap-3 mt-4">
+            <div className="flex flex-wrap gap-3 mt-4">
               <Button
                 variant="primary"
                 size="sm"
@@ -426,13 +486,27 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
                 View on Maps
               </Button>
               
-              {activity.bookingLink && (
+              {/* Only show booking button in expanded view if not already shown in booking notice */}
+              {activity.bookingLink && !activity.bookingRequired && (
                 <Button
                   variant="secondary"
                   size="sm"
+                  icon={getBookingIcon(activity)}
                   onClick={() => window.open(activity.bookingLink, '_blank')}
+                  className="bg-accent-500 hover:bg-accent-600 text-neutral-900"
                 >
-                  Book Now
+                  {getBookingButtonText(activity)}
+                </Button>
+              )}
+
+              {googleMapsData?.website && !activity.bookingLink && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={<Globe className="w-4 h-4" />}
+                  onClick={() => window.open(googleMapsData.website, '_blank')}
+                >
+                  Visit Website
                 </Button>
               )}
             </div>
@@ -487,16 +561,41 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
             <span className="mx-2">•</span>
             <span className="capitalize">{travel.mode}</span>
           </div>
+          
+          {/* Travel booking notice with integrated booking link */}
+          {travel.bookingRequired && (
+            <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-3 w-3 text-amber-600 flex-shrink-0" />
+                <div className="flex-grow">
+                  <span className="text-amber-800 font-medium">Booking required: </span>
+                  <span className="text-amber-700">{travel.bookingAdvice || 'Advance booking recommended'}</span>
+                  {travel.bookingLink && (
+                    <a
+                      href={travel.bookingLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-2 inline-flex items-center text-amber-700 hover:text-amber-800 font-medium underline"
+                    >
+                      Book Now <ExternalLink className="w-3 h-3 ml-1" />
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         
-        <a
-          href="#"
-          onClick={(e) => handleDirectionsClick(e, getDirectionsUrl())}
-          className="ml-2 text-secondary-600 hover:text-secondary-700 flex items-center"
-        >
-          <Navigation className="h-4 w-4 mr-1" />
-          <span className="text-sm">Directions</span>
-        </a>
+        <div className="flex items-center gap-2">
+          <a
+            href="#"
+            onClick={(e) => handleDirectionsClick(e, getDirectionsUrl())}
+            className="ml-2 text-secondary-600 hover:text-secondary-700 flex items-center"
+          >
+            <Navigation className="h-4 w-4 mr-1" />
+            <span className="text-sm">Directions</span>
+          </a>
+        </div>
       </div>
     );
   };
