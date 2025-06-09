@@ -49,6 +49,7 @@ export interface TravelDistance {
 }
 
 export interface MealPreferences {
+  includeBreakfast?: boolean;
   includeCoffee?: boolean;
   includeLunch?: boolean;
   includeDinner?: boolean;
@@ -62,7 +63,7 @@ export interface UserPreferences {
   travelDistance: TravelDistance;
   transportModes?: TransportMode[];
   activityTypes?: ActivityType[];
-  activityVibe?: ActivityVibe | ActivityVibe[];
+  activityVibe?: ActivityVibe[];
   ageRestrictions?: AgeRestriction[];
   planDate?: string;
   startTime?: string;

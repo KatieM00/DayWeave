@@ -1,13 +1,28 @@
 import React, { useState } from 'react';
-import { MapPin, LogIn, UserPlus, Menu, X } from 'lucide-react';
+import { MapPin, LogIn, UserPlus, Menu, X, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Button from '../common/Button';
 import UserDropdown from '../auth/UserDropdown';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCurrency } from '../../contexts/CurrencyContext';
 
 const Header: React.FC = () => {
   const { user, loading } = useAuth();
+  const { selectedCurrency, setCurrency } = useCurrency();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
+
+  const currencies = [
+    { symbol: '£', name: 'British Pound (GBP)', flag: '🇬🇧' },
+    { symbol: '$', name: 'US Dollar (USD)', flag: '🇺🇸' },
+    { symbol: '€', name: 'Euro (EUR)', flag: '🇪🇺' },
+    { symbol: '¥', name: 'Japanese Yen (JPY)', flag: '🇯🇵' },
+    { symbol: '₩', name: 'Korean Won (KRW)', flag: '🇰🇷' },
+    { symbol: '₽', name: 'Russian Ruble (RUB)', flag: '🇷🇺' },
+    { symbol: '₹', name: 'Indian Rupee (INR)', flag: '🇮🇳' },
+  ];
+
+  const currentCurrency = currencies.find(c => c.symbol === selectedCurrency) || currencies[0];
 
   const getUserName = () => {
     if (!user) return '';
@@ -73,6 +88,39 @@ const Header: React.FC = () => {
             </nav>
 
             <div className="flex items-center space-x-3">
+              {/* Currency Selector */}
+              <div className="relative">
+                <button
+                  onClick={() => setCurrencyDropdownOpen(!currencyDropdownOpen)}
+                  className="flex items-center space-x-1 text-white hover:text-accent-300 transition-colors duration-200 py-2 px-3 rounded-lg hover:bg-white/10"
+                >
+                  <Globe className="w-4 h-4" />
+                  <span className="text-lg">{currentCurrency.flag}</span>
+                  <span className="text-sm font-medium">{selectedCurrency}</span>
+                </button>
+
+                {currencyDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50 animate-fadeIn border border-neutral-200">
+                    {currencies.map((currency) => (
+                      <button
+                        key={currency.symbol}
+                        onClick={() => {
+                          setCurrency(currency.symbol);
+                          setCurrencyDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center px-4 py-2 text-sm hover:bg-neutral-50 transition-colors duration-200 ${
+                          selectedCurrency === currency.symbol ? 'bg-primary-50 text-primary-700' : 'text-neutral-700'
+                        }`}
+                      >
+                        <span className="text-lg mr-3">{currency.flag}</span>
+                        <span className="font-medium mr-2">{currency.symbol}</span>
+                        <span className="text-xs">{currency.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {user ? (
                 <UserDropdown userName={getUserName()} />
               ) : (

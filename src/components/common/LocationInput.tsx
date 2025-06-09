@@ -217,7 +217,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
 
   const displayError = error || loadError;
   const displayPlaceholder = isGoogleMapsLoaded 
-    ? "Start typing an address, hotel, venue, or landmark..."
+    ? "Start typing..."
     : placeholder;
 
   return (

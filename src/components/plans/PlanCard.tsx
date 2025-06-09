@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, MapPin, Calendar, DollarSign, Users, Edit2, Trash2 } from 'lucide-react';
+import { Clock, MapPin, Calendar, Users, Edit2, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Card from '../common/Card';
 import Button from '../common/Button';
@@ -48,7 +48,6 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan, onDelete }) => {
               {formatDuration(plan.totalDuration)}
             </div>
             <div className="flex items-center">
-              <DollarSign className="w-4 h-4 mr-1 text-primary-500" />
               £{plan.totalCost.toFixed(2)}
             </div>
             <div className="flex items-center">

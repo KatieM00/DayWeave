@@ -31,6 +31,7 @@ import { getActivitySuggestions } from '../../services/activitySuggestions';
 import { searchPlaces, getPlaceDetails, generateShareableLink } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePlans } from '../../hooks/usePlans';
+import { useCurrency } from '../../contexts/CurrencyContext';
 
 interface ItineraryViewProps {
   dayPlan: DayPlan;
@@ -52,6 +53,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   onUpdatePlan
 }) => {
   const { user } = useAuth();
+  const { selectedCurrency } = useCurrency();
   const { savePlan, updatePlan, loading: plansLoading } = usePlans();
   const [isEditing, setIsEditing] = useState(false);
   const [showActivityChoices, setShowActivityChoices] = useState(false);
@@ -619,7 +621,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
                             {activity.duration} min
                           </span>
                           <span className="flex items-center">
-                            £{activity.cost}
+                            {selectedCurrency}{activity.cost}
                           </span>
                           {activity.ratings && (
                             <span className="flex items-center">
@@ -839,7 +841,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
             </div>
             
             <div className="flex items-center text-neutral-600">
-              <span>£{dayPlan.totalCost.toFixed(2)} total</span>
+              <span>{selectedCurrency}{dayPlan.totalCost.toFixed(2)} total</span>
             </div>
             
             <div className="flex items-center text-neutral-600">

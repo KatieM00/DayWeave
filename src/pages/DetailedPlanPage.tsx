@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import Button from '../components/common/Button';
 import DetailedForm from '../components/forms/DetailedForm';
@@ -8,11 +8,13 @@ import HomeButton from '../components/common/HomeButton';
 import { UserPreferences, DayPlan } from '../types';
 import { Link } from 'react-router-dom';
 import { generateItinerary, getWeatherForecast } from '../services/api';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 const DetailedPlanPage: React.FC = () => {
   const [dayPlan, setDayPlan] = useState<DayPlan | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { selectedCurrency } = useCurrency();
   
   const handleSubmit = async (preferences: UserPreferences) => {
     setIsLoading(true);
@@ -122,7 +124,10 @@ const DetailedPlanPage: React.FC = () => {
                 onRetry={() => setError(null)}
               />
             ) : (
-              <DetailedForm onSubmit={handleSubmit} />
+              <DetailedForm 
+                onSubmit={handleSubmit} 
+                selectedCurrency={selectedCurrency}
+              />
             )}
           </>
         )}

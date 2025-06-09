@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { CurrencyProvider } from './contexts/CurrencyContext';
 
 // Pages
 import HomePage from './pages/HomePage';
@@ -12,6 +13,7 @@ import MyPlansPage from './pages/MyPlansPage';
 import UserPreferencesPage from './pages/UserPreferencesPage';
 import AccountPage from './pages/AccountPage';
 import SharedPlanPage from './pages/SharedPlanPage';
+import AboutPage from './pages/AboutPage';
 
 // Components
 import Header from './components/layout/Header';
@@ -63,6 +65,7 @@ function AppContent() {
           <Route path="/" element={<HomePage />} />
           <Route path="/surprise" element={<SurprisePlanPage />} />
           <Route path="/plan" element={<DetailedPlanPage />} />
+          <Route path="/about" element={<AboutPage />} />
           
           {/* Shared plan route - public access */}
           <Route path="/share/:shareableLinkId" element={<SharedPlanPage />} />
@@ -124,9 +127,11 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <AppContent />
-      </Router>
+      <CurrencyProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </CurrencyProvider>
     </AuthProvider>
   );
 }

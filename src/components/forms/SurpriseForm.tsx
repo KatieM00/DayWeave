@@ -89,7 +89,7 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
               </div>
               
               <LocationInput
-                placeholder="Start typing a city, town, or postcode..."
+                placeholder="Type location..."
                 value={preferences.startLocation}
                 onChange={(value) => handleChange('startLocation', value)}
                 error={errors.startLocation}
@@ -97,7 +97,7 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
               />
               
               <p className="text-sm text-neutral-600">
-                💡 Tip: Use the autocomplete suggestions for the best surprise recommendations. Try "London", "Edinburgh", or your local area.
+                💡 Leave end location blank if you want to return to your starting location.
               </p>
             </div>
             
@@ -228,7 +228,7 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
               >
                 <DollarSign className="h-8 w-8" />
                 <span className="font-semibold text-center">Budget</span>
-                <span className="text-sm text-center">£0-50</span>
+                <span className="text-sm text-center">0-50</span>
               </Button>
               
               <Button
@@ -239,7 +239,7 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
               >
                 <DollarSign className="h-8 w-8" />
                 <span className="font-semibold text-center">Moderate</span>
-                <span className="text-sm text-center">£50-150</span>
+                <span className="text-sm text-center">50-150</span>
               </Button>
               
               <Button
@@ -250,7 +250,7 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
               >
                 <DollarSign className="h-8 w-8" />
                 <span className="font-semibold text-center">Premium</span>
-                <span className="text-sm text-center">£150+</span>
+                <span className="text-sm text-center">150+</span>
               </Button>
             </div>
             
