@@ -11,13 +11,25 @@ interface SuggestionParams {
 
 export const getActivitySuggestions = async (params: SuggestionParams): Promise<Activity[]> => {
   try {
-    // Check cache first
-    const { data: cachedData, error: cacheError } = await supabase
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id || null;
+
+    // Build cache query conditionally based on user authentication
+    let cacheQuery = supabase
       .from('activity_suggestions_cache')
       .select('suggestions')
       .eq('location', params.location)
-      .gte('expires_at', new Date().toISOString())
-      .maybeSingle(); // Use maybeSingle() instead of single() to handle no results
+      .gte('expires_at', new Date().toISOString());
+
+    // Add user_id filter conditionally
+    if (userId) {
+      cacheQuery = cacheQuery.eq('user_id', userId);
+    } else {
+      cacheQuery = cacheQuery.is('user_id', null);
+    }
+
+    const { data: cachedData, error: cacheError } = await cacheQuery.maybeSingle();
 
     if (cacheError && cacheError.code !== 'PGRST116') {
       console.error('Cache query error:', cacheError);
@@ -35,10 +47,11 @@ export const getActivitySuggestions = async (params: SuggestionParams): Promise<
       travelDistance: { value: params.radius, unit: 'miles' }
     });
 
-    // Cache the results
+    // Cache the results with user_id
     const { error: insertError } = await supabase
       .from('activity_suggestions_cache')
       .insert({
+        user_id: userId,
         location: params.location,
         query_params: params,
         suggestions,

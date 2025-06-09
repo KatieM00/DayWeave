@@ -134,16 +134,34 @@ CRITICAL REQUIREMENTS:
     
     let itineraryData
     try {
-      const cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-      itineraryData = JSON.parse(cleanText)
+      // More robust JSON extraction
+      let cleanText = text.trim()
+      
+      // Remove markdown code blocks
+      cleanText = cleanText.replace(/```json\n?/g, '').replace(/```\n?/g, '')
+      
+      // Find the first opening brace and last closing brace
+      const firstBrace = cleanText.indexOf('{')
+      const lastBrace = cleanText.lastIndexOf('}')
+      
+      if (firstBrace === -1 || lastBrace === -1 || firstBrace >= lastBrace) {
+        throw new Error('No valid JSON object found in AI response')
+      }
+      
+      // Extract only the JSON content
+      const jsonContent = cleanText.substring(firstBrace, lastBrace + 1)
+      
+      console.log('Extracted JSON content:', jsonContent.substring(0, 200) + '...')
+      
+      itineraryData = JSON.parse(jsonContent)
     } catch (parseError) {
       console.error('JSON parsing error:', parseError)
       console.error('Raw AI response:', text)
-      throw new Error('Invalid JSON response from AI')
+      console.error('Attempted to parse:', text.substring(0, 500) + '...')
+      throw new Error(`Invalid JSON response from AI: ${parseError.message}`)
     }
     
     const dayPlan = {
-      id: crypto.randomUUID(),
       date,
       ...itineraryData,
       preferences,

@@ -10,6 +10,7 @@ interface AuthContextType {
   signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ data: any; error: AuthError | null }>;
   signOut: () => Promise<{ error: AuthError | null }>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
+  restoreStoredPlan: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,6 +23,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Plan restoration helper
+  const restoreStoredPlan = (): boolean => {
+    try {
+      const storedPlan = sessionStorage.getItem('dayweave_current_plan');
+      if (!storedPlan) return false;
+
+      const planData = JSON.parse(storedPlan);
+      
+      // Check if data is valid and not expired (1 hour)
+      const now = Date.now();
+      const expiry = 60 * 60 * 1000; // 1 hour
+      
+      if (!planData.timestamp || (now - planData.timestamp) > expiry) {
+        sessionStorage.removeItem('dayweave_current_plan');
+        return false;
+      }
+
+      // Set flag to indicate restoration should happen
+      sessionStorage.setItem('dayweave_should_restore', 'true');
+
+      // Dispatch restoration event
+      window.dispatchEvent(new CustomEvent('planRestoration', {
+        detail: planData
+      }));
+
+      console.log('Plan restoration triggered from AuthContext');
+      return true;
+    } catch (error) {
+      console.error('Error restoring stored plan:', error);
+      sessionStorage.removeItem('dayweave_current_plan');
+      return false;
+    }
+  };
 
   useEffect(() => {
     // Get initial session - check for existing valid session
@@ -61,12 +96,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         if (event === 'SIGNED_IN') {
           console.log('User signed in:', session?.user?.email);
-          // Don't redirect here - let the component handle it
+          
+          // Attempt to restore stored plan after successful sign-in
+          setTimeout(() => {
+            const restored = restoreStoredPlan();
+            if (restored) {
+              console.log('Plan restoration flag set after sign-in');
+            }
+          }, 100);
         } else if (event === 'SIGNED_OUT') {
           console.log('User signed out');
           // Clear any stored data
           localStorage.removeItem('dayweave_remember_me');
           sessionStorage.removeItem('dayweave_current_plan');
+          sessionStorage.removeItem('dayweave_should_restore');
         }
         
         setLoading(false);
@@ -116,6 +159,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Clear remember me flag and stored data
       localStorage.removeItem('dayweave_remember_me');
       sessionStorage.removeItem('dayweave_current_plan');
+      sessionStorage.removeItem('dayweave_should_restore');
       
       return result;
     } finally {
@@ -135,6 +179,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signIn,
     signOut,
     resetPassword,
+    restoreStoredPlan,
   };
 
   return (

@@ -23,7 +23,7 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import Card from '../common/Card';
 import Button from '../common/Button';
 import Input from '../common/Input';
-import AuthPrompt from '../common/AuthPrompt';
+import AuthModal from '../auth/AuthModal';
 import { DayPlan, WeatherForecast, ItineraryEvent, Activity } from '../../types';
 import ItineraryItem from './ItineraryItem';
 import { generateTravelSegment } from '../../utils/mockData';
@@ -32,6 +32,7 @@ import { searchPlaces, getPlaceDetails, generateShareableLink } from '../../serv
 import { useAuth } from '../../contexts/AuthContext';
 import { usePlans } from '../../hooks/usePlans';
 import { useCurrency } from '../../contexts/CurrencyContext';
+import { usePlanRestoration } from '../../hooks/usePlanRestoration';
 
 interface ItineraryViewProps {
   dayPlan: DayPlan;
@@ -77,7 +78,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   });
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
-  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [planName, setPlanName] = useState(
     `${dayPlan.preferences.startLocation} - ${new Date(dayPlan.date).toLocaleDateString('en-GB', { 
       month: 'long', 
@@ -96,9 +97,18 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   const [linkCopied, setLinkCopied] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [authAction, setAuthAction] = useState<'save' | 'share' | null>(null);
+  const [authAction, setAuthAction] = useState<'save' | 'share' | 'modify' | null>(null);
 
-  // Store the current plan data in sessionStorage to preserve it during auth flow
+  // Initialize plan restoration
+  const { storePlanData, clearStoredPlanData } = usePlanRestoration({
+    onPlanRestore: (storedData) => {
+      console.log('Plan restoration callback triggered');
+      // The plan data is already set by the parent component
+      // This callback can be used for additional restoration logic if needed
+    }
+  });
+
+  // Store plan data whenever it changes
   useEffect(() => {
     const planData = {
       dayPlan,
@@ -107,8 +117,8 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
       revealProgress,
       currentUrl: window.location.href
     };
-    sessionStorage.setItem('dayweave_current_plan', JSON.stringify(planData));
-  }, [dayPlan, events, planName, revealProgress]);
+    storePlanData(planData);
+  }, [dayPlan, events, planName, revealProgress, storePlanData]);
 
   // Handle post-authentication actions
   useEffect(() => {
@@ -118,36 +128,20 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
         handleSavePlanAfterAuth();
       } else if (authAction === 'share') {
         handleSharePlanAfterAuth();
+      } else if (authAction === 'modify') {
+        // User authenticated to modify plan, enable editing and show activity choices
+        setIsEditing(true);
+        setShowActivityChoices(true);
       }
       setAuthAction(null);
     }
   }, [user, authAction]);
 
-  // Restore plan data after authentication (if needed)
   useEffect(() => {
-    if (user) {
-      const storedPlan = sessionStorage.getItem('dayweave_current_plan');
-      if (storedPlan) {
-        try {
-          const planData = JSON.parse(storedPlan);
-          // Only restore if we're on the same URL and the plan data is valid
-          if (planData.currentUrl === window.location.href && planData.dayPlan) {
-            setEvents(planData.events || dayPlan.events);
-            setPlanName(planData.planName || planName);
-            setRevealProgress(planData.revealProgress || 0);
-          }
-        } catch (error) {
-          console.error('Error restoring plan data:', error);
-        }
-      }
-    }
-  }, [user, dayPlan]);
-
-  useEffect(() => {
-    if (showActivityChoices) {
+    if (showActivityChoices && user) {
       loadActivitySuggestions();
     }
-  }, [showActivityChoices]);
+  }, [showActivityChoices, user]);
 
   const loadActivitySuggestions = async () => {
     setIsLoadingSuggestions(true);
@@ -366,10 +360,20 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
     setShowActivityChoices(false);
   };
 
+  const handleAddNewActivity = () => {
+    if (!user) {
+      setAuthAction('modify');
+      setShowAuthModal(true);
+      return;
+    }
+
+    setShowActivityChoices(true);
+  };
+
   const handleSavePlan = async () => {
     if (!user) {
       setAuthAction('save');
-      setShowAuthPrompt(true);
+      setShowAuthModal(true);
       return;
     }
 
@@ -410,7 +414,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
       setShowSaveDialog(false);
       
       // Clear stored plan data after successful save
-      sessionStorage.removeItem('dayweave_current_plan');
+      clearStoredPlanData();
       
       // Call the original onSavePlan if provided
       onSavePlan?.();
@@ -428,7 +432,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   const handleSharePlan = async () => {
     if (!user) {
       setAuthAction('share');
-      setShowAuthPrompt(true);
+      setShowAuthModal(true);
       return;
     }
 
@@ -787,6 +791,31 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
     </div>
   );
 
+  const getAuthPromptContent = () => {
+    switch (authAction) {
+      case 'save':
+        return {
+          title: "Save Your Plan",
+          message: "Sign in to save your day plan and access it anytime. You'll also be able to share your plans with friends!"
+        };
+      case 'share':
+        return {
+          title: "Share Your Plan",
+          message: "Sign in to share your day plan with friends and family. Your plan will be saved automatically when you create a shareable link."
+        };
+      case 'modify':
+        return {
+          title: "Modify Your Plan",
+          message: "Sign in to add new activities and customize your day plan. You'll return to your completed plan after signing in, and all your current progress will be preserved."
+        };
+      default:
+        return {
+          title: "Sign In Required",
+          message: "Please sign in to continue."
+        };
+    }
+  };
+
   const visibleEvents = getVisibleEvents();
 
   return (
@@ -891,7 +920,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
             variant="primary"
             size="lg"
             icon={<Plus className="h-5 w-5" />}
-            onClick={() => setShowActivityChoices(true)}
+            onClick={handleAddNewActivity}
           >
             Add New Activity
           </Button>
@@ -1022,17 +1051,17 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
       {showSaveDialog && <SaveDialog />}
       {showShareDialog && <ShareDialog />}
       
-      <AuthPrompt
-        isOpen={showAuthPrompt}
+      <AuthModal
+        isOpen={showAuthModal}
         onClose={() => {
-          setShowAuthPrompt(false);
+          setShowAuthModal(false);
           setAuthAction(null);
         }}
-        title={authAction === 'save' ? "Save Your Plan" : "Share Your Plan"}
-        message={authAction === 'save' 
-          ? "Sign in to save your day plan and access it anytime. You'll also be able to share your plans with friends!"
-          : "Sign in to share your day plan with friends and family. Your plan will be saved automatically when you create a shareable link."
-        }
+        onSuccess={() => {
+          console.log('Auth modal success callback triggered');
+        }}
+        title={getAuthPromptContent().title}
+        message={getAuthPromptContent().message}
       />
 
       <div className="text-center text-sm text-neutral-500 mb-8 mt-6">

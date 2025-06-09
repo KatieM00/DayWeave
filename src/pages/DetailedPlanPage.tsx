@@ -9,12 +9,64 @@ import { UserPreferences, DayPlan } from '../types';
 import { Link } from 'react-router-dom';
 import { generateItinerary, getWeatherForecast } from '../services/api';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { usePlanRestoration } from '../hooks/usePlanRestoration';
 
 const DetailedPlanPage: React.FC = () => {
   const [dayPlan, setDayPlan] = useState<DayPlan | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(true);
+  const [hasAttemptedRestore, setHasAttemptedRestore] = useState(false);
   const { selectedCurrency } = useCurrency();
+
+  // Initialize plan restoration
+  const { storePlanData, restorePlanData, clearStoredPlanData } = usePlanRestoration({
+    onPlanRestore: (storedData) => {
+      console.log('Restoring detailed plan data:', storedData);
+      setDayPlan(storedData.dayPlan);
+      setShowForm(false); // Hide form when restoring a plan
+    }
+  });
+
+  // Check for stored plan data on component mount - but only restore if appropriate
+  useEffect(() => {
+    if (!hasAttemptedRestore) {
+      setHasAttemptedRestore(true);
+      
+      // Only attempt restoration if we have a specific indicator that we should restore
+      // For example, if coming from an auth flow or if there's a specific URL parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      const shouldRestore = urlParams.get('restore') === 'true' || 
+                           sessionStorage.getItem('dayweave_should_restore') === 'true';
+      
+      if (shouldRestore) {
+        const hasRestoredPlan = restorePlanData();
+        if (hasRestoredPlan) {
+          // Clear the restore flag
+          sessionStorage.removeItem('dayweave_should_restore');
+          return;
+        }
+      }
+      
+      // Default: show form for fresh visits
+      setShowForm(true);
+      setDayPlan(null);
+    }
+  }, [hasAttemptedRestore, restorePlanData]);
+
+  // Store plan data whenever it changes (but only after successful generation)
+  useEffect(() => {
+    if (dayPlan && !showForm) {
+      const planData = {
+        dayPlan,
+        events: dayPlan.events,
+        planName: dayPlan.title,
+        revealProgress: dayPlan.revealProgress || 100,
+        currentUrl: window.location.href
+      };
+      storePlanData(planData);
+    }
+  }, [dayPlan, showForm, storePlanData]);
   
   const handleSubmit = async (preferences: UserPreferences) => {
     setIsLoading(true);
@@ -40,6 +92,7 @@ const DetailedPlanPage: React.FC = () => {
       }
       
       setDayPlan(plan);
+      setShowForm(false); // Hide form after successful generation
       window.scrollTo(0, 0);
     } catch (err) {
       setError('Failed to generate your itinerary. Please try again.');
@@ -66,6 +119,14 @@ const DetailedPlanPage: React.FC = () => {
     setDayPlan(updatedPlan);
   };
 
+  const handleStartOver = () => {
+    setDayPlan(null);
+    setShowForm(true);
+    setError(null);
+    clearStoredPlanData();
+    window.scrollTo(0, 0);
+  };
+
   const getCurrentLocation = () => {
     if (!dayPlan?.events.length) return '';
     const lastEvent = dayPlan.events[dayPlan.events.length - 1];
@@ -75,45 +136,20 @@ const DetailedPlanPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-neutral-50 py-8 px-4">
       <div className="container mx-auto">
-        {dayPlan ? (
-          <div className="mb-6">
-            <div className="mb-6">
-              <Link to="/\" className="inline-flex items-center text-primary-600 hover:text-primary-700">
-                <ArrowLeft className="w-4 h-4 mr-1" />
-                Back to Home
-              </Link>
-            </div>
-            
-            <div className="text-center mb-10">
-              <h1 className="text-3xl font-bold text-primary-800 mb-2">Your Custom Day Plan</h1>
-              <p className="text-neutral-600">
-                Here's the custom day we've planned for you based on your preferences.
-              </p>
-            </div>
-            
-            <ItineraryView
-              dayPlan={dayPlan}
-              isSurpriseMode={false}
-              onSharePlan={handleSharePlan}
-              onExportPDF={handleExportPDF}
-              onSavePlan={handleSavePlan}
-              onUpdatePlan={handleUpdatePlan}
-            />
-          </div>
-        ) : (
+        <div className="mb-6">
+          <Link to="/" className="inline-flex items-center text-primary-600 hover:text-primary-700">
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Back to Home
+          </Link>
+        </div>
+
+        {/* Show form when no plan exists or when explicitly showing form */}
+        {showForm && !dayPlan && (
           <>
-            <div className="mb-6">
-              <Link to="/" className="inline-flex items-center text-primary-600 hover:text-primary-700">
-                <ArrowLeft className="w-4 h-4 mr-1" />
-                Back to Home
-              </Link>
-            </div>
-            
             <div className="text-center mb-10">
               <h1 className="text-3xl font-bold text-primary-800 mb-2">Help Me Plan</h1>
               <p className="text-neutral-600 max-w-2xl mx-auto">
-                Let's build your perfect day together. Fill out the form below with your preferences,
-                and we'll create a customized itinerary just for you.
+                Let's build your perfect day together, step by step.
               </p>
             </div>
             
@@ -129,6 +165,36 @@ const DetailedPlanPage: React.FC = () => {
                 selectedCurrency={selectedCurrency}
               />
             )}
+          </>
+        )}
+
+        {/* Show plan when it exists and form is hidden */}
+        {dayPlan && !showForm && (
+          <>
+            <div className="text-center mb-10">
+              <h1 className="text-3xl font-bold text-primary-800 mb-2">Your Custom Day Plan</h1>
+              <p className="text-neutral-600">
+                Here's the custom day we've planned for you based on your preferences.
+              </p>
+            </div>
+            
+            <ItineraryView
+              dayPlan={dayPlan}
+              isSurpriseMode={false}
+              onSharePlan={handleSharePlan}
+              onExportPDF={handleExportPDF}
+              onSavePlan={handleSavePlan}
+              onUpdatePlan={handleUpdatePlan}
+            />
+            
+            <div className="mt-8 text-center">
+              <Button
+                variant="outline"
+                onClick={handleStartOver}
+              >
+                Start Over
+              </Button>
+            </div>
           </>
         )}
       </div>
