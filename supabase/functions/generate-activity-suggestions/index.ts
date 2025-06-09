@@ -12,6 +12,51 @@ interface SuggestionsRequest {
   preferences: any;
 }
 
+function cleanJsonString(jsonString: string): string {
+  let cleaned = jsonString
+    // Remove markdown code blocks
+    .replace(/```json\n?/g, '').replace(/```\n?/g, '')
+    .trim();
+
+  // Find the first opening bracket and last closing bracket for array
+  const firstBracket = cleaned.indexOf('[');
+  const lastBracket = cleaned.lastIndexOf(']');
+  
+  if (firstBracket === -1 || lastBracket === -1 || firstBracket >= lastBracket) {
+    throw new Error('No valid JSON array found in AI response');
+  }
+  
+  // Extract only the JSON content
+  cleaned = cleaned.substring(firstBracket, lastBracket + 1);
+
+  // Apply comprehensive JSON cleaning
+  cleaned = cleaned
+    // Fix unquoted property names
+    .replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":')
+    // Fix single quotes to double quotes
+    .replace(/'/g, '"')
+    // Fix trailing commas before closing brackets/braces
+    .replace(/,(\s*[}\]])/g, '$1')
+    // Add missing commas between string values and new properties
+    .replace(/("(?:[^"\\]|\\.)*")\s*([a-zA-Z_"]\w*\s*:)/g, '$1,$2')
+    // Add missing commas between closing braces/brackets and new properties
+    .replace(/([}\]])\s*("?\w+"?\s*:)/g, '$1,$2')
+    // Add missing commas between values and opening braces/brackets
+    .replace(/("(?:[^"\\]|\\.)*")\s*([{\[])/g, '$1,$2')
+    // Add missing commas between numbers and new properties
+    .replace(/(\d)\s*("?\w+"?\s*:)/g, '$1,$2')
+    // Add missing commas between boolean values and new properties
+    .replace(/(true|false|null)\s*("?\w+"?\s*:)/g, '$1,$2')
+    // Fix multiple consecutive commas
+    .replace(/,+/g, ',')
+    // Remove commas before closing brackets
+    .replace(/,(\s*[}\]])/g, '$1')
+    // Normalize whitespace
+    .replace(/\s+/g, ' ');
+
+  return cleaned;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -64,11 +109,13 @@ Return ONLY a JSON array of activities with this structure:
     const text = response.text()
     
     console.log('AI response received, parsing JSON...')
+    console.log('Raw response preview:', text.substring(0, 200) + '...')
     
     let suggestions
     try {
-      const cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-      suggestions = JSON.parse(cleanText)
+      const cleanedJson = cleanJsonString(text);
+      console.log('Cleaned JSON preview:', cleanedJson.substring(0, 200) + '...')
+      suggestions = JSON.parse(cleanedJson)
     } catch (parseError) {
       console.error('JSON parsing error:', parseError)
       console.error('Raw AI response:', text)

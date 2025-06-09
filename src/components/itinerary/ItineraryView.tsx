@@ -32,6 +32,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { usePlans } from '../../hooks/usePlans';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { usePlanRestoration } from '../../hooks/usePlanRestoration';
+import { WeatherIcon } from '../weather';
 
 interface ItineraryViewProps {
   dayPlan: DayPlan;
@@ -504,13 +505,32 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   const WeatherCard = ({ forecast }: { forecast: WeatherForecast }) => (
     <Card className="bg-gradient-to-br from-secondary-100 to-secondary-50 mb-4">
       <div className="flex justify-between items-center">
-        <div>
-          <h3 className="font-medium text-secondary-800">Weather Forecast</h3>
-          <p className="text-secondary-700">{forecast.condition}</p>
+        <div className="flex items-center gap-4">
+          <div className="flex-shrink-0">
+            <WeatherIcon 
+              condition={forecast.icon || forecast.condition} 
+              size={64}
+              className="drop-shadow-sm"
+            />
+          </div>
+          <div>
+            <h3 className="font-medium text-secondary-800 text-lg">Weather Forecast</h3>
+            <p className="text-secondary-700 capitalize">{forecast.condition}</p>
+            {forecast.precipitation !== undefined && forecast.precipitation > 0 && (
+              <p className="text-sm text-secondary-600">
+                {forecast.precipitation}% chance of rain
+              </p>
+            )}
+            {forecast.windSpeed && (
+              <p className="text-sm text-secondary-600">
+                Wind: {forecast.windSpeed} km/h
+              </p>
+            )}
+          </div>
         </div>
         <div className="text-center">
-          <div className="text-3xl font-semibold text-secondary-800">{forecast.temperature}°</div>
-          <div className="text-xs text-secondary-600">Feels like {forecast.temperature - 2}°</div>
+          <div className="text-3xl font-semibold text-secondary-800">{forecast.temperature}°C</div>
+          <div className="text-xs text-secondary-600">Feels like {forecast.temperature - 2}°C</div>
         </div>
       </div>
     </Card>

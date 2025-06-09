@@ -30,6 +30,31 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
   const [mapsImages, setMapsImages] = useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  // Helper function to format time strings consistently
+  const formatTime = (timeString: string): string => {
+    if (!timeString) return '';
+    
+    // Remove any commas that might have been added by number formatting
+    const cleanTime = timeString.toString().replace(/,/g, '');
+    
+    // If it's already in HH:MM format, return as is
+    if (/^\d{1,2}:\d{2}$/.test(cleanTime)) {
+      const [hours, minutes] = cleanTime.split(':');
+      return `${hours.padStart(2, '0')}:${minutes}`;
+    }
+    
+    // If it's a number, try to convert it to time format
+    const numericTime = parseFloat(cleanTime);
+    if (!isNaN(numericTime)) {
+      const hours = Math.floor(numericTime);
+      const minutes = Math.round((numericTime - hours) * 60);
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    }
+    
+    // Return the original string if we can't parse it
+    return cleanTime;
+  };
+
   // Load Google Maps data when component mounts or expands
   useEffect(() => {
     console.log('🔍 ItineraryItem useEffect triggered:', {
@@ -264,7 +289,7 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
           <div className="flex flex-col items-end">
             <div className="flex items-center text-sm text-neutral-600">
               <Clock className="h-4 w-4 mr-1 text-primary-500" />
-              <span>{activity.startTime} - {activity.endTime}</span>
+              <span>{formatTime(activity.startTime)} - {formatTime(activity.endTime)}</span>
             </div>
             <div className="flex items-center text-sm text-neutral-600 mt-1">
               <DollarSign className="h-4 w-4 mr-1 text-primary-500" />
@@ -553,7 +578,7 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
         
         <div className="ml-3 flex-grow">
           <div className="flex items-center text-sm text-neutral-600">
-            <span>{travel.startTime} → {travel.endTime}</span>
+            <span>{formatTime(travel.startTime)} → {formatTime(travel.endTime)}</span>
             <span className="mx-2">•</span>
             <span>{Math.floor(travel.duration)} min</span>
             <span className="mx-2">•</span>

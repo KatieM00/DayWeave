@@ -16,6 +16,51 @@ interface ItineraryRequest {
 
 const MAX_RETRIES = 3;
 
+function cleanJsonString(jsonString: string): string {
+  let cleaned = jsonString
+    // Remove markdown code blocks
+    .replace(/```json\n?/g, '').replace(/```\n?/g, '')
+    .trim();
+
+  // Find the first opening brace and last closing brace
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  
+  if (firstBrace === -1 || lastBrace === -1 || firstBrace >= lastBrace) {
+    throw new Error('No valid JSON object found in AI response');
+  }
+  
+  // Extract only the JSON content
+  cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+
+  // Apply comprehensive JSON cleaning
+  cleaned = cleaned
+    // Fix unquoted property names
+    .replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":')
+    // Fix single quotes to double quotes
+    .replace(/'/g, '"')
+    // Fix trailing commas before closing brackets/braces
+    .replace(/,(\s*[}\]])/g, '$1')
+    // Add missing commas between string values and new properties
+    .replace(/("(?:[^"\\]|\\.)*")\s*([a-zA-Z_"]\w*\s*:)/g, '$1,$2')
+    // Add missing commas between closing braces/brackets and new properties
+    .replace(/([}\]])\s*("?\w+"?\s*:)/g, '$1,$2')
+    // Add missing commas between values and opening braces/brackets
+    .replace(/("(?:[^"\\]|\\.)*")\s*([{\[])/g, '$1,$2')
+    // Add missing commas between numbers and new properties
+    .replace(/(\d)\s*("?\w+"?\s*:)/g, '$1,$2')
+    // Add missing commas between boolean values and new properties
+    .replace(/(true|false|null)\s*("?\w+"?\s*:)/g, '$1,$2')
+    // Fix multiple consecutive commas
+    .replace(/,+/g, ',')
+    // Remove commas before closing brackets
+    .replace(/,(\s*[}\]])/g, '$1')
+    // Normalize whitespace
+    .replace(/\s+/g, ' ');
+
+  return cleaned;
+}
+
 async function generateItineraryWithRetry(model: any, prompt: string, attempt: number = 1): Promise<any> {
   console.log(`Attempt ${attempt}/${MAX_RETRIES}: Generating content with Gemini AI...`)
   
@@ -25,51 +70,24 @@ async function generateItineraryWithRetry(model: any, prompt: string, attempt: n
     const text = response.text()
     
     console.log(`Attempt ${attempt}: AI response received, parsing JSON...`)
-    
-    // More robust JSON extraction and parsing
-    let cleanText = text.trim()
-    
-    // Remove markdown code blocks
-    cleanText = cleanText.replace(/```json\n?/g, '').replace(/```\n?/g, '')
-    
-    // Find the first opening brace and last closing brace
-    const firstBrace = cleanText.indexOf('{')
-    const lastBrace = cleanText.lastIndexOf('}')
-    
-    if (firstBrace === -1 || lastBrace === -1 || firstBrace >= lastBrace) {
-      throw new Error('No valid JSON object found in AI response')
-    }
-    
-    // Extract only the JSON content
-    const jsonContent = cleanText.substring(firstBrace, lastBrace + 1)
-    
-    console.log(`Attempt ${attempt}: Extracted JSON content:`, jsonContent.substring(0, 200) + '...')
-    
-    // Additional JSON cleaning to handle common AI formatting issues
-    let cleanedJson = jsonContent
-      // Fix unquoted property names (common AI mistake)
-      .replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":')
-      // Fix single quotes to double quotes
-      .replace(/'/g, '"')
-      // Fix trailing commas
-      .replace(/,(\s*[}\]])/g, '$1')
-      // Fix multiple spaces
-      .replace(/\s+/g, ' ')
+    console.log(`Attempt ${attempt}: Raw response preview:`, text.substring(0, 200) + '...')
     
     try {
-      const itineraryData = JSON.parse(cleanedJson)
-      console.log(`Attempt ${attempt}: Successfully parsed JSON`)
-      return itineraryData
+      const cleanedJson = cleanJsonString(text);
+      console.log(`Attempt ${attempt}: Cleaned JSON preview:`, cleanedJson.substring(0, 200) + '...')
+      
+      const itineraryData = JSON.parse(cleanedJson);
+      console.log(`Attempt ${attempt}: Successfully parsed JSON`);
+      return itineraryData;
     } catch (parseError) {
-      console.error(`Attempt ${attempt}: JSON parsing error:`, parseError.message)
-      console.error(`Attempt ${attempt}: Raw AI response:`, text.substring(0, 500) + '...')
-      console.error(`Attempt ${attempt}: Cleaned JSON:`, cleanedJson.substring(0, 500) + '...')
+      console.error(`Attempt ${attempt}: JSON parsing error:`, parseError.message);
+      console.error(`Attempt ${attempt}: Raw AI response:`, text.substring(0, 500) + '...');
       
       if (attempt < MAX_RETRIES) {
-        console.log(`Attempt ${attempt}: Retrying due to JSON parsing error...`)
-        return await generateItineraryWithRetry(model, prompt, attempt + 1)
+        console.log(`Attempt ${attempt}: Retrying due to JSON parsing error...`);
+        return await generateItineraryWithRetry(model, prompt, attempt + 1);
       } else {
-        throw new Error(`Failed to parse JSON after ${MAX_RETRIES} attempts. Last error: ${parseError.message}`)
+        throw new Error(`Failed to parse JSON after ${MAX_RETRIES} attempts. Last error: ${parseError.message}`);
       }
     }
   } catch (error) {
