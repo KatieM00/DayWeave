@@ -19,7 +19,7 @@ const generateTimeOptions = () => {
   const options = [];
   for (let hour = 1; hour <= 12; hour++) {
     for (let minute = 0; minute < 60; minute += 15) {
-      const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      const timeString = `${hour}:${minute.toString().padStart(2, '0')}`;
       options.push(timeString);
     }
   }
@@ -140,6 +140,12 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
 
   // Generate budget options with selected currency
   const budgetOptions = [
+    { 
+      value: 'free', 
+      label: 'Free',
+      description: 'Walking & free activities only',
+      className: 'bg-green-50 border-green-300 text-green-800 hover:bg-green-100'
+    },
     { value: 'budget-low', label: `${selectedCurrency}0-20` },
     { value: 'budget-mid', label: `${selectedCurrency}20-35` },
     { value: 'budget', label: `${selectedCurrency}35-50` },
@@ -149,10 +155,19 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
   ];
 
   const handleChange = (field: keyof UserPreferences, value: any) => {
-    setPreferences(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setPreferences(prev => {
+      const newPrefs = {
+        ...prev,
+        [field]: value
+      };
+
+      // Auto-select walking when free budget is chosen
+      if (field === 'budgetRange' && value === 'free') {
+        newPrefs.transportModes = ['walking'];
+      }
+
+      return newPrefs;
+    });
     
     if (errors[field]) {
       setErrors(prev => {
@@ -278,7 +293,7 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
     }
     
     return {
-      time: `${hour12.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`,
+      time: `${hour12.toString()}:${minutes.toString().padStart(2, '0')}`,
       ampm
     };
   };
@@ -504,23 +519,49 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                 {errors.transportModes && (
                   <div className="text-error-default text-sm mb-2">{errors.transportModes}</div>
                 )}
+
+                {/* Free budget notice */}
+                {preferences.budgetRange === 'free' && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
+                    <p className="text-green-800 text-sm font-medium">
+                      🌱 Free budget mode: Only walking is available to keep costs at zero
+                    </p>
+                  </div>
+                )}
                 
                 <div className="grid grid-cols-5 gap-3">
-                  {transportOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => handleMultiSelectChange('transportModes', option.value, !preferences.transportModes?.includes(option.value))}
-                      className={`
-                        relative flex flex-col items-center justify-center h-20 p-3 border-2 rounded-md transition-all
-                        ${preferences.transportModes?.includes(option.value) 
-                          ? 'border-primary-500 bg-primary-50 text-primary-700' 
-                          : 'border-neutral-300 bg-white text-neutral-700 hover:border-primary-300'}
-                      `}
-                    >
-                      {option.icon}
-                      <span className="text-sm mt-2">{option.label}</span>
-                    </button>
-                  ))}
+                  {transportOptions.map((option) => {
+                    const isDisabled = preferences.budgetRange === 'free' && option.value !== 'walking';
+                    const isSelected = preferences.transportModes?.includes(option.value);
+                    
+                    return (
+                      <button
+                        key={option.value}
+                        onClick={() => {
+                          if (!isDisabled) {
+                            handleMultiSelectChange('transportModes', option.value, !isSelected);
+                          }
+                        }}
+                        disabled={isDisabled}
+                        className={`
+                          relative flex flex-col items-center justify-center h-20 p-3 border-2 rounded-md transition-all
+                          ${isSelected 
+                            ? 'border-primary-500 bg-primary-50 text-primary-700' 
+                            : isDisabled
+                              ? 'border-neutral-200 bg-neutral-100 text-neutral-400 cursor-not-allowed'
+                              : 'border-neutral-300 bg-white text-neutral-700 hover:border-primary-300'}
+                        `}
+                      >
+                        {option.icon}
+                        <span className="text-sm mt-2">{option.label}</span>
+                        {isDisabled && (
+                          <div className="absolute inset-0 bg-neutral-100 bg-opacity-50 rounded-md flex items-center justify-center">
+                            <span className="text-xs text-neutral-500 font-medium">Free mode</span>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -580,14 +621,16 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                   </Button>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4">
                   <div>
-                    <label className="block text-sm text-neutral-700 mb-2">Start Time</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-sm text-neutral-700">Start Time</label>
+                    </div>
                     <div className="flex gap-2">
                       <select
                         value={preferences.startTime ? convertTo12Hour(preferences.startTime).time : ''}
                         onChange={(e) => handleTimeChange('startTime', e.target.value)}
-                        className="flex-1 border-2 border-neutral-300 rounded-md p-2 focus:border-primary-500 focus:outline-none text-sm md:text-base"
+                        className="flex-1 border-2 border-neutral-300 rounded-md p-2 focus:border-primary-500 focus:outline-none"
                       >
                         <option value="">Select time</option>
                         {timeOptions.map((time) => (
@@ -600,18 +643,14 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                         <button
                           type="button"
                           onClick={() => handleAmPmChange('startTime', 'AM')}
-                          className={`px-2 md:px-3 py-2 text-xs md:text-sm font-medium transition-colors ${
-                            startTimeAmPm === 'AM' ? 'bg-primary-500 text-white' : 'bg-white text-neutral-700 hover:bg-neutral-50'
-                          }`}
+                          className={`px-3 py-2 text-sm ${startTimeAmPm === 'AM' ? 'bg-primary-500 text-white' : 'bg-white text-neutral-700'}`}
                         >
                           AM
                         </button>
                         <button
                           type="button"
                           onClick={() => handleAmPmChange('startTime', 'PM')}
-                          className={`px-2 md:px-3 py-2 text-xs md:text-sm font-medium transition-colors ${
-                            startTimeAmPm === 'PM' ? 'bg-primary-500 text-white' : 'bg-white text-neutral-700 hover:bg-neutral-50'
-                          }`}
+                          className={`px-3 py-2 text-sm ${startTimeAmPm === 'PM' ? 'bg-primary-500 text-white' : 'bg-white text-neutral-700'}`}
                         >
                           PM
                         </button>
@@ -623,12 +662,12 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                   </div>
                   
                   <div>
-                    <label className="block text-sm text-neutral-700 mb-2">End Time</label>
+                    <label className="block text-sm text-neutral-700 mb-1">End Time</label>
                     <div className="flex gap-2">
                       <select
                         value={preferences.endTime ? convertTo12Hour(preferences.endTime).time : ''}
                         onChange={(e) => handleTimeChange('endTime', e.target.value)}
-                        className="flex-1 border-2 border-neutral-300 rounded-md p-2 focus:border-primary-500 focus:outline-none text-sm md:text-base"
+                        className="flex-1 border-2 border-neutral-300 rounded-md p-2 focus:border-primary-500 focus:outline-none"
                       >
                         <option value="">Select time</option>
                         {timeOptions.map((time) => (
@@ -641,18 +680,14 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                         <button
                           type="button"
                           onClick={() => handleAmPmChange('endTime', 'AM')}
-                          className={`px-2 md:px-3 py-2 text-xs md:text-sm font-medium transition-colors ${
-                            endTimeAmPm === 'AM' ? 'bg-primary-500 text-white' : 'bg-white text-neutral-700 hover:bg-neutral-50'
-                          }`}
+                          className={`px-3 py-2 text-sm ${endTimeAmPm === 'AM' ? 'bg-primary-500 text-white' : 'bg-white text-neutral-700'}`}
                         >
                           AM
                         </button>
                         <button
                           type="button"
                           onClick={() => handleAmPmChange('endTime', 'PM')}
-                          className={`px-2 md:px-3 py-2 text-xs md:text-sm font-medium transition-colors ${
-                            endTimeAmPm === 'PM' ? 'bg-primary-500 text-white' : 'bg-white text-neutral-700 hover:bg-neutral-50'
-                          }`}
+                          className={`px-3 py-2 text-sm ${endTimeAmPm === 'PM' ? 'bg-primary-500 text-white' : 'bg-white text-neutral-700'}`}
                         >
                           PM
                         </button>
@@ -811,14 +846,14 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                         key={option.value}
                         onClick={() => handleVibeToggle(option.value as ActivityVibe)}
                         className={`
-                          h-28 sm:h-32 p-4 border-2 rounded-lg text-left transition-all flex flex-col items-center justify-center gap-2
+                          p-4 border-2 rounded-lg text-left transition-all flex items-center gap-3
                           ${isSelected
                             ? 'border-primary-500 bg-primary-50 text-primary-700'
                             : 'border-neutral-300 hover:border-primary-300'}
                         `}
                       >
                         {option.icon}
-                        <span className="text-base sm:text-lg font-semibold text-center">{option.label}</span>
+                        <span className="font-medium">{option.label}</span>
                       </button>
                     );
                   })}
@@ -892,16 +927,32 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                       key={option.value}
                       onClick={() => handleChange('budgetRange', option.value)}
                       className={`
-                        p-2 border-2 rounded-lg text-center transition-all flex flex-col items-center justify-center h-16
+                        p-3 border-2 rounded-lg text-center transition-all flex flex-col items-center justify-center h-20
                         ${preferences.budgetRange === option.value
-                          ? 'border-primary-500 bg-primary-50 text-primary-700'
+                          ? option.className || 'border-primary-500 bg-primary-50 text-primary-700'
                           : 'border-neutral-300 hover:border-primary-300'}
                       `}
                     >
                       <span className="text-sm font-semibold">{option.label}</span>
+                      {option.description && (
+                        <span className="text-xs mt-1 opacity-80">{option.description}</span>
+                      )}
                     </button>
                   ))}
                 </div>
+
+                {/* Free budget explanation */}
+                {preferences.budgetRange === 'free' && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-3">
+                    <h4 className="font-medium text-green-800 mb-2">🌱 Free Budget Mode</h4>
+                    <ul className="text-sm text-green-700 space-y-1">
+                      <li>• Focus on free activities: parks, beaches, walking trails, free museums</li>
+                      <li>• Walking-only transport to keep costs at zero</li>
+                      <li>• Budget-friendly meal suggestions: picnic spots, affordable cafes</li>
+                      <li>• Perfect for eco-friendly, healthy adventures</li>
+                    </ul>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-4">
@@ -1015,6 +1066,11 @@ const DetailedForm: React.FC<DetailedFormProps> = ({
                      preferences.groupSize === 2 ? 'Duo' :
                      preferences.groupSize === 3 ? 'Trio' : 
                      'Group (4+)'}
+                  </p>
+                  <p>
+                    <span className="font-medium">Budget:</span>{' '}
+                    {preferences.budgetRange === 'free' ? 'Free (Walking & free activities)' : 
+                     budgetOptions.find(opt => opt.value === preferences.budgetRange)?.label}
                   </p>
                   <p>
                     <span className="font-medium">Transport:</span>{' '}

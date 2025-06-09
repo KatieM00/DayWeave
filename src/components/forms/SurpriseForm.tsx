@@ -280,40 +280,79 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
               What's your budget looking like?
             </h2>
             
-            <div className="grid grid-cols-3 gap-4">
-              <Button
-                variant={preferences.budgetRange === 'budget' ? 'primary' : 'outline'}
-                size="lg"
+            <div className="grid grid-cols-2 gap-3">
+              {/* Free Budget Option */}
+              <button
+                onClick={() => handleChange('budgetRange', 'free')}
+                className={`
+                  p-4 border-2 rounded-lg text-center transition-all flex flex-col items-center justify-center h-24
+                  ${preferences.budgetRange === 'free'
+                    ? 'bg-green-50 border-green-300 text-green-800'
+                    : 'border-neutral-300 hover:border-green-300 hover:bg-green-50'}
+                `}
+              >
+                <span className="text-base font-semibold">Free</span>
+                <span className="text-xs mt-1 opacity-80">Walking & free activities</span>
+              </button>
+
+              {/* Budget Option */}
+              <button
                 onClick={() => handleChange('budgetRange', 'budget')}
-                className="aspect-square flex flex-col items-center justify-center gap-2 p-6"
+                className={`
+                  p-4 border-2 rounded-lg text-center transition-all flex flex-col items-center justify-center h-24
+                  ${preferences.budgetRange === 'budget'
+                    ? 'border-primary-500 bg-primary-50 text-primary-700'
+                    : 'border-neutral-300 hover:border-primary-300'}
+                `}
               >
-                <DollarSign className="h-8 w-8" />
-                <span className="font-semibold text-center">Budget</span>
-                <span className="text-sm text-center">0-50</span>
-              </Button>
+                <DollarSign className="h-6 w-6 mb-1" />
+                <span className="text-base font-semibold">Budget</span>
+                <span className="text-xs">0-50</span>
+              </button>
               
-              <Button
-                variant={preferences.budgetRange === 'moderate' ? 'primary' : 'outline'}
-                size="lg"
+              {/* Moderate Option */}
+              <button
                 onClick={() => handleChange('budgetRange', 'moderate')}
-                className="aspect-square flex flex-col items-center justify-center gap-2 p-6"
+                className={`
+                  p-4 border-2 rounded-lg text-center transition-all flex flex-col items-center justify-center h-24
+                  ${preferences.budgetRange === 'moderate'
+                    ? 'border-primary-500 bg-primary-50 text-primary-700'
+                    : 'border-neutral-300 hover:border-primary-300'}
+                `}
               >
-                <DollarSign className="h-8 w-8" />
-                <span className="font-semibold text-center">Moderate</span>
-                <span className="text-sm text-center">50-150</span>
-              </Button>
+                <DollarSign className="h-6 w-6 mb-1" />
+                <span className="text-base font-semibold">Moderate</span>
+                <span className="text-xs">50-150</span>
+              </button>
               
-              <Button
-                variant={preferences.budgetRange === 'premium' ? 'primary' : 'outline'}
-                size="lg"
+              {/* Premium Option */}
+              <button
                 onClick={() => handleChange('budgetRange', 'premium')}
-                className="aspect-square flex flex-col items-center justify-center gap-2 p-6"
+                className={`
+                  p-4 border-2 rounded-lg text-center transition-all flex flex-col items-center justify-center h-24
+                  ${preferences.budgetRange === 'premium'
+                    ? 'border-primary-500 bg-primary-50 text-primary-700'
+                    : 'border-neutral-300 hover:border-primary-300'}
+                `}
               >
-                <DollarSign className="h-8 w-8" />
-                <span className="font-semibold text-center">Premium</span>
-                <span className="text-sm text-center">150+</span>
-              </Button>
+                <DollarSign className="h-6 w-6 mb-1" />
+                <span className="text-base font-semibold">Premium</span>
+                <span className="text-xs">150+</span>
+              </button>
             </div>
+
+            {/* Free budget explanation */}
+            {preferences.budgetRange === 'free' && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h4 className="font-medium text-green-800 mb-2">🌱 Free Budget Mode</h4>
+                <ul className="text-sm text-green-700 space-y-1">
+                  <li>• Focus on free activities: parks, beaches, walking trails</li>
+                  <li>• Walking-only transport to keep costs at zero</li>
+                  <li>• Budget-friendly meal suggestions and picnic spots</li>
+                  <li>• Perfect for eco-friendly, healthy adventures</li>
+                </ul>
+              </div>
+            )}
             
             <Button
               variant="primary"

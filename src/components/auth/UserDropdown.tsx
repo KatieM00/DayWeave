@@ -76,14 +76,6 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ userName }) => {
             </button>
             
             <button
-              onClick={() => handleNavigation('/preferences')}
-              className="w-full flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors duration-200"
-            >
-              <User className="w-4 h-4 mr-3 text-neutral-500" />
-              Preferences
-            </button>
-            
-            <button
               onClick={() => handleNavigation('/account')}
               className="w-full flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors duration-200"
             >

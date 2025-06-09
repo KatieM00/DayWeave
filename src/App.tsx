@@ -10,7 +10,6 @@ import DetailedPlanPage from './pages/DetailedPlanPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import MyPlansPage from './pages/MyPlansPage';
-import UserPreferencesPage from './pages/UserPreferencesPage';
 import AccountPage from './pages/AccountPage';
 import SharedPlanPage from './pages/SharedPlanPage';
 import AboutPage from './pages/AboutPage';
@@ -96,14 +95,6 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <MyPlansPage />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/preferences" 
-            element={
-              <ProtectedRoute>
-                <UserPreferencesPage />
               </ProtectedRoute>
             } 
           />

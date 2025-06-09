@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   ChevronDown,
-  Download,
   Edit2,
   Link,
   Plus,
@@ -39,7 +38,6 @@ interface ItineraryViewProps {
   isSurpriseMode?: boolean;
   onRevealMore?: () => void;
   onSharePlan?: () => void;
-  onExportPDF?: () => void;
   onSavePlan?: () => void;
   onUpdatePlan?: (updatedPlan: DayPlan) => void;
 }
@@ -49,7 +47,6 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   isSurpriseMode = false,
   onRevealMore,
   onSharePlan,
-  onExportPDF,
   onSavePlan,
   onUpdatePlan
 }) => {
@@ -900,14 +897,6 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
             disabled={isGeneratingLink}
           >
             Share
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onExportPDF}
-          >
-            Export PDF
           </Button>
         </div>
       </Card>
