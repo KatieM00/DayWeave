@@ -14,6 +14,76 @@ interface ItineraryRequest {
   surpriseMode: boolean;
 }
 
+const MAX_RETRIES = 3;
+
+async function generateItineraryWithRetry(model: any, prompt: string, attempt: number = 1): Promise<any> {
+  console.log(`Attempt ${attempt}/${MAX_RETRIES}: Generating content with Gemini AI...`)
+  
+  try {
+    const result = await model.generateContent(prompt)
+    const response = await result.response
+    const text = response.text()
+    
+    console.log(`Attempt ${attempt}: AI response received, parsing JSON...`)
+    
+    // More robust JSON extraction and parsing
+    let cleanText = text.trim()
+    
+    // Remove markdown code blocks
+    cleanText = cleanText.replace(/```json\n?/g, '').replace(/```\n?/g, '')
+    
+    // Find the first opening brace and last closing brace
+    const firstBrace = cleanText.indexOf('{')
+    const lastBrace = cleanText.lastIndexOf('}')
+    
+    if (firstBrace === -1 || lastBrace === -1 || firstBrace >= lastBrace) {
+      throw new Error('No valid JSON object found in AI response')
+    }
+    
+    // Extract only the JSON content
+    const jsonContent = cleanText.substring(firstBrace, lastBrace + 1)
+    
+    console.log(`Attempt ${attempt}: Extracted JSON content:`, jsonContent.substring(0, 200) + '...')
+    
+    // Additional JSON cleaning to handle common AI formatting issues
+    let cleanedJson = jsonContent
+      // Fix unquoted property names (common AI mistake)
+      .replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":')
+      // Fix single quotes to double quotes
+      .replace(/'/g, '"')
+      // Fix trailing commas
+      .replace(/,(\s*[}\]])/g, '$1')
+      // Fix multiple spaces
+      .replace(/\s+/g, ' ')
+    
+    try {
+      const itineraryData = JSON.parse(cleanedJson)
+      console.log(`Attempt ${attempt}: Successfully parsed JSON`)
+      return itineraryData
+    } catch (parseError) {
+      console.error(`Attempt ${attempt}: JSON parsing error:`, parseError.message)
+      console.error(`Attempt ${attempt}: Raw AI response:`, text.substring(0, 500) + '...')
+      console.error(`Attempt ${attempt}: Cleaned JSON:`, cleanedJson.substring(0, 500) + '...')
+      
+      if (attempt < MAX_RETRIES) {
+        console.log(`Attempt ${attempt}: Retrying due to JSON parsing error...`)
+        return await generateItineraryWithRetry(model, prompt, attempt + 1)
+      } else {
+        throw new Error(`Failed to parse JSON after ${MAX_RETRIES} attempts. Last error: ${parseError.message}`)
+      }
+    }
+  } catch (error) {
+    console.error(`Attempt ${attempt}: Error during AI generation:`, error.message)
+    
+    if (attempt < MAX_RETRIES && !error.message.includes('API key')) {
+      console.log(`Attempt ${attempt}: Retrying due to generation error...`)
+      return await generateItineraryWithRetry(model, prompt, attempt + 1)
+    } else {
+      throw error
+    }
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -51,6 +121,8 @@ ${preferences.mealPreferences ? `
   * Morning Coffee: ${preferences.mealPreferences.includeCoffee}
   * Lunch: ${preferences.mealPreferences.includeLunch}
   * Dinner: ${preferences.mealPreferences.includeDinner}` : ''}
+
+CRITICAL: You MUST return ONLY valid JSON with properly quoted property names. Do not include any text before or after the JSON.
 
 Generate a JSON response with this exact structure:
 {
@@ -121,45 +193,12 @@ CRITICAL REQUIREMENTS:
 - Set imageUrl to null - Google Maps integration will handle images
 - Add booking information where appropriate with real booking URLs when possible
 - For bookingAdvice, provide specific guidance like "Book 2-3 days in advance" or "Walk-ins available but booking recommended"
-- Return ONLY valid JSON, no additional text
-- Make venue names specific and searchable (avoid generic terms like "local café")`
+- Return ONLY valid JSON with properly quoted property names, no additional text
+- Make venue names specific and searchable (avoid generic terms like "local café")
+- ALL property names MUST be enclosed in double quotes
+- Use double quotes for all string values, never single quotes`
 
-    console.log('Generating content with Gemini AI...')
-    
-    const result = await model.generateContent(prompt)
-    const response = await result.response
-    const text = response.text()
-    
-    console.log('AI response received, parsing JSON...')
-    
-    let itineraryData
-    try {
-      // More robust JSON extraction
-      let cleanText = text.trim()
-      
-      // Remove markdown code blocks
-      cleanText = cleanText.replace(/```json\n?/g, '').replace(/```\n?/g, '')
-      
-      // Find the first opening brace and last closing brace
-      const firstBrace = cleanText.indexOf('{')
-      const lastBrace = cleanText.lastIndexOf('}')
-      
-      if (firstBrace === -1 || lastBrace === -1 || firstBrace >= lastBrace) {
-        throw new Error('No valid JSON object found in AI response')
-      }
-      
-      // Extract only the JSON content
-      const jsonContent = cleanText.substring(firstBrace, lastBrace + 1)
-      
-      console.log('Extracted JSON content:', jsonContent.substring(0, 200) + '...')
-      
-      itineraryData = JSON.parse(jsonContent)
-    } catch (parseError) {
-      console.error('JSON parsing error:', parseError)
-      console.error('Raw AI response:', text)
-      console.error('Attempted to parse:', text.substring(0, 500) + '...')
-      throw new Error(`Invalid JSON response from AI: ${parseError.message}`)
-    }
+    const itineraryData = await generateItineraryWithRetry(model, prompt)
     
     const dayPlan = {
       date,

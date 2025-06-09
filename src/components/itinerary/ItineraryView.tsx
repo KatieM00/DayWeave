@@ -831,16 +831,6 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
         <div className="mb-4 pb-4 border-b border-neutral-200">
           <div className="flex justify-between items-start mb-4">
             <h2 className="text-2xl font-bold text-primary-800">{dayPlan.title}</h2>
-            {!isSurpriseMode && onUpdatePlan && (
-              <Button
-                variant="outline"
-                size="sm"
-                icon={isEditing ? <Save className="h-4 w-4" /> : <Edit2 className="h-4 w-4" />}
-                onClick={() => setIsEditing(!isEditing)}
-              >
-                {isEditing ? 'Save Changes' : 'Modify Plan'}
-              </Button>
-            )}
           </div>
           
           <div className="flex flex-wrap gap-4 mt-2">
@@ -898,6 +888,17 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
           >
             Share
           </Button>
+
+          {!isSurpriseMode && onUpdatePlan && (
+            <Button
+              variant="outline"
+              size="sm"
+              icon={isEditing ? <Save className="h-4 w-4" /> : <Edit2 className="h-4 w-4" />}
+              onClick={() => setIsEditing(!isEditing)}
+            >
+              {isEditing ? 'Save Changes' : 'Modify Plan'}
+            </Button>
+          )}
         </div>
       </Card>
       
