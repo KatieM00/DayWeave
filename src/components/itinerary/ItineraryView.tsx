@@ -43,6 +43,73 @@ interface ItineraryViewProps {
   onUpdatePlan?: (updatedPlan: DayPlan) => void;
 }
 
+// Enhanced time formatting helper function
+const formatTimeString = (timeValue: any): string | null => {
+  if (!timeValue) return null;
+  
+  // Handle different input types
+  let timeStr: string;
+  
+  if (Array.isArray(timeValue)) {
+    // If it's an array like [17, 35], join with ':'
+    const cleanedArray = timeValue.map(val => {
+      if (typeof val === 'string') {
+        return val.replace(/[,\s]/g, '');
+      }
+      return val.toString();
+    });
+    timeStr = cleanedArray.join(':');
+  } else {
+    timeStr = timeValue.toString();
+  }
+  
+  // Remove any commas and extra spaces
+  timeStr = timeStr.replace(/[,\s]/g, '');
+  
+  // Handle HH:MM format
+  if (timeStr.includes(':')) {
+    const [hours, minutes] = timeStr.split(':');
+    const hourNum = parseInt(hours, 10);
+    const minNum = parseInt(minutes, 10);
+    
+    if (!isNaN(hourNum) && !isNaN(minNum) && hourNum >= 0 && hourNum <= 23 && minNum >= 0 && minNum <= 59) {
+      return `${hourNum.toString().padStart(2, '0')}:${minNum.toString().padStart(2, '0')}`;
+    }
+    return null;
+  }
+  
+  // Handle numeric time (like 1735 for 17:35)
+  const numericTime = parseInt(timeStr, 10);
+  if (!isNaN(numericTime)) {
+    const hours = Math.floor(numericTime / 100);
+    const minutes = numericTime % 100;
+    
+    if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    }
+  }
+  
+  return null;
+};
+
+// Function to safely format activity times
+const sanitizeActivityTimes = (activity: Activity): Activity => {
+  return {
+    ...activity,
+    startTime: formatTimeString(activity.startTime) || activity.startTime,
+    endTime: formatTimeString(activity.endTime) || activity.endTime
+  };
+};
+
+// Function to safely format travel times
+const sanitizeTravelTimes = (travel: any): any => {
+  return {
+    ...travel,
+    startTime: formatTimeString(travel.startTime) || travel.startTime,
+    endTime: formatTimeString(travel.endTime) || travel.endTime
+  };
+};
+
 // Move SaveDialog component OUTSIDE of ItineraryView to prevent re-creation on every render
 const SaveDialog = ({ 
   planName, 
@@ -119,10 +186,24 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   const [showActivityChoices, setShowActivityChoices] = useState(false);
   const [selectedActivities, setSelectedActivities] = useState<Activity[]>([]);
   
-  // Initialize events with proper final travel segment
+  // Initialize events with proper final travel segment and sanitized times
   const [events, setEvents] = useState<ItineraryEvent[]>(() => {
-    const baseEvents = [...dayPlan.events];
-    const lastEvent = baseEvents[baseEvents.length - 1];
+    // First, sanitize all existing events
+    const sanitizedBaseEvents = dayPlan.events.map(event => {
+      if (event.type === 'activity') {
+        return {
+          ...event,
+          data: sanitizeActivityTimes(event.data as Activity)
+        };
+      } else {
+        return {
+          ...event,
+          data: sanitizeTravelTimes(event.data)
+        };
+      }
+    });
+
+    const lastEvent = sanitizedBaseEvents[sanitizedBaseEvents.length - 1];
     
     // Only add final travel segment if the last event is an activity
     if (lastEvent && lastEvent.type === 'activity') {
@@ -132,32 +213,28 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
       // Ensure we have valid end time before creating travel segment
       if (lastActivity.endTime && lastActivity.endTime !== 'NaN:NaN') {
         try {
-          // Clean the end time to remove any formatting issues
-          const cleanEndTime = lastActivity.endTime.toString().replace(/,/g, '');
+          // Use the sanitized end time
+          const cleanEndTime = formatTimeString(lastActivity.endTime);
           
-          // Validate the time format
-          if (cleanEndTime.includes(':')) {
-            const [hours, minutes] = cleanEndTime.split(':');
-            const hourNum = parseInt(hours, 10);
-            const minNum = parseInt(minutes, 10);
+          // Only proceed if we have valid time
+          if (cleanEndTime) {
+            const finalTravel = {
+              ...generateTravelSegment(
+                lastActivity.location,
+                finalDestination,
+                cleanEndTime,
+                dayPlan.preferences.transportModes
+              ),
+              isEndOfDay: true
+            };
             
-            // Only proceed if we have valid time components
-            if (!isNaN(hourNum) && !isNaN(minNum) && hourNum >= 0 && hourNum <= 23 && minNum >= 0 && minNum <= 59) {
-              const finalTravel = {
-                ...generateTravelSegment(
-                  lastActivity.location,
-                  finalDestination,
-                  cleanEndTime,
-                  dayPlan.preferences.transportModes
-                ),
-                isEndOfDay: true
-              };
-              
-              // Validate that the generated travel segment has valid times
-              if (finalTravel.startTime && finalTravel.endTime && 
-                  finalTravel.startTime !== 'NaN:NaN' && finalTravel.endTime !== 'NaN:NaN') {
-                return [...baseEvents, { type: 'travel', data: finalTravel }];
-              }
+            // Sanitize the generated travel times
+            const sanitizedFinalTravel = sanitizeTravelTimes(finalTravel);
+            
+            // Validate that the generated travel segment has valid times
+            if (sanitizedFinalTravel.startTime && sanitizedFinalTravel.endTime && 
+                sanitizedFinalTravel.startTime !== 'NaN:NaN' && sanitizedFinalTravel.endTime !== 'NaN:NaN') {
+              return [...sanitizedBaseEvents, { type: 'travel', data: sanitizedFinalTravel }];
             }
           }
         } catch (error) {
@@ -166,7 +243,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
       }
     }
     
-    return baseEvents;
+    return sanitizedBaseEvents;
   });
 
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -257,18 +334,18 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
 
             if (places.length > 0) {
               const details = await getPlaceDetails(places[0].place_id);
-              return {
+              return sanitizeActivityTimes({
                 ...suggestion,
                 location: details.name,
                 address: details.formatted_address,
                 ratings: details.rating,
                 imageUrl: null
-              };
+              });
             }
-            return suggestion;
+            return sanitizeActivityTimes(suggestion);
           } catch (error) {
             console.error('Error enriching suggestion:', error);
-            return suggestion;
+            return sanitizeActivityTimes(suggestion);
           }
         })
       );
@@ -308,20 +385,20 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
       const suggestions = await Promise.all(
         places.slice(0, 5).map(async (place) => {
           const details = await getPlaceDetails(place.place_id);
-          return {
+          return sanitizeActivityTimes({
             id: place.place_id,
             name: details.name,
             description: `Visit ${details.name} - a highly rated destination in ${dayPlan.preferences.startLocation}`,
             location: details.name,
-            startTime: '',
-            endTime: '',
+            startTime: '10:00',
+            endTime: '12:00',
             duration: 120,
             cost: details.price_level ? details.price_level * 25 : 25,
             activityType: ['custom'],
             address: details.formatted_address,
             ratings: details.rating,
             imageUrl: null
-          };
+          });
         })
       );
 
@@ -366,7 +443,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   const extractActivities = (events: ItineraryEvent[]): Activity[] => {
     return events
       .filter(event => event.type === 'activity')
-      .map(event => event.data as Activity);
+      .map(event => sanitizeActivityTimes(event.data as Activity));
   };
 
   const handleDeleteEvent = (eventId: string) => {
@@ -382,7 +459,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
     activities.forEach((activity, index) => {
       newEvents.push({ type: 'activity', data: activity });
       if (index < activities.length - 1) {
-        newEvents.push({ type: 'travel', data: travels[index] });
+        newEvents.push({ type: 'travel', data: sanitizeTravelTimes(travels[index]) });
       }
     });
     
@@ -418,7 +495,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
     activities.forEach((activity, index) => {
       newEvents.push({ type: 'activity', data: activity });
       if (index < activities.length - 1) {
-        newEvents.push({ type: 'travel', data: travels[index] });
+        newEvents.push({ type: 'travel', data: sanitizeTravelTimes(travels[index]) });
       }
     });
     
@@ -429,7 +506,10 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   const handleAddSelectedActivities = () => {
     const currentActivities = extractActivities(events);
     
-    const allActivities = [...currentActivities, ...selectedActivities];
+    // Sanitize selected activities
+    const sanitizedSelectedActivities = selectedActivities.map(sanitizeActivityTimes);
+    
+    const allActivities = [...currentActivities, ...sanitizedSelectedActivities];
     
     allActivities.sort((a, b) => {
       const timeA = a.startTime.split(':').map(Number);
@@ -443,7 +523,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
     allActivities.forEach((activity, index) => {
       newEvents.push({ type: 'activity', data: activity });
       if (index < allActivities.length - 1) {
-        newEvents.push({ type: 'travel', data: travels[index] });
+        newEvents.push({ type: 'travel', data: sanitizeTravelTimes(travels[index]) });
       }
     });
     
@@ -1030,7 +1110,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
                                   Time to head {event.data.endLocation === dayPlan.preferences.startLocation ? 'back home' : 'to your destination'}!
                                 </div>
                                 <div className="flex items-center text-sm text-neutral-600">
-                                  <span>{event.data.startTime} → {event.data.endTime}</span>
+                                  <span>{formatTimeString(event.data.startTime) || event.data.startTime} → {formatTimeString(event.data.endTime) || event.data.endTime}</span>
                                   <span className="mx-2">•</span>
                                   <span>{Math.floor(event.data.duration)} min</span>
                                   <span className="mx-2">•</span>
