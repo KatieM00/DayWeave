@@ -81,7 +81,7 @@ const HomePage: React.FC = () => {
       </section>
       
       {/* Call to Action */}
-      <section className="py-16 bg-gradient-to-br from-secondary-100 to-primary-50 flex-grow">
+      <section className="py-16 bg-gradient-to-br from-secondary-100 to-primary-50 flex-grow relative">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-primary-800 mb-4">Ready to Start Your Adventure?</h2>
           <p className="text-lg text-neutral-700 max-w-2xl mx-auto mb-8">
@@ -104,6 +104,23 @@ const HomePage: React.FC = () => {
               Create Detailed Plan
             </Button>
           </div>
+        </div>
+        
+        {/* Built in Bolt Badge */}
+        <div className="absolute bottom-6 right-6">
+          <a
+            href="https://bolt.new/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block transition-all duration-300 hover:scale-105 hover:shadow-lg"
+            aria-label="Built with Bolt - Visit bolt.new"
+          >
+            <img
+              src="/white_circle_360x360.png"
+              alt="Built with Bolt"
+              className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full shadow-md hover:shadow-lg transition-shadow duration-300"
+            />
+          </a>
         </div>
       </section>
     </div>
