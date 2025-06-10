@@ -43,6 +43,67 @@ interface ItineraryViewProps {
   onUpdatePlan?: (updatedPlan: DayPlan) => void;
 }
 
+// Move SaveDialog component OUTSIDE of ItineraryView to prevent re-creation on every render
+const SaveDialog = ({ 
+  planName, 
+  setPlanName, 
+  onSave, 
+  onClose, 
+  isSaving 
+}: {
+  planName: string;
+  setPlanName: (name: string) => void;
+  onSave: () => void;
+  onClose: () => void;
+  isSaving: boolean;
+}) => (
+  <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <Card className="w-full max-w-lg">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-xl font-semibold text-primary-800">Save Your Plan</h3>
+        <button 
+          onClick={onClose}
+          className="text-neutral-500 hover:text-neutral-700"
+        >
+          <X className="w-6 h-6" />
+        </button>
+      </div>
+
+      <div className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-neutral-700 mb-2">
+            Name your plan
+          </label>
+          <Input
+            type="text"
+            value={planName}
+            onChange={(e) => setPlanName(e.target.value)}
+            placeholder="Enter a name for your plan"
+            fullWidth
+          />
+        </div>
+
+        <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-neutral-200">
+          <Button
+            variant="outline"
+            onClick={onClose}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={onSave}
+            loading={isSaving}
+            disabled={isSaving || !planName.trim()}
+          >
+            {isSaving ? 'Saving...' : 'Save Plan'}
+          </Button>
+        </div>
+      </div>
+    </Card>
+  </div>
+);
+
 const ItineraryView: React.FC<ItineraryViewProps> = ({
   dayPlan,
   isSurpriseMode = false,
@@ -57,23 +118,57 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [showActivityChoices, setShowActivityChoices] = useState(false);
   const [selectedActivities, setSelectedActivities] = useState<Activity[]>([]);
+  
+  // Initialize events with proper final travel segment
   const [events, setEvents] = useState<ItineraryEvent[]>(() => {
-    const lastEvent = dayPlan.events[dayPlan.events.length - 1];
-    if (lastEvent.type === 'activity') {
+    const baseEvents = [...dayPlan.events];
+    const lastEvent = baseEvents[baseEvents.length - 1];
+    
+    // Only add final travel segment if the last event is an activity
+    if (lastEvent && lastEvent.type === 'activity') {
       const finalDestination = dayPlan.preferences.endLocation || dayPlan.preferences.startLocation;
-      const finalTravel = {
-        ...generateTravelSegment(
-          lastEvent.data.location,
-          finalDestination,
-          lastEvent.data.endTime,
-          dayPlan.preferences.transportModes
-        ),
-        isEndOfDay: true
-      };
-      return [...dayPlan.events, { type: 'travel', data: finalTravel }];
+      const lastActivity = lastEvent.data as Activity;
+      
+      // Ensure we have valid end time before creating travel segment
+      if (lastActivity.endTime && lastActivity.endTime !== 'NaN:NaN') {
+        try {
+          // Clean the end time to remove any formatting issues
+          const cleanEndTime = lastActivity.endTime.toString().replace(/,/g, '');
+          
+          // Validate the time format
+          if (cleanEndTime.includes(':')) {
+            const [hours, minutes] = cleanEndTime.split(':');
+            const hourNum = parseInt(hours, 10);
+            const minNum = parseInt(minutes, 10);
+            
+            // Only proceed if we have valid time components
+            if (!isNaN(hourNum) && !isNaN(minNum) && hourNum >= 0 && hourNum <= 23 && minNum >= 0 && minNum <= 59) {
+              const finalTravel = {
+                ...generateTravelSegment(
+                  lastActivity.location,
+                  finalDestination,
+                  cleanEndTime,
+                  dayPlan.preferences.transportModes
+                ),
+                isEndOfDay: true
+              };
+              
+              // Validate that the generated travel segment has valid times
+              if (finalTravel.startTime && finalTravel.endTime && 
+                  finalTravel.startTime !== 'NaN:NaN' && finalTravel.endTime !== 'NaN:NaN') {
+                return [...baseEvents, { type: 'travel', data: finalTravel }];
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error generating final travel segment:', error);
+        }
+      }
     }
-    return dayPlan.events;
+    
+    return baseEvents;
   });
+
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -692,54 +787,6 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
     );
   };
 
-  const SaveDialog = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-lg">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-semibold text-primary-800">Save Your Plan</h3>
-          <button 
-            onClick={() => setShowSaveDialog(false)}
-            className="text-neutral-500 hover:text-neutral-700"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-2">
-              Name your plan
-            </label>
-            <Input
-              type="text"
-              value={planName}
-              onChange={(e) => setPlanName(e.target.value)}
-              placeholder="Enter a name for your plan"
-              fullWidth
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-neutral-200">
-            <Button
-              variant="outline"
-              onClick={() => setShowSaveDialog(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleSavePlan}
-              loading={isSaving}
-              disabled={isSaving || !planName.trim()}
-            >
-              {isSaving ? 'Saving...' : 'Save Plan'}
-            </Button>
-          </div>
-        </div>
-      </Card>
-    </div>
-  );
-
   const ShareDialog = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-lg">
@@ -1058,7 +1105,15 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
       )}
 
       {showActivityChoices && <ActivityOverlay />}
-      {showSaveDialog && <SaveDialog />}
+      {showSaveDialog && (
+        <SaveDialog
+          planName={planName}
+          setPlanName={setPlanName}
+          onSave={handleSavePlan}
+          onClose={() => setShowSaveDialog(false)}
+          isSaving={isSaving}
+        />
+      )}
       {showShareDialog && <ShareDialog />}
       
       <AuthModal

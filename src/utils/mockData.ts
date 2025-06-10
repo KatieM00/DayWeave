@@ -18,8 +18,27 @@ export const generateTravelSegment = (
   startTime: string,
   preferredModes: TransportMode[] = ['walking', 'driving']
 ): Travel => {
-  // In a real app, this would use Google Maps API or similar
-  // For now, we'll generate realistic-looking mock data
+  // Validate input parameters
+  if (!startLocation || !endLocation || !startTime) {
+    console.error('Invalid parameters for generateTravelSegment:', { startLocation, endLocation, startTime });
+    throw new Error('Invalid travel segment parameters');
+  }
+
+  // Validate and parse start time
+  if (startTime === 'NaN:NaN' || !startTime.includes(':')) {
+    console.error('Invalid start time for travel segment:', startTime);
+    throw new Error('Invalid start time for travel segment');
+  }
+
+  const [hoursStr, minutesStr] = startTime.split(':');
+  const hours = parseInt(hoursStr, 10);
+  const minutes = parseInt(minutesStr, 10);
+
+  // Validate parsed time components
+  if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    console.error('Invalid time components:', { hours, minutes, startTime });
+    throw new Error('Invalid time format');
+  }
   
   // Generate a random distance between 0.1 and 15 miles
   const distance = Math.round((Math.random() * 14.9 + 0.1) * 10) / 10;
@@ -36,10 +55,11 @@ export const generateTravelSegment = (
   let speedMph = mode === 'walking' ? 3 : mode === 'cycling' ? 12 : 25;
   const durationMinutes = Math.ceil((distance / speedMph) * 60);
   
-  // Calculate end time
-  const [hours, minutes] = startTime.split(':').map(Number);
+  // Calculate end time using proper date arithmetic
   const startDate = new Date(2025, 0, 1, hours, minutes);
   const endDate = new Date(startDate.getTime() + durationMinutes * 60000);
+  
+  // Format times with proper zero padding
   const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
   
   // Calculate cost (only for driving/taxi)
@@ -51,8 +71,8 @@ export const generateTravelSegment = (
     (mode === 'train' ? 'https://www.trainline.com' : 'https://www.nationalexpress.com') : 
     undefined;
   
-  return {
-    id: `travel-${startTime}-${endTime}`.replace(/:/g, ''),
+  const travelSegment = {
+    id: `travel-${startTime.replace(':', '')}-${endTime.replace(':', '')}`,
     startLocation,
     endLocation,
     startTime,
@@ -65,6 +85,14 @@ export const generateTravelSegment = (
     bookingLink,
     bookingAdvice: bookingRequired ? 'Book in advance for better prices' : undefined
   };
+
+  // Validate the generated travel segment
+  if (travelSegment.startTime === 'NaN:NaN' || travelSegment.endTime === 'NaN:NaN') {
+    console.error('Generated invalid travel segment:', travelSegment);
+    throw new Error('Generated travel segment has invalid times');
+  }
+
+  return travelSegment;
 };
 
 // Helper function to recalculate all travel segments in an itinerary
@@ -78,30 +106,41 @@ export const recalculateTravel = (
     const currentActivity = activities[i];
     const nextActivity = activities[i + 1];
     
-    const travel = generateTravelSegment(
-      currentActivity.location,
-      nextActivity.location,
-      currentActivity.endTime,
-      preferences.transportModes
-    );
-    
-    // Adjust next activity start time if needed
-    const [travelEndHours, travelEndMinutes] = travel.endTime.split(':').map(Number);
-    const [nextStartHours, nextStartMinutes] = nextActivity.startTime.split(':').map(Number);
-    const travelEndMinutesTotal = travelEndHours * 60 + travelEndMinutes;
-    const nextStartMinutesTotal = nextStartHours * 60 + nextStartMinutes;
-    
-    if (travelEndMinutesTotal > nextStartMinutesTotal) {
-      const newStartDate = new Date(2025, 0, 1, travelEndHours, travelEndMinutes);
-      nextActivity.startTime = `${newStartDate.getHours().toString().padStart(2, '0')}:${newStartDate.getMinutes().toString().padStart(2, '0')}`;
-      
-      // Adjust end time accordingly
-      const activityDuration = nextActivity.duration;
-      const endDate = new Date(newStartDate.getTime() + activityDuration * 60000);
-      nextActivity.endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
+    // Validate activity end times before generating travel
+    if (!currentActivity.endTime || currentActivity.endTime === 'NaN:NaN') {
+      console.error('Invalid end time for activity:', currentActivity);
+      continue;
     }
-    
-    travels.push(travel);
+
+    try {
+      const travel = generateTravelSegment(
+        currentActivity.location,
+        nextActivity.location,
+        currentActivity.endTime,
+        preferences.transportModes
+      );
+      
+      // Adjust next activity start time if needed
+      const [travelEndHours, travelEndMinutes] = travel.endTime.split(':').map(Number);
+      const [nextStartHours, nextStartMinutes] = nextActivity.startTime.split(':').map(Number);
+      const travelEndMinutesTotal = travelEndHours * 60 + travelEndMinutes;
+      const nextStartMinutesTotal = nextStartHours * 60 + nextStartMinutes;
+      
+      if (travelEndMinutesTotal > nextStartMinutesTotal) {
+        const newStartDate = new Date(2025, 0, 1, travelEndHours, travelEndMinutes);
+        nextActivity.startTime = `${newStartDate.getHours().toString().padStart(2, '0')}:${newStartDate.getMinutes().toString().padStart(2, '0')}`;
+        
+        // Adjust end time accordingly
+        const activityDuration = nextActivity.duration;
+        const endDate = new Date(newStartDate.getTime() + activityDuration * 60000);
+        nextActivity.endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
+      }
+      
+      travels.push(travel);
+    } catch (error) {
+      console.error('Error generating travel segment:', error);
+      // Skip this travel segment if generation fails
+    }
   }
   
   return travels;
