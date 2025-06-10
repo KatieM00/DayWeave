@@ -1,36 +1,49 @@
-# DayWeave - AI-Powered Day Planner
+# DayWeave ✨
+
+> **AI-Powered Day Planner - Your perfectly planned day, powered by AI**
 
 A beautiful, production-ready day planning application that creates personalized itineraries using AI and real-time data.
 
-## Features
+[![Live Demo](https://img.shields.io/badge/🌐-Live%20Demo-4A9CB8?style=for-the-badge)](https://dayweave.netlify.app)
+[![Built with Bolt](https://img.shields.io/badge/⚡-Built%20with%20Bolt-E6D055?style=for-the-badge)](https://bolt.new)
 
-- **AI-Powered Planning**: Uses Google's Gemini AI to generate intelligent, personalized day plans
-- **Real Weather Data**: Integrates OpenWeatherMap for accurate weather forecasts
-- **Google Places Integration**: Finds real venues, restaurants, and attractions with photos and details
-- **Location Autocomplete**: Smart location suggestions powered by Google Maps
-- **Surprise Mode**: Creates mystery itineraries that reveal activities step-by-step
-- **User Authentication**: Secure sign-up/sign-in with Supabase Auth
-- **Plan Management**: Save, edit, and organize your day plans
-- **Responsive Design**: Beautiful UI that works on all devices
+---
 
-## Tech Stack
+## ✨ Features
 
-- **Frontend**: React 18, TypeScript, Tailwind CSS
+- **🤖 AI-Powered Planning**: Uses Google's Gemini AI to generate intelligent, personalized day plans
+- **🌤️ Real Weather Data**: Integrates OpenWeatherMap for accurate weather forecasts
+- **📍 Google Places Integration**: Finds real venues, restaurants, and attractions with photos and details
+- **🔍 Location Autocomplete**: Smart location suggestions powered by Google Maps
+- **🎲 Surprise Mode**: Creates mystery itineraries that reveal activities step-by-step
+- **👤 User Authentication**: Secure sign-up/sign-in with Supabase Auth
+- **💾 Plan Management**: Save, edit, and organize your day plans
+- **📱 Responsive Design**: Beautiful UI that works on all devices
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React 18, TypeScript, Tailwind CSS, Vite
 - **Backend**: Supabase (PostgreSQL, Auth, Edge Functions)
-- **AI**: Google Gemini AI
+- **AI**: Google Gemini AI (1.5 Pro)
 - **APIs**: OpenWeatherMap, Google Maps/Places
 - **Deployment**: Netlify
+
+---
 
 ## 🔒 Security Architecture
 
 This application follows security best practices:
 
-- **API Keys**: All sensitive API keys (Google AI, OpenWeather, server-side Google Maps) are stored as Supabase Edge Function secrets, never exposed to the client
-- **Server-Side Processing**: All API calls to external services happen through Supabase Edge Functions
-- **Client-Side Safety**: Only Supabase URL, anonymous key, and client-side Google Maps key are exposed to the browser
-- **No Environment Variables**: No sensitive credentials in `.env` files or client-side code
+- **🔐 API Keys**: All sensitive API keys (Google AI, OpenWeather, server-side Google Maps) are stored as Supabase Edge Function secrets, never exposed to the client
+- **⚡ Server-Side Processing**: All API calls to external services happen through Supabase Edge Functions
+- **✅ Client-Side Safety**: Only Supabase URL, anonymous key, and client-side Google Maps key are exposed to the browser
+- **🚫 No Environment Variables**: No sensitive credentials in `.env` files or client-side code
 
-## Setup
+---
+
+## 🚀 Setup
 
 ### Prerequisites
 
@@ -77,38 +90,15 @@ VITE_GOOGLE_MAPS_API_KEY=your_client_side_google_maps_api_key
      - `*.netlify.app/*` (for Netlify deployment)
      - `yourdomain.com/*` (replace with your actual domain)
      - `*.yourdomain.com/*` (for subdomains)
-   - Save the changes
 6. **CRITICAL**: Configure API restrictions:
    - Under "API restrictions", select "Restrict key"
-   - Enable these APIs:
-     - **Maps JavaScript API**
-     - **Places API**
-     - **Geocoding API**
-   - Save the changes
+   - Enable these APIs: Maps JavaScript API, Places API, Geocoding API
 
 #### Step 2: Create Server-side API Key (GOOGLE_API_KEY)
 1. In the same Google Cloud project, create another API key
-2. Enable these APIs:
-   - **Geocoding API**
-   - **Places API**
+2. Enable: **Geocoding API**, **Places API**
 3. **Important**: Leave this key unrestricted (no HTTP referrer restrictions)
 4. This key will be stored as a Supabase secret (never in `.env`)
-
-**🚨 Fixing RefererNotAllowedMapError**: 
-If you encounter this error:
-1. Copy the URL from the error message in your browser console
-2. Go to Google Cloud Console → APIs & Services → Credentials
-3. Select your `VITE_GOOGLE_MAPS_API_KEY`
-4. Add the URL to the HTTP referrers list with `/*` at the end
-5. Save the changes and refresh your page
-
-**🚨 Fixing Geocoding Service Error**: 
-If you see "This API key is not authorized to use this service":
-1. Go to Google Cloud Console → APIs & Services → Credentials
-2. Select your `VITE_GOOGLE_MAPS_API_KEY`
-3. Under "API restrictions", ensure "Geocoding API" is enabled
-4. If using "Restrict key", add "Geocoding API" to the allowed APIs list
-5. Save changes and wait a few minutes for propagation
 
 ### 3. Secure API Key Configuration
 
@@ -118,10 +108,8 @@ Configure your server-side API keys as Supabase Edge Function secrets:
 # Install Supabase CLI
 npm install -g supabase
 
-# Login to Supabase
+# Login and link to your project
 supabase login
-
-# Link to your project (get project ref from Supabase dashboard)
 supabase link --project-ref your-project-ref
 
 # Set your API keys as secrets (server-side only)
@@ -140,11 +128,9 @@ npm install
 npm run dev
 ```
 
-### Database Setup
+---
 
-The database migrations are included in the `supabase/migrations` folder and will be applied automatically when you set up your Supabase project.
-
-## Deployment
+## 🚀 Deployment
 
 ### Netlify Deployment
 
@@ -170,96 +156,63 @@ supabase functions deploy search-places
 supabase functions deploy generate-activity-suggestions
 supabase functions deploy get-place-details
 supabase functions deploy get-place-photo
+supabase functions deploy share-plan
 ```
 
-## Key Features Explained
+---
 
-### Location Autocomplete
+## 🎯 Key Features Explained
+
+### 🔍 Location Autocomplete
 - Powered by Google Maps Places API
 - Provides real-time location suggestions as you type
 - Ensures accurate geocoding for better venue recommendations
 - Fallback to manual entry if API unavailable
 
-### Google Maps Integration
+### 📍 Google Maps Integration
 - Real venue photos from Google Places
 - Accurate ratings and reviews
 - Opening hours and contact information
 - Direct links to Google Maps for directions
 - Price level indicators
 
-### AI-Powered Itineraries
+### 🤖 AI-Powered Itineraries
 - Uses Google Gemini AI for intelligent planning
 - Considers real venue names and locations
 - Factors in travel times and transportation modes
 - Adapts to budget and activity preferences
 
-## Security Best Practices Implemented
+---
 
-1. **API Key Separation**: Client-side and server-side keys are separate
-2. **Edge Function Secrets**: Sensitive API keys stored securely in Supabase
-3. **CORS Protection**: Proper CORS headers on all edge functions
-4. **Domain Restrictions**: Client-side API keys restricted to specific domains
-5. **No Credential Leakage**: No sensitive data in repository or client code
-
-## API Documentation
-
-### Edge Functions
-
-- `generate-itinerary`: Creates AI-powered day plans with real venues
-- `get-weather`: Fetches weather forecasts from OpenWeatherMap
-- `search-places`: Searches for venues using Google Places API
-- `get-place-details`: Gets detailed venue information
-- `get-place-photo`: Retrieves venue photos from Google Places
-- `generate-activity-suggestions`: AI-generated activity recommendations
-
-All edge functions are automatically secured and handle CORS properly.
-
-## Troubleshooting
+## 🐛 Troubleshooting
 
 ### Common Issues
 
-1. **RefererNotAllowedMapError (Google Maps API)**
-   - **Cause**: Your current URL is not authorized to use the Google Maps API key
-   - **Quick Fix**: 
-     1. Copy the URL from the error message in your browser console
-     2. Go to [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials
-     3. Select your `VITE_GOOGLE_MAPS_API_KEY`
-     4. Under "Application restrictions", add the URL with `/*` at the end
-     5. Save changes and refresh your page
-   - **Prevention**: Add common development URLs like `localhost:*`, `*.webcontainer-api.io/*`
+**🚨 RefererNotAllowedMapError (Google Maps API)**
+- **Cause**: Your current URL is not authorized to use the Google Maps API key
+- **Quick Fix**: 
+  1. Copy the URL from the error message in your browser console
+  2. Go to [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials
+  3. Select your `VITE_GOOGLE_MAPS_API_KEY`
+  4. Under "Application restrictions", add the URL with `/*` at the end
+  5. Save changes and refresh your page
 
-2. **"Geocoding Service: This API key is not authorized to use this service"**
-   - **Cause**: The client-side Google Maps API key doesn't have Geocoding API enabled
-   - **Quick Fix**:
-     1. Go to [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials
-     2. Select your `VITE_GOOGLE_MAPS_API_KEY`
-     3. Under "API restrictions", ensure "Geocoding API" is enabled
-     4. If using "Restrict key", add "Geocoding API" to the allowed APIs list
-     5. Save changes and wait a few minutes for propagation
-   - **Note**: This API is required for current location detection features
+**🚨 "Geocoding Service: This API key is not authorized"**
+- **Cause**: The client-side Google Maps API key doesn't have Geocoding API enabled
+- **Quick Fix**:
+  1. Go to Google Cloud Console → APIs & Services → Credentials
+  2. Select your `VITE_GOOGLE_MAPS_API_KEY`
+  3. Under "API restrictions", ensure "Geocoding API" is enabled
+  4. Save changes and wait a few minutes for propagation
 
-3. **"Google Maps API key not configured"**
-   - Check that `VITE_GOOGLE_MAPS_API_KEY` is set in your `.env` file
-   - Ensure the API key is valid and not expired
-   - Verify Maps JavaScript API and Places API are enabled in Google Cloud Console
+**🚨 Location autocomplete not working**
+- Check that `VITE_GOOGLE_MAPS_API_KEY` is set in your `.env` file
+- Ensure the API key is valid and APIs are enabled
+- Verify API key is not restricted to wrong domains
 
-4. **Location autocomplete not working**
-   - Verify `VITE_GOOGLE_MAPS_API_KEY` is correctly configured
-   - Check browser console for specific error messages
-   - Ensure API key is not restricted to wrong domains
-   - Make sure Maps JavaScript API and Places API are enabled
+---
 
-5. **"Location not found" errors**
-   - Make sure users select from autocomplete suggestions
-   - Verify server-side `GOOGLE_API_KEY` is set in Supabase secrets
-   - Check Google Cloud Console for API quotas
-
-6. **Venue photos not loading**
-   - Verify `GOOGLE_API_KEY` is configured in Supabase secrets
-   - Check Places API is enabled and has quota
-   - Some venues may not have photos available
-
-## API Key Summary
+## 🔑 API Key Summary
 
 **Client-side (in .env file):**
 - `VITE_SUPABASE_DATABASE_URL`: Supabase project URL
@@ -271,7 +224,9 @@ All edge functions are automatically secured and handle CORS properly.
 - `OPENWEATHER_API_KEY`: OpenWeatherMap API key
 - `GOOGLE_API_KEY`: Google Maps API key for geocoding/places
 
-## Contributing
+---
+
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -279,6 +234,16 @@ All edge functions are automatically secured and handle CORS properly.
 4. Add tests if applicable
 5. Submit a pull request
 
-## License
+---
 
-MIT License - see LICENSE file for details.
+## 📄 Copyright & License
+
+**© 2025 DayWeave. All Rights Reserved.**
+
+This software and all associated content are proprietary and confidential. No part of this software may be reproduced, distributed, or transmitted in any form or by any means, including photocopying, recording, or other electronic or mechanical methods, without the prior written permission of the copyright holder.
+
+**For licensing inquiries:** Contact [hello@dayweave.com](mailto:hello@dayweave.com)
+
+---
+
+**Built with ❤️ for the World's Largest Hackathon**
