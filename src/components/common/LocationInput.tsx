@@ -148,12 +148,87 @@ const LocationInput: React.FC<LocationInputProps> = ({
           autocompleteRef.current.setBounds(circle.getBounds());
         }
 
-        // Optionally, reverse geocode to get the address
+        // Reverse geocode to get a detailed address (avoiding Plus Codes)
         if (window.google && window.google.maps) {
           const geocoder = new window.google.maps.Geocoder();
-          geocoder.geocode({ location }, (results: any[], status: string) => {
-            if (status === 'OK' && results[0]) {
-              onChange(results[0].formatted_address);
+          geocoder.geocode({ 
+            location,
+            // Add parameters to get better address resolution
+            region: 'GB', // Since you're in Oxford, UK
+            language: 'en'
+          }, (results: any[], status: string) => {
+            if (status === 'OK' && results && results.length > 0) {
+              // Find the most specific address that's not a Plus Code
+              let bestResult = results.find(result => 
+                result.types.includes('street_address') || 
+                result.types.includes('premise')
+              );
+              
+              if (!bestResult) {
+                bestResult = results.find(result => 
+                  result.types.includes('route') || 
+                  result.types.includes('neighborhood') ||
+                  result.types.includes('sublocality')
+                );
+              }
+              
+              if (!bestResult) {
+                bestResult = results.find(result => 
+                  !result.formatted_address.match(/^[A-Z0-9]{4}\+[A-Z0-9]{2}/)
+                );
+              }
+              
+              if (!bestResult) {
+                bestResult = results[0];
+              }
+              
+              // Try to build a readable address from components
+              const components = bestResult.address_components;
+              const addressParts = [];
+              
+              // Get street number and route
+              const streetNumber = components.find((c: any) => c.types.includes('street_number'))?.long_name;
+              const route = components.find((c: any) => c.types.includes('route'))?.long_name;
+              
+              if (streetNumber && route) {
+                addressParts.push(`${streetNumber} ${route}`);
+              } else if (route) {
+                addressParts.push(route);
+              }
+              
+              // Get neighborhood/area
+              const neighborhood = components.find((c: any) => 
+                c.types.includes('neighborhood') || 
+                c.types.includes('sublocality') ||
+                c.types.includes('sublocality_level_1')
+              )?.long_name;
+              
+              if (neighborhood && !addressParts.includes(neighborhood)) {
+                addressParts.push(neighborhood);
+              }
+              
+              // Get city/town
+              const city = components.find((c: any) => 
+                c.types.includes('locality') || 
+                c.types.includes('postal_town')
+              )?.long_name;
+              
+              if (city && !addressParts.includes(city)) {
+                addressParts.push(city);
+              }
+              
+              // Use the constructed address if we have parts, otherwise use formatted_address
+              if (addressParts.length > 0) {
+                onChange(addressParts.join(', '));
+              } else if (!bestResult.formatted_address.match(/^[A-Z0-9]{4}\+[A-Z0-9]{2}/)) {
+                onChange(bestResult.formatted_address);
+              } else {
+                // Last resort - just use the area if Plus Code is still showing
+                const area = components.find((c: any) => 
+                  c.types.includes('locality') || c.types.includes('postal_town')
+                )?.long_name;
+                onChange(area || bestResult.formatted_address);
+              }
             }
           });
         }
