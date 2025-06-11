@@ -18,7 +18,6 @@ const SurprisePlanPage: React.FC = () => {
   const [showForm, setShowForm] = useState(true);
   const [hasAttemptedRestore, setHasAttemptedRestore] = useState(false);
   const [currentPreferences, setCurrentPreferences] = useState<any>(null);
-  
 
   // Initialize plan restoration
   const { storePlanData, restorePlanData, clearStoredPlanData } = usePlanRestoration({
