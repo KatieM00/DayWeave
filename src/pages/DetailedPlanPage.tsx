@@ -18,8 +18,6 @@ const DetailedPlanPage: React.FC = () => {
   const [showForm, setShowForm] = useState(true);
   const [hasAttemptedRestore, setHasAttemptedRestore] = useState(false);
   const { selectedCurrency } = useCurrency();
-  const [currentPreferences, setCurrentPreferences] = useState<any>(null);
-  const [revealProgress, setRevealProgress] = useState(0);
 
   // Initialize plan restoration
   const { storePlanData, restorePlanData, clearStoredPlanData } = usePlanRestoration({
