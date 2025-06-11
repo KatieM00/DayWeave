@@ -558,7 +558,7 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
     );
   };
 
-  const renderTravelContent = (travel: Travel) => {
+const renderTravelContent = (travel: Travel) => {
     const getDirectionsUrl = () => {
       const origin = encodeURIComponent(travel.startLocation);
       const destination = encodeURIComponent(travel.endLocation);
@@ -587,13 +587,13 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
             <span className="capitalize">{travel.mode}</span>
           </div>
           
-          {/* Travel booking notice with integrated booking link */}
-          {travel.bookingRequired && (
+          {/* Only show travel booking notice for actual transport bookings (trains, buses) */}
+          {travel.bookingRequired && (travel.mode === 'train' || travel.mode === 'bus') && (
             <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs">
               <div className="flex items-center gap-2">
                 <Calendar className="h-3 w-3 text-amber-600 flex-shrink-0" />
                 <div className="flex-grow">
-                  <span className="text-amber-800 font-medium">Booking required: </span>
+                  <span className="text-amber-800 font-medium">Transport booking required: </span>
                   <span className="text-amber-700">{travel.bookingAdvice || 'Advance booking recommended'}</span>
                   {travel.bookingLink && (
                     <a
@@ -602,7 +602,7 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
                       rel="noopener noreferrer"
                       className="ml-2 inline-flex items-center text-amber-700 hover:text-amber-800 font-medium underline"
                     >
-                      Book Now <ExternalLink className="w-3 h-3 ml-1" />
+                      Book Transport <ExternalLink className="w-3 h-3 ml-1" />
                     </a>
                   )}
                 </div>
@@ -624,7 +624,7 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
       </div>
     );
   };
-
+  
   return (
     <>
       <Card className={`mb-3 ${event.type === 'travel' ? 'border-l-4 border-secondary-400 bg-secondary-50' : ''}`}>
