@@ -3,12 +3,12 @@ import { ArrowLeft } from 'lucide-react';
 import Button from '../components/common/Button';
 import SurpriseForm from '../components/forms/SurpriseForm';
 import ItineraryView from '../components/itinerary/ItineraryView';
+import ItineraryGenerator from '../components/common/ItineraryGenerator';
 import HomeButton from '../components/common/HomeButton';
 import { UserPreferences, DayPlan } from '../types';
+import { generateItinerary, getWeatherForecast } from '../services/api';
 import { Link } from 'react-router-dom';
 import { usePlanRestoration } from '../hooks/usePlanRestoration';
-import OptimizedItineraryGenerator from '../components/common/OptimizedItineraryGenerator';
-import { optimizedPlanService } from '../services/optimizedApi';
 
 const SurprisePlanPage: React.FC = () => {
   const [dayPlan, setDayPlan] = useState<DayPlan | null>(null);
@@ -17,7 +17,6 @@ const SurprisePlanPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(true);
   const [hasAttemptedRestore, setHasAttemptedRestore] = useState(false);
-  const [currentPreferences, setCurrentPreferences] = useState<any>(null);
 
   // Initialize plan restoration
   const { storePlanData, restorePlanData, clearStoredPlanData } = usePlanRestoration({
@@ -73,46 +72,48 @@ const SurprisePlanPage: React.FC = () => {
     }
   }, [dayPlan, revealProgress, showForm, storePlanData]);
   
- const handleSubmit = async (preferences: UserPreferences & { surpriseMode: boolean }) => {
-  setIsLoading(true);
-  setError(null);
-  setCurrentPreferences(preferences);
-  
-  try {
-    const planDate = preferences.planDate || new Date().toISOString().split('T')[0];
+  const handleSubmit = async (preferences: UserPreferences & { surpriseMode: boolean }) => {
+    setIsLoading(true);
+    setError(null);
     
-    const result = await optimizedPlanService.generateOptimizedPlan({
-      location: preferences.startLocation,
-      date: planDate,
-      preferences,
-      surpriseMode: preferences.surpriseMode
-    });
-    
-    const plan = result.plan;
-    
-    if (result.weather) {
-      plan.weatherForecast = result.weather;
+    try {
+      const planDate = preferences.planDate || new Date().toISOString().split('T')[0];
+      
+      // Generate itinerary and weather forecast in parallel
+      const [plan, weatherForecast] = await Promise.all([
+        generateItinerary({
+          location: preferences.startLocation,
+          date: planDate,
+          preferences,
+          surpriseMode: preferences.surpriseMode
+        }),
+        getWeatherForecast(preferences.startLocation, planDate)
+      ]);
+      
+      // Add weather forecast to the plan
+      if (weatherForecast) {
+        plan.weatherForecast = weatherForecast;
+      }
+      
+      if (preferences.surpriseMode) {
+        const initialReveal = Math.ceil((1 / plan.events.length) * 100);
+        plan.revealProgress = initialReveal;
+        setRevealProgress(initialReveal);
+      } else {
+        plan.revealProgress = 100;
+        setRevealProgress(100);
+      }
+      
+      setDayPlan(plan);
+      setShowForm(false); // Hide form after successful generation
+      window.scrollTo(0, 0);
+    } catch (err) {
+      setError('Failed to generate your surprise itinerary. Please try again.');
+      console.error('Itinerary generation error:', err);
+    } finally {
+      setIsLoading(false);
     }
-    
-    if (preferences.surpriseMode) {
-      const initialReveal = Math.ceil((1 / plan.events.length) * 100);
-      plan.revealProgress = initialReveal;
-      setRevealProgress(initialReveal);
-    } else {
-      plan.revealProgress = 100;
-      setRevealProgress(100);
-    }
-    
-    setDayPlan(plan);
-    setShowForm(false);
-    window.scrollTo(0, 0);
-  } catch (err) {
-    setError('Failed to generate your surprise itinerary. Please try again.');
-    console.error('Optimized itinerary generation error:', err);
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
   
   const handleRevealMore = () => {
     if (!dayPlan) return;
@@ -184,11 +185,10 @@ const SurprisePlanPage: React.FC = () => {
             </div>
             
             {isLoading || error ? (
-              <OptimizedItineraryGenerator 
+              <ItineraryGenerator 
                 isLoading={isLoading}
                 error={error || undefined}
                 onRetry={() => setError(null)}
-                preferences={currentPreferences}
               />
             ) : (
               <SurpriseForm onSubmit={handleSubmit} />
