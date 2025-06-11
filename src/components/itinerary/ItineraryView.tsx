@@ -25,7 +25,6 @@ import Input from '../common/Input';
 import AuthModal from '../auth/AuthModal';
 import { DayPlan, WeatherForecast, ItineraryEvent, Activity } from '../../types';
 import ItineraryItem from './ItineraryItem';
-import { generateTravelSegment } from '../../utils/mockData';
 import { getActivitySuggestions } from '../../services/activitySuggestions';
 import { searchPlaces, getPlaceDetails, generateShareableLink } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -33,6 +32,90 @@ import { usePlans } from '../../hooks/usePlans';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { usePlanRestoration } from '../../hooks/usePlanRestoration';
 import { WeatherIcon } from '../weather';
+
+// Helper function to generate travel segments between activities
+const generateTravelSegment = (
+  startLocation: string,
+  endLocation: string,
+  startTime: string,
+  preferredModes: string[] = ['walking', 'driving']
+) => {
+  // Validate input parameters
+  if (!startLocation || !endLocation || !startTime) {
+    console.error('Invalid parameters for generateTravelSegment:', { startLocation, endLocation, startTime });
+    throw new Error('Invalid travel segment parameters');
+  }
+
+  // Validate and parse start time
+  if (startTime === 'NaN:NaN' || !startTime.includes(':')) {
+    console.error('Invalid start time for travel segment:', startTime);
+    throw new Error('Invalid start time for travel segment');
+  }
+
+  const [hoursStr, minutesStr] = startTime.split(':');
+  const hours = parseInt(hoursStr, 10);
+  const minutes = parseInt(minutesStr, 10);
+
+  // Validate parsed time components
+  if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    console.error('Invalid time components:', { hours, minutes, startTime });
+    throw new Error('Invalid time format');
+  }
+  
+  // Generate a random distance between 0.1 and 15 miles
+  const distance = Math.round((Math.random() * 14.9 + 0.1) * 10) / 10;
+  
+  // Choose transport mode based on distance and preferences
+  let mode = 'walking';
+  if (distance > 2 && preferredModes.includes('driving')) {
+    mode = 'driving';
+  } else if (distance > 1 && preferredModes.includes('cycling')) {
+    mode = 'cycling';
+  }
+  
+  // Calculate duration based on mode and distance
+  let speedMph = mode === 'walking' ? 3 : mode === 'cycling' ? 12 : 25;
+  const durationMinutes = Math.ceil((distance / speedMph) * 60);
+  
+  // Calculate end time using proper date arithmetic
+  const startDate = new Date(2025, 0, 1, hours, minutes);
+  const endDate = new Date(startDate.getTime() + durationMinutes * 60000);
+  
+  // Format times with proper zero padding
+  const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
+  
+  // Calculate cost (only for driving/taxi)
+  const cost = mode === 'driving' ? Math.round(distance * 0.5 * 100) / 100 : 0;
+  
+  // Determine if booking is required for this transport mode
+  const bookingRequired = mode === 'train' || (mode === 'bus' && distance > 10);
+  const bookingLink = bookingRequired ? 
+    (mode === 'train' ? 'https://www.trainline.com' : 'https://www.nationalexpress.com') : 
+    undefined;
+  
+  const travelSegment = {
+    id: `travel-${startTime.replace(':', '')}-${endTime.replace(':', '')}`,
+    startLocation,
+    endLocation,
+    startTime,
+    endTime,
+    duration: durationMinutes,
+    mode,
+    cost,
+    distance,
+    bookingRequired,
+    bookingLink,
+    bookingAdvice: bookingRequired ? 'Book in advance for better prices' : undefined
+  };
+
+  // Validate the generated travel segment
+  if (travelSegment.startTime === 'NaN:NaN' || travelSegment.endTime === 'NaN:NaN') {
+    console.error('Generated invalid travel segment:', travelSegment);
+    throw new Error('Generated travel segment has invalid times');
+  }
+
+  return travelSegment;
+};
 
 interface ItineraryViewProps {
   dayPlan: DayPlan;
