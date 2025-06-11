@@ -71,9 +71,9 @@ const DetailedPlanPage: React.FC = () => {
   }, [dayPlan, showForm, storePlanData]);
   
   const handleSubmit = async (preferences: UserPreferences & { surpriseMode: boolean }) => {
-    setIsLoading(true);
-    setError(null);
-    setCurrentPreferences(preferences);
+  setIsLoading(true);
+  setError(null);
+  setCurrentPreferences(preferences);
   
   try {
     const planDate = preferences.planDate || new Date().toISOString().split('T')[0];
@@ -82,7 +82,7 @@ const DetailedPlanPage: React.FC = () => {
       location: preferences.startLocation,
       date: planDate,
       preferences,
-      surpriseMode: false
+      surpriseMode: preferences.surpriseMode
     });
     
     const plan = result.plan;
@@ -90,10 +90,15 @@ const DetailedPlanPage: React.FC = () => {
     if (result.weather) {
       plan.weatherForecast = result.weather;
     }
-  
+    
+    if (preferences.surpriseMode) {
+      const initialReveal = Math.ceil((1 / plan.events.length) * 100);
+      plan.revealProgress = initialReveal;
+      setRevealProgress(initialReveal);
+    } else {
       plan.revealProgress = 100;
       setRevealProgress(100);
-    
+    }
     
     setDayPlan(plan);
     setShowForm(false);
