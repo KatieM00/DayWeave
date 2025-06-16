@@ -94,7 +94,7 @@ serve(async (req)=>{
     // Initialize Gemini AI with server-side API key
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-pro"
+      model: "gemini-2.0-flash"
     });
     const prompt = `You are an expert local travel guide creating a day itinerary for ${location} on ${date}.
 
