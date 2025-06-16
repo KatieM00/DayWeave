@@ -6,9 +6,11 @@ import Card from '../common/Card';
 import LocationInput from '../common/LocationInput';
 import { UserPreferences, BudgetRange, ActivityVibe, TravelDistance } from '../../types';
 
+
 interface SurpriseFormProps {
   onSubmit: (preferences: UserPreferences & { surpriseMode: boolean }) => void;
 }
+
 
 const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
   const [step, setStep] = useState(1);
@@ -164,115 +166,115 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
         );
 
       case 3:
-        return (
-          <div className="space-y-6 animate-fadeIn">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-primary-800 mb-4">
-                How far shall we roam?
-              </h2>
-              
-              {/* Miles/Hours toggle inline with question */}
-              <div className="flex justify-center gap-3">
-                <Button
-                  variant={preferences.travelDistance.unit === 'miles' ? 'primary' : 'outline'}
-                  onClick={() => handleChange('travelDistance', { ...preferences.travelDistance, unit: 'miles' })}
-                  size="sm"
-                >
-                  Miles
-                </Button>
-                
-                <Button
-                  variant={preferences.travelDistance.unit === 'hours' ? 'primary' : 'outline'}
-                  onClick={() => handleChange('travelDistance', { ...preferences.travelDistance, unit: 'hours' })}
-                  size="sm"
-                >
-                  Hours
-                </Button>
-              </div>
-            </div>
+  return (
+    <div className="space-y-8 animate-fadeIn">
+      
+      {/* Transport Mode Selection */}
+      <div className="text-center space-y-6">
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <Users className="h-6 w-6 text-primary-600" />
+          <h2 className="text-2xl font-bold text-primary-800">
+            How would you prefer to get around?
+          </h2>
+        </div>
+        
+        <p className="text-neutral-600 mb-6">
+          Choose all the ways you're happy to travel (you can select multiple)
+        </p>
+        
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
+          {[
+            { value: 'walking', label: 'Walking', icon: Users },
+            { value: 'cycling', label: 'Cycling', icon: Users },
+            { value: 'driving', label: 'Driving', icon: Users },
+            { value: 'bus', label: 'Bus', icon: Users },
+            { value: 'train', label: 'Train', icon: Users }
+          ].map((option) => {
+            const Icon = option.icon;
+            const isSelected = preferences.transportModes?.includes(option.value);
             
-            <div className="space-y-4">
-              {/* Distance options in the requested layout */}
-              <div className="space-y-3">
-                {/* Line 1: 1, 2, 3, 4, 5 */}
-                <div className="grid grid-cols-5 gap-2 sm:gap-3">
-                  {[1, 2, 3, 4, 5].map((value) => (
-                    <Button
-                      key={value}
-                      variant={preferences.travelDistance.value === value ? 'primary' : 'outline'}
-                      onClick={() => handleChange('travelDistance', { ...preferences.travelDistance, value })}
-                      className="h-12 sm:h-14 flex items-center justify-center text-base sm:text-lg font-semibold min-w-0"
-                    >
-                      {value}
-                    </Button>
-                  ))}
-                </div>
-                
-                {/* Line 2: 5-8, 8-11, 11-14 */}
-                <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                  {[
-                    { value: 6.5, label: '5 - 8' },
-                    { value: 9.5, label: '8 - 11' },
-                    { value: 12.5, label: '11 - 14' }
-                  ].map((option) => (
-                    <Button
-                      key={option.value}
-                      variant={preferences.travelDistance.value === option.value ? 'primary' : 'outline'}
-                      onClick={() => handleChange('travelDistance', { ...preferences.travelDistance, value: option.value })}
-                      className="h-12 sm:h-14 flex items-center justify-center text-base sm:text-lg font-semibold"
-                    >
-                      {option.label}
-                    </Button>
-                  ))}
-                </div>
-                
-                {/* Line 3: 15-20, 20-24, Over 24 */}
-                <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                  {[
-                    { value: 17.5, label: '15 - 20' },
-                    { value: 22, label: '20 - 24' },
-                    { value: 25, label: 'Over 24' }
-                  ].map((option) => (
-                    <Button
-                      key={option.value}
-                      variant={preferences.travelDistance.value === option.value ? 'primary' : 'outline'}
-                      onClick={() => handleChange('travelDistance', { ...preferences.travelDistance, value: option.value })}
-                      className="h-12 sm:h-14 flex items-center justify-center text-base sm:text-lg font-semibold"
-                    >
-                      {option.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Display selected value */}
-              {preferences.travelDistance.value > 0 && (
-                <div className="text-center text-sm sm:text-base text-neutral-600 bg-neutral-50 p-3 rounded-lg">
-                  Selected: <span className="font-medium text-primary-600">
-                    {preferences.travelDistance.value === 25 ? 'Over 24' : 
-                     preferences.travelDistance.value === 22 ? '20 - 24' :
-                     preferences.travelDistance.value === 17.5 ? '15 - 20' :
-                     preferences.travelDistance.value === 12.5 ? '11 - 14' :
-                     preferences.travelDistance.value === 9.5 ? '8 - 11' :
-                     preferences.travelDistance.value === 6.5 ? '5 - 8' :
-                     preferences.travelDistance.value} {preferences.travelDistance.unit}
-                  </span>
-                </div>
-              )}
-            </div>
-            
-            <Button
-              variant="primary"
-              size="lg"
-              fullWidth
-              onClick={nextStep}
-              disabled={preferences.travelDistance.value === 0}
-            >
-              Next
-            </Button>
-          </div>
-        );
+            return (
+              <Button
+                key={option.value}
+                variant={isSelected ? 'primary' : 'outline'}
+                size="lg"
+                onClick={() => {
+                  const currentModes = preferences.transportModes || [];
+                  const newModes = isSelected
+                    ? currentModes.filter(m => m !== option.value)
+                    : [...currentModes, option.value];
+                  handleChange('transportModes', newModes);
+                }}
+                className="h-24 flex flex-col items-center justify-center gap-2"
+              >
+                <Icon className="h-6 w-6" />
+                <span className="text-sm">{option.label}</span>
+              </Button>
+            );
+          })}
+        </div>
+        
+        {(!preferences.transportModes || preferences.transportModes.length === 0) && (
+          <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3">
+            Please select at least one transport method
+          </p>
+        )}
+      </div>
 
+      {/* Travel Distance Question */}
+      <div className="text-center space-y-6">
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <MapPin className="h-6 w-6 text-primary-600" />
+          <h2 className="text-2xl font-bold text-primary-800">
+            How far are you willing to travel? 
+            <span className="text-primary-600 ml-2 font-bold">{preferences.travelDistance.value} miles</span>
+          </h2>
+        </div>
+        
+        <p className="text-neutral-600 mb-8">
+          Maximum distance from your starting point to reach activities
+        </p>
+        
+        {/* Distance Slider */}
+        <div className="px-4 space-y-4">
+          <div className="relative">
+            <input
+              type="range"
+              min="1"
+              max="50"
+              value={preferences.travelDistance.value}
+              onChange={(e) => handleChange('travelDistance', { value: parseInt(e.target.value), unit: 'miles' })}
+              className="w-full h-3 bg-neutral-200 rounded-lg appearance-none cursor-pointer"
+              style={{
+                background: `linear-gradient(to right, #4A9CB8 0%, #4A9CB8 ${(preferences.travelDistance.value / 50) * 100}%, #e2e8f0 ${(preferences.travelDistance.value / 50) * 100}%, #e2e8f0 100%)`
+              }}
+            />
+          </div>
+          
+          {/* Slider Labels */}
+          <div className="flex justify-between text-sm text-neutral-500 px-1">
+            <span>1 mile</span>
+            <span>25 miles</span>
+            <span>50+ miles</span>
+          </div>
+          
+          <p className="text-sm text-neutral-600 bg-neutral-50 rounded-lg p-3">
+            Activities will be found within <strong>{preferences.travelDistance.value} miles</strong> of your starting location
+          </p>
+        </div>
+      </div>
+
+      <Button
+        variant="primary"
+        size="lg"
+        fullWidth
+        onClick={nextStep}
+        disabled={!preferences.travelDistance.value || !preferences.transportModes?.length}
+      >
+        Next
+      </Button>
+    </div>
+  );
       case 4:
         return (
           <div className="space-y-6 animate-fadeIn">
