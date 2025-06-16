@@ -396,51 +396,151 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
     }
   }, [showActivityChoices, user]);
 
-  const loadActivitySuggestions = async () => {
-    setIsLoadingSuggestions(true);
-    setError(null);
-    try {
-      const suggestions = await getActivitySuggestions({
-        location: dayPlan.preferences.startLocation,
-        categories: dayPlan.preferences.activityTypes || [],
-        maxBudget: extractBudgetLimit(dayPlan.preferences.budgetRange),
-        radius: dayPlan.preferences.travelDistance.value
-      });
+  // Replace your loadActivitySuggestions function in ItineraryView.tsx with this one:
 
-      const enrichedSuggestions = await Promise.all(
-        suggestions.map(async (suggestion) => {
-          try {
-            const places = await searchPlaces(
-              `${suggestion.name} near ${dayPlan.preferences.startLocation}`,
-              dayPlan.preferences.startLocation
-            );
+const loadActivitySuggestions = async () => {
+  setIsLoadingSuggestions(true);
+  setError(null);
+  try {
+    console.log('🚀 Loading activity suggestions using Google Places API...');
+    
+    const location = dayPlan.preferences.startLocation;
+    const categories = dayPlan.preferences.activityTypes || [];
+    
+    // Create search queries based on user preferences and popular activities
+    const searchQueries = [
+      // User preference-based searches
+      ...categories.map(category => {
+        const categoryMap: Record<string, string> = {
+          'outdoor': 'parks outdoor activities',
+          'culture': 'museums galleries cultural sites',
+          'food': 'restaurants cafes food',
+          'shopping': 'shopping centers markets',
+          'nightlife': 'bars pubs nightlife',
+          'nature': 'gardens parks nature',
+          'history': 'historical sites heritage',
+          'art': 'art galleries exhibitions',
+          'music': 'music venues concerts',
+          'sports': 'sports activities fitness',
+          'entertainment': 'entertainment attractions',
+          'family': 'family activities kids'
+        };
+        return categoryMap[category] || category;
+      }),
+      // Popular general activities
+      'popular attractions',
+      'recommended restaurants',
+      'things to do',
+      'local experiences',
+      'tourist attractions'
+    ].slice(0, 5); // Limit to 5 searches to avoid rate limits
 
-            if (places.length > 0) {
-              const details = await getPlaceDetails(places[0].place_id);
-              return sanitizeActivityTimes({
-                ...suggestion,
-                location: details.name,
-                address: details.formatted_address,
-                ratings: details.rating,
-                imageUrl: null
-              });
-            }
-            return sanitizeActivityTimes(suggestion);
-          } catch (error) {
-            console.error('Error enriching suggestion:', error);
-            return sanitizeActivityTimes(suggestion);
-          }
-        })
-      );
+    console.log('🔍 Searching for:', searchQueries);
 
-      setActivitySuggestions(enrichedSuggestions);
-    } catch (error) {
-      console.error('Error loading suggestions:', error);
-      setError('Failed to load activity suggestions. Please try again.');
-    } finally {
-      setIsLoadingSuggestions(false);
+    const allPlaces: PlaceDetails[] = [];
+    
+    // Search for each category
+    for (const query of searchQueries) {
+      try {
+        console.log(`🔍 Searching: "${query}" near ${location}`);
+        const places = await searchPlaces(`${query} near ${location}`, location);
+        allPlaces.push(...places.slice(0, 3)); // Take top 3 from each search
+      } catch (error) {
+        console.warn(`Search failed for "${query}":`, error);
+      }
     }
-  };
+
+    console.log(`📍 Found ${allPlaces.length} total places`);
+
+    // Remove duplicates and convert to Activity format
+    const uniquePlaces = allPlaces.filter((place, index, self) => 
+      index === self.findIndex(p => p.place_id === place.place_id)
+    );
+
+    const suggestions = await Promise.all(
+      uniquePlaces.slice(0, 15).map(async (place) => { // Limit to 15 suggestions
+        try {
+          const details = await getPlaceDetails(place.place_id);
+          
+          // Determine activity type based on place details
+          const activityType = determineActivityType(details.name, details.formatted_address);
+          
+          // Calculate estimated cost based on price level
+          const estimatedCost = details.price_level ? details.price_level * 25 : 15;
+          
+          return sanitizeActivityTimes({
+            id: place.place_id,
+            name: details.name,
+            description: `Visit ${details.name} - ${getActivityDescription(details)}`,
+            location: details.name,
+            startTime: '10:00',
+            endTime: '12:00',
+            duration: 120,
+            cost: estimatedCost,
+            activityType: [activityType],
+            address: details.formatted_address,
+            ratings: details.rating,
+            imageUrl: null
+          });
+        } catch (error) {
+          console.error('Error processing place:', error);
+          return null;
+        }
+      })
+    );
+
+    // Filter out null results and sort by rating
+    const validSuggestions = suggestions
+      .filter(Boolean)
+      .sort((a, b) => (b.ratings || 0) - (a.ratings || 0));
+
+    console.log(`✅ Generated ${validSuggestions.length} activity suggestions`);
+    setActivitySuggestions(validSuggestions);
+    
+  } catch (error) {
+    console.error('❌ Error loading suggestions:', error);
+    setError('Failed to load activity suggestions. Please try again.');
+  } finally {
+    setIsLoadingSuggestions(false);
+  }
+};
+
+// Helper function to determine activity type from place details
+const determineActivityType = (name: string, address: string): string => {
+  const nameAndAddress = `${name} ${address}`.toLowerCase();
+  
+  if (nameAndAddress.includes('museum') || nameAndAddress.includes('gallery') || nameAndAddress.includes('exhibition')) {
+    return 'culture';
+  }
+  if (nameAndAddress.includes('park') || nameAndAddress.includes('garden') || nameAndAddress.includes('green')) {
+    return 'outdoor';
+  }
+  if (nameAndAddress.includes('restaurant') || nameAndAddress.includes('cafe') || nameAndAddress.includes('food') || nameAndAddress.includes('dining')) {
+    return 'food';
+  }
+  if (nameAndAddress.includes('shop') || nameAndAddress.includes('market') || nameAndAddress.includes('mall')) {
+    return 'shopping';
+  }
+  if (nameAndAddress.includes('bar') || nameAndAddress.includes('pub') || nameAndAddress.includes('club')) {
+    return 'nightlife';
+  }
+  if (nameAndAddress.includes('church') || nameAndAddress.includes('cathedral') || nameAndAddress.includes('abbey') || nameAndAddress.includes('heritage')) {
+    return 'history';
+  }
+  if (nameAndAddress.includes('theater') || nameAndAddress.includes('theatre') || nameAndAddress.includes('cinema') || nameAndAddress.includes('entertainment')) {
+    return 'entertainment';
+  }
+  
+  return 'culture'; // Default fallback
+};
+
+// Helper function to create activity descriptions
+const getActivityDescription = (details: PlaceDetails): string => {
+  const rating = details.rating ? `rated ${details.rating.toFixed(1)}` : 'highly recommended';
+  const reviewCount = details.user_ratings_total ? ` with ${details.user_ratings_total} reviews` : '';
+  
+  return `a ${rating} destination${reviewCount} in ${details.formatted_address.split(',')[1]?.trim() || 'the area'}`;
+};
 
   const extractBudgetLimit = (budgetRange: string): number => {
     const ranges: Record<string, number> = {
