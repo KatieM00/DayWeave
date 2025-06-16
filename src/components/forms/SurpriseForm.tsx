@@ -459,7 +459,7 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
               <Button
                 variant={preferences.surpriseMode ? 'primary' : 'outline'}
                 size="lg"
-                onClick={() => setPreferences(prev => ({ ...prev, surpriseMode: true }))}
+                onClick={() => handleChange('surpriseMode', true)}
                 className="p-6 flex flex-col items-center gap-4 text-left"
               >
                 <div className="flex items-center gap-3">
@@ -477,7 +477,7 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
               <Button
                 variant={preferences.surpriseMode === false ? 'primary' : 'outline'}
                 size="lg"
-                onClick={() => setPreferences(prev => ({ ...prev, surpriseMode: false }))}
+                onClick={() => handleChange('surpriseMode', false)}
                 className="p-6 flex flex-col items-center gap-4 text-left"
               >
                 <div className="flex items-center gap-3">
