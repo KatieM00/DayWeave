@@ -221,6 +221,39 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
         )}
       </div>
 
+      {/* Adventure Duration Question */}
+      <div className="text-center space-y-6">
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <Compass className="h-6 w-6 text-primary-600" />
+          <h2 className="text-2xl font-bold text-primary-800">
+            How many hours for your adventure?
+          </h2>
+        </div>
+        
+        <p className="text-neutral-600 mb-6">
+          This is the total time you want to spend exploring, including activities and travel
+        </p>
+        
+        <div className="grid grid-cols-3 gap-3 sm:gap-4">
+          {[1, 2, 3, 4, 5, 6, 8].map((hours) => {
+            // Use endTime to store the duration as a simple way to track it
+            const selectedHours = preferences.endTime ? parseInt(preferences.endTime) : 0;
+            
+            return (
+              <Button
+                key={hours}
+                variant={selectedHours === hours ? 'primary' : 'outline'}
+                size="lg"
+                onClick={() => handleChange('endTime', hours.toString())}
+                className="h-20 font-semibold text-lg"
+              >
+                {hours}h
+              </Button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Travel Distance Question */}
       <div className="text-center space-y-6">
         <div className="flex items-center justify-center gap-3 mb-4">
@@ -269,7 +302,7 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
         size="lg"
         fullWidth
         onClick={nextStep}
-        disabled={!preferences.travelDistance.value || !preferences.transportModes?.length}
+        disabled={!preferences.endTime || !preferences.travelDistance.value || !preferences.transportModes?.length}
       >
         Next
       </Button>
