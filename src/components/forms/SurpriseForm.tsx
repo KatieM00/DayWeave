@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, LogIn, Users, Compass, DollarSign, Sparkles, Eye, EyeOff, Heart, Zap, Leaf, Gem, Activity } from 'lucide-react';
+import { MapPin, Users, Clock, Compass, Activity, Coffee, Calendar, Bot as Boot, Bike, Car, Bus, Train, Plus, Sparkles, Heart, Zap, Leaf, Gem } from 'lucide-react';
 import Button from '../common/Button';
 import Input from '../common/Input';
 import Card from '../common/Card';
@@ -99,7 +99,7 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
               />
               
               <p className="text-sm text-neutral-600">
-                💡 Leave end location blank if you want to return to your starting location.
+                💡 Your end location will be the same
               </p>
             </div>
             
@@ -184,11 +184,11 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
         
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
           {[
-            { value: 'walking', label: 'Walking' },
-            { value: 'cycling', label: 'Cycling' },
-            { value: 'driving', label: 'Driving' },
-            { value: 'bus', label: 'Bus' },
-            { value: 'train', label: 'Train' }
+            { value: 'walking', label: 'Walking', icon: Boot },
+            { value: 'cycling', label: 'Cycling', icon: Bike },
+            { value: 'driving', label: 'Driving', icon: Car },
+            { value: 'bus', label: 'Bus', icon: Bus },
+            { value: 'train', label: 'Train', icon: Train }
           ].map((option) => {
             const isSelected = preferences.transportModes?.includes(option.value);
             
@@ -202,13 +202,14 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
                   const newModes = isSelected
                     ? currentModes.filter(m => m !== option.value)
                     : [...currentModes, option.value];
-                  handleChange('transportModes', newModes);
-                }}
-                className="h-24 flex flex-col items-center justify-center gap-2"
-              >
-                <Activity className="h-6 w-6" />
-                <span className="text-sm">{option.label}</span>
-              </Button>
+                 handleChange('transportModes', newModes);
+              }}
+            className="h-24 flex flex-col items-center justify-center gap-2"
+          >
+            <option.icon className="h-6 w-6" />
+            <span className="text-sm">{option.label}</span>
+            </Button>
+            
             );
           })}
         </div>
@@ -334,9 +335,6 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
                     : 'border-neutral-300 hover:border-primary-300'}
                 `}
               >
-                <DollarSign className="h-6 w-6 mb-1" />
-                <span className="text-base font-semibold">Budget</span>
-                <span className="text-xs">0-50</span>
               </button>
               
               {/* Moderate Option */}
@@ -349,9 +347,7 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
                     : 'border-neutral-300 hover:border-primary-300'}
                 `}
               >
-                <DollarSign className="h-6 w-6 mb-1" />
-                <span className="text-base font-semibold">Moderate</span>
-                <span className="text-xs">50-150</span>
+              
               </button>
               
               {/* Premium Option */}
@@ -364,9 +360,7 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
                     : 'border-neutral-300 hover:border-primary-300'}
                 `}
               >
-                <DollarSign className="h-6 w-6 mb-1" />
-                <span className="text-base font-semibold">Premium</span>
-                <span className="text-xs">150+</span>
+                
               </button>
             </div>
 
