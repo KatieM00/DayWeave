@@ -1,22 +1,9 @@
-// Enhanced ItineraryItem component with proper Google Maps Directions API integration
-
 import React, { useState, useEffect } from 'react';
 import { Clock, MapPin, DollarSign, ChevronDown, ChevronUp, Activity, AlertTriangle, Camera, Star, Phone, Globe, Navigation, ExternalLink, Calendar, CreditCard } from 'lucide-react';
 import type { Activity as ActivityType, Travel, ItineraryEvent } from '../../types';
 import Card from '../common/Card';
 import Button from '../common/Button';
 import { getPlaceDetails, getPlacePhoto, searchPlaces } from '../../services/api';
-
-interface TravelDirections {
-  distance: string;
-  duration: string;
-  steps: {
-    instructions: string;
-    distance: string;
-    duration: string;
-  }[];
-  mode: string;
-}
 
 interface ItineraryItemProps {
   event: ItineraryEvent;
@@ -42,20 +29,21 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
   const [loadingMapsData, setLoadingMapsData] = useState(false);
   const [mapsImages, setMapsImages] = useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [travelDirections, setTravelDirections] = useState<TravelDirections | null>(null);
-  const [loadingDirections, setLoadingDirections] = useState(false);
 
   // Helper function to format time strings consistently
   const formatTime = (timeString: string): string => {
     if (!timeString) return '';
     
+    // Remove any commas that might have been added by number formatting
     const cleanTime = timeString.toString().replace(/,/g, '');
     
+    // If it's already in HH:MM format, return as is
     if (/^\d{1,2}:\d{2}$/.test(cleanTime)) {
       const [hours, minutes] = cleanTime.split(':');
       return `${hours.padStart(2, '0')}:${minutes}`;
     }
     
+    // If it's a number, try to convert it to time format
     const numericTime = parseFloat(cleanTime);
     if (!isNaN(numericTime)) {
       const hours = Math.floor(numericTime);
@@ -63,90 +51,8 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
       return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     }
     
+    // Return the original string if we can't parse it
     return cleanTime;
-  };
-
-  // Function to get real travel directions using Google Maps Directions API
-  const loadTravelDirections = async (travel: Travel) => {
-    if (!window.google || !window.google.maps) {
-      console.log('❌ Google Maps not loaded for directions');
-      return;
-    }
-
-    console.log('🗺️ Loading real travel directions...', {
-      from: travel.startLocation,
-      to: travel.endLocation,
-      mode: travel.mode
-    });
-
-    setLoadingDirections(true);
-
-    try {
-      const directionsService = new window.google.maps.DirectionsService();
-      
-      // Map our mode to Google Maps travel mode
-      let travelMode = window.google.maps.TravelMode.WALKING;
-      switch (travel.mode) {
-        case 'driving':
-          travelMode = window.google.maps.TravelMode.DRIVING;
-          break;
-        case 'cycling':
-          travelMode = window.google.maps.TravelMode.BICYCLING;
-          break;
-        case 'transit':
-          travelMode = window.google.maps.TravelMode.TRANSIT;
-          break;
-        default:
-          travelMode = window.google.maps.TravelMode.WALKING;
-      }
-
-      const request = {
-        origin: travel.startLocation,
-        destination: travel.endLocation,
-        travelMode: travelMode,
-        unitSystem: window.google.maps.UnitSystem.IMPERIAL,
-        avoidHighways: false,
-        avoidTolls: false
-      };
-
-      directionsService.route(request, (result, status) => {
-        if (status === 'OK' && result?.routes?.[0]) {
-          const route = result.routes[0];
-          const leg = route.legs[0];
-          
-          const directions: TravelDirections = {
-            distance: leg.distance?.text || `${travel.distance || 0.5} miles`,
-            duration: leg.duration?.text || `${travel.duration || 15} min`,
-            steps: leg.steps?.map(step => ({
-              instructions: step.instructions.replace(/<[^>]*>/g, ''), // Remove HTML tags
-              distance: step.distance?.text || '',
-              duration: step.duration?.text || ''
-            })) || [],
-            mode: travel.mode
-          };
-
-          console.log('✅ Real directions loaded:', directions);
-          setTravelDirections(directions);
-        } else {
-          console.log('❌ Directions request failed:', status);
-          // Fallback to original data
-          setTravelDirections({
-            distance: `${travel.distance || 0.5} miles`,
-            duration: `${travel.duration || 15} min`,
-            steps: [{
-              instructions: `${travel.mode === 'walking' ? 'Walk' : travel.mode === 'driving' ? 'Drive' : 'Travel'} to ${travel.endLocation}`,
-              distance: `${travel.distance || 0.5} miles`,
-              duration: `${travel.duration || 15} min`
-            }],
-            mode: travel.mode
-          });
-        }
-        setLoadingDirections(false);
-      });
-    } catch (error) {
-      console.error('❌ Error getting directions:', error);
-      setLoadingDirections(false);
-    }
   };
 
   // Load Google Maps data when component mounts or expands
@@ -161,11 +67,15 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
     });
 
     if (expanded && event.type === 'activity' && !googleMapsData && !loadingMapsData) {
-      console.log('✅ Loading Google Maps data for activity');
+      console.log('✅ Conditions met for loading Google Maps data - calling loadGoogleMapsData()');
       loadGoogleMapsData();
-    } else if (expanded && event.type === 'travel' && !travelDirections && !loadingDirections) {
-      console.log('✅ Loading travel directions');
-      loadTravelDirections(event.data as Travel);
+    } else {
+      console.log('❌ Conditions NOT met for loading Google Maps data:', {
+        expanded,
+        isActivity: event.type === 'activity',
+        hasGoogleMapsData: !!googleMapsData,
+        loadingMapsData
+      });
     }
   }, [expanded, event]);
 
@@ -180,8 +90,14 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
     
     try {
       const activity = event.data as ActivityType;
-      console.log('📍 Searching for place:', activity.location);
+      console.log('📍 About to search places with:', {
+        activityName: activity.name,
+        planStartLocation,
+        activityLocation: activity.location
+      });
       
+      // Search for the place using activity.location (the exact venue name) instead of activity.name
+      console.log('🔍 Calling searchPlaces API...');
       const places = await searchPlaces(activity.location, planStartLocation);
       console.log('📍 searchPlaces response:', places);
       
@@ -189,6 +105,8 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
         const place = places[0];
         console.log('🏢 Found place, getting details for place_id:', place.place_id);
         
+        // Get detailed place information
+        console.log('📋 Calling getPlaceDetails API...');
         const details = await getPlaceDetails(place.place_id);
         console.log('📋 getPlaceDetails response:', details);
         
@@ -197,6 +115,7 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
         if (details.photos && details.photos.length > 0) {
           console.log(`📸 Found ${details.photos.length} photos, loading up to 5...`);
           
+          // Load up to 5 photos
           const photoPromises = details.photos.slice(0, 5).map(async (photo, index) => {
             try {
               console.log(`📸 Loading photo ${index + 1}:`, photo.photo_reference);
@@ -213,6 +132,8 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
           const validPhotos = photos.filter(url => url !== null) as string[];
           photoUrls.push(...validPhotos);
           console.log(`📸 Successfully loaded ${validPhotos.length} photos`);
+        } else {
+          console.log('📸 No photos available for this place');
         }
         
         setGoogleMapsData(details);
@@ -225,6 +146,7 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
       console.error('❌ Error loading Google Maps data:', error);
     } finally {
       setLoadingMapsData(false);
+      console.log('🏁 loadGoogleMapsData completed');
     }
   };
 
@@ -250,125 +172,7 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
     setShowDirectionsWarning(true);
   };
 
-  const renderTravelContent = (travel: Travel) => {
-    const directionsUrl = getDirectionsUrl(travel.endLocation, travel.startLocation);
-    
-    return (
-      <>
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center">
-            <div className="flex items-center justify-center w-8 h-8 bg-primary-100 rounded-full mr-3">
-              <Navigation className="h-4 w-4 text-primary-600" />
-            </div>
-            <div>
-              <h3 className="font-medium text-neutral-800">
-                {formatTime(travel.startTime)} — {formatTime(travel.endTime)}
-              </h3>
-              <p className="text-sm text-neutral-600">
-                {travel.mode.charAt(0).toUpperCase() + travel.mode.slice(1)} to next location
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="flex items-center text-primary-600 hover:text-primary-700 text-sm font-medium"
-          >
-            {expanded ? (
-              <>
-                <ChevronUp className="h-4 w-4 mr-1" />
-                Hide Details
-              </>
-            ) : (
-              <>
-                <ChevronDown className="h-4 w-4 mr-1" />
-                Route Details
-              </>
-            )}
-          </button>
-        </div>
-
-        {expanded && (
-          <div className="mt-4 pt-4 border-t border-neutral-200">
-            {loadingDirections ? (
-              <div className="flex items-center justify-center h-20 bg-neutral-50 rounded-lg">
-                <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary-500 border-t-transparent"></div>
-                <span className="ml-2 text-neutral-600">Loading route details...</span>
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-neutral-700 mb-1">Distance</h4>
-                    <p className="text-sm text-neutral-600">
-                      {travelDirections?.distance || `${travel.distance || 0.5} miles`}
-                    </p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-neutral-700 mb-1">Duration</h4>
-                    <p className="text-sm text-neutral-600">
-                      {travelDirections?.duration || `${travel.duration || 15} min`}
-                    </p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-neutral-700 mb-1">Mode</h4>
-                    <p className="text-sm text-neutral-600 capitalize">
-                      {travel.mode}
-                    </p>
-                  </div>
-                </div>
-
-                {travelDirections?.steps && travelDirections.steps.length > 0 && (
-                  <div className="mb-4">
-                    <h4 className="text-sm font-medium text-neutral-700 mb-2">Route Steps</h4>
-                    <div className="space-y-2">
-                      {travelDirections.steps.map((step, index) => (
-                        <div key={index} className="flex items-start p-2 bg-neutral-50 rounded-lg">
-                          <span className="flex items-center justify-center w-6 h-6 bg-primary-100 text-primary-600 rounded-full text-xs font-medium mr-3 mt-0.5">
-                            {index + 1}
-                          </span>
-                          <div className="flex-1">
-                            <p className="text-sm text-neutral-800">{step.instructions}</p>
-                            {step.distance && step.duration && (
-                              <p className="text-xs text-neutral-500 mt-1">
-                                {step.distance} • {step.duration}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => handleDirectionsClick(e, directionsUrl)}
-                  >
-                    <Navigation className="h-4 w-4 mr-1" />
-                    Get Directions
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => handleDirectionsClick(e, getGoogleMapsUrl(`${travel.startLocation} to ${travel.endLocation}`))}
-                  >
-                    <MapPin className="h-4 w-4 mr-1" />
-                    View on Map
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-      </>
-    );
-  };
-
-  // Rest of your existing renderActivityContent function stays the same...
   const renderActivityContent = (activity: ActivityType) => {
-    // Your existing activity rendering code
     return (
       <>
         <div className="flex items-center justify-between mb-2">
@@ -390,7 +194,7 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
           </div>
         </div>
         
-        <p className="text-neutral-600 mb-4">{activity.description}</p>
+        {/* NO description here - moved to details section */}
         
         <button
           onClick={() => setExpanded(!expanded)}
@@ -408,8 +212,198 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
             </>
           )}
         </button>
+
+        {expanded && (
+          <div className="mt-4 pt-4 border-t border-neutral-200">
+            {/* Description moved here - appears FIRST in details section */}
+            <div className="mb-4">
+              <p className="text-neutral-600">{activity.description}</p>
+            </div>
+
+            {/* Photo carousel */}
+            {mapsImages.length > 0 && (
+              <div className="mb-4">
+                <div className="relative">
+                  <img
+                    src={mapsImages[currentImageIndex]}
+                    alt={activity.name}
+                    className="w-full h-48 object-cover rounded-lg"
+                    onError={() => setImageError(true)}
+                    onLoad={() => setImageLoading(false)}
+                  />
+                  {mapsImages.length > 1 && (
+                    <>
+                      <button
+                        onClick={() => setCurrentImageIndex((prev) => (prev - 1 + mapsImages.length) % mapsImages.length)}
+                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70"
+                      >
+                        ‹
+                      </button>
+                      <button
+                        onClick={() => setCurrentImageIndex((prev) => (prev + 1) % mapsImages.length)}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70"
+                      >
+                        ›
+                      </button>
+                      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
+                        {mapsImages.map((_, index) => (
+                          <button
+                            key={index}
+                            onClick={() => setCurrentImageIndex(index)}
+                            className={`w-2 h-2 rounded-full ${
+                              index === currentImageIndex ? 'bg-white' : 'bg-white bg-opacity-50'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {loadingMapsData && (
+              <div className="mb-4 flex items-center justify-center h-32 bg-neutral-50 rounded-lg">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent"></div>
+                <span className="ml-2 text-neutral-600">Loading Google Maps data...</span>
+              </div>
+            )}
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <h4 className="text-sm font-medium text-neutral-700 mb-1">Address</h4>
+                <a 
+                  href="#"
+                  onClick={(e) => handleDirectionsClick(e, getDirectionsUrl(googleMapsData?.formatted_address || activity.address || activity.location))}
+                  className="text-sm text-primary-600 hover:underline"
+                >
+                  {googleMapsData?.formatted_address || activity.address || activity.location}
+                </a>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-neutral-700 mb-1">Duration</h4>
+                <p className="text-sm text-neutral-600">
+                  {Math.floor(activity.duration / 60)}h {activity.duration % 60}m
+                </p>
+              </div>
+              
+              {googleMapsData?.formatted_phone_number && (
+                <div>
+                  <h4 className="text-sm font-medium text-neutral-700 mb-1">Phone</h4>
+                  <a 
+                    href={`tel:${googleMapsData.formatted_phone_number}`}
+                    className="text-sm text-primary-600 hover:underline flex items-center"
+                  >
+                    <Phone className="w-4 h-4 mr-1" />
+                    {googleMapsData.formatted_phone_number}
+                  </a>
+                </div>
+              )}
+              
+              {googleMapsData?.website && (
+                <div>
+                  <h4 className="text-sm font-medium text-neutral-700 mb-1">Website</h4>
+                  <a 
+                    href={googleMapsData.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary-600 hover:underline flex items-center"
+                  >
+                    <Globe className="w-4 h-4 mr-1" />
+                    Visit Website
+                  </a>
+                </div>
+              )}
+              
+              {googleMapsData?.rating && (
+                <div>
+                  <h4 className="text-sm font-medium text-neutral-700 mb-1">Rating</h4>
+                  <div className="flex items-center">
+                    <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
+                    <span className="text-sm text-neutral-600">
+                      {googleMapsData.rating} ({googleMapsData.user_ratings_total} reviews)
+                    </span>
+                  </div>
+                </div>
+              )}
+              
+              {googleMapsData?.opening_hours && (
+                <div>
+                  <h4 className="text-sm font-medium text-neutral-700 mb-1">Hours</h4>
+                  <p className="text-sm text-neutral-600">
+                    {googleMapsData.opening_hours.open_now ? '🟢 Open now' : '🔴 Closed'}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => handleDirectionsClick(e, getDirectionsUrl(googleMapsData?.formatted_address || activity.location))}
+              >
+                <Navigation className="h-4 w-4 mr-1" />
+                Get Directions
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => handleDirectionsClick(e, getGoogleMapsUrl(activity.location))}
+              >
+                <MapPin className="h-4 w-4 mr-1" />
+                View on Map
+              </Button>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  };
+
+  const renderTravelContent = (travel: Travel) => {
+    const directionsUrl = getDirectionsUrl(travel.endLocation, travel.startLocation);
+    
+    return (
+      <>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center">
+            <div className="flex items-center justify-center w-8 h-8 bg-primary-100 rounded-full mr-3">
+              <Navigation className="h-4 w-4 text-primary-600" />
+            </div>
+            <div>
+              <h3 className="font-medium text-neutral-800">
+                {formatTime(travel.startTime)} — {formatTime(travel.endTime)}
+              </h3>
+              <p className="text-sm text-neutral-600">
+                {travel.mode.charAt(0).toUpperCase() + travel.mode.slice(1)} to next location
+              </p>
+            </div>
+          </div>
+          
+          {/* Single "Get Directions" button - no "Route Details" */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => handleDirectionsClick(e, directionsUrl)}
+          >
+            <Navigation className="h-4 w-4 mr-1" />
+            Get Directions
+          </Button>
+        </div>
         
-        {/* Your existing expanded activity content... */}
+        {/* Travel segments should show duration and distance info inline */}
+        <div className="text-sm text-neutral-500 ml-11">
+          {travel.distance && travel.distance > 0 && (
+            <span>{travel.distance} miles • </span>
+          )}
+          {travel.duration && travel.duration > 0 && (
+            <span>{travel.duration} min</span>
+          )}
+          {travel.cost && travel.cost > 0 && (
+            <span> • £{travel.cost}</span>
+          )}
+        </div>
       </>
     );
   };
@@ -438,7 +432,7 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
         }
       </Card>
 
-      {/* Directions warning modal */}
+      {/* Directions warning modal for surprise mode */}
       {showDirectionsWarning && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md mx-4">
