@@ -172,7 +172,7 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
       {/* Transport Mode Selection */}
       <div className="text-center space-y-6">
         <div className="flex items-center justify-center gap-3 mb-4">
-          <Users className="h-6 w-6 text-primary-600" />
+          <Activity className="h-6 w-6 text-primary-600" />
           <h2 className="text-2xl font-bold text-primary-800">
             How would you prefer to get around?
           </h2>
@@ -184,13 +184,12 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
         
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
           {[
-            { value: 'walking', label: 'Walking', icon: Users },
-            { value: 'cycling', label: 'Cycling', icon: Users },
-            { value: 'driving', label: 'Driving', icon: Users },
-            { value: 'bus', label: 'Bus', icon: Users },
-            { value: 'train', label: 'Train', icon: Users }
+            { value: 'walking', label: 'Walking' },
+            { value: 'cycling', label: 'Cycling' },
+            { value: 'driving', label: 'Driving' },
+            { value: 'bus', label: 'Bus' },
+            { value: 'train', label: 'Train' }
           ].map((option) => {
-            const Icon = option.icon;
             const isSelected = preferences.transportModes?.includes(option.value);
             
             return (
@@ -207,7 +206,7 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
                 }}
                 className="h-24 flex flex-col items-center justify-center gap-2"
               >
-                <Icon className="h-6 w-6" />
+                <Activity className="h-6 w-6" />
                 <span className="text-sm">{option.label}</span>
               </Button>
             );
@@ -234,9 +233,8 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
           This is the total time you want to spend exploring, including activities and travel
         </p>
         
-        <div className="grid grid-cols-3 gap-3 sm:gap-4">
-          {[1, 2, 3, 4, 5, 6, 8].map((hours) => {
-            // Use endTime to store the duration as a simple way to track it
+        <div className="grid grid-cols-4 gap-3 sm:gap-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((hours) => {
             const selectedHours = preferences.endTime ? parseInt(preferences.endTime) : 0;
             
             return (
@@ -268,23 +266,19 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
           Maximum distance from your starting point to reach activities
         </p>
         
-        {/* Distance Slider */}
         <div className="px-4 space-y-4">
-          <div className="relative">
-            <input
-              type="range"
-              min="1"
-              max="50"
-              value={preferences.travelDistance.value}
-              onChange={(e) => handleChange('travelDistance', { value: parseInt(e.target.value), unit: 'miles' })}
-              className="w-full h-3 bg-neutral-200 rounded-lg appearance-none cursor-pointer"
-              style={{
-                background: `linear-gradient(to right, #4A9CB8 0%, #4A9CB8 ${(preferences.travelDistance.value / 50) * 100}%, #e2e8f0 ${(preferences.travelDistance.value / 50) * 100}%, #e2e8f0 100%)`
-              }}
-            />
-          </div>
+          <input
+            type="range"
+            min="1"
+            max="50"
+            value={preferences.travelDistance.value}
+            onChange={(e) => handleChange('travelDistance', { value: parseInt(e.target.value), unit: 'miles' })}
+            className="w-full h-3 bg-neutral-200 rounded-lg appearance-none cursor-pointer"
+            style={{
+              background: `linear-gradient(to right, #4A9CB8 0%, #4A9CB8 ${(preferences.travelDistance.value / 50) * 100}%, #e2e8f0 ${(preferences.travelDistance.value / 50) * 100}%, #e2e8f0 100%)`
+            }}
+          />
           
-          {/* Slider Labels */}
           <div className="flex justify-between text-sm text-neutral-500 px-1">
             <span>1 mile</span>
             <span>25 miles</span>
