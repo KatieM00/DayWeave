@@ -304,89 +304,93 @@ const SurpriseForm: React.FC<SurpriseFormProps> = ({ onSubmit }) => {
     </div>
   );
       case 4:
-        return (
-          <div className="space-y-6 animate-fadeIn">
-            <h2 className="text-2xl font-bold text-primary-800 text-center mb-8">
-              What's your budget looking like?
-            </h2>
-            
-            <div className="grid grid-cols-2 gap-3">
-              {/* Free Budget Option */}
-              <button
-                onClick={() => handleChange('budgetRange', 'free')}
-                className={`
-                  p-4 border-2 rounded-lg text-center transition-all flex flex-col items-center justify-center h-24
-                  ${preferences.budgetRange === 'free'
-                    ? 'bg-green-50 border-green-300 text-green-800'
-                    : 'border-neutral-300 hover:border-green-300 hover:bg-green-50'}
-                `}
-              >
-                <span className="text-base font-semibold">Free</span>
-                <span className="text-xs mt-1 opacity-80">Walking & free activities</span>
-              </button>
+  return (
+    <div className="space-y-6 animate-fadeIn">
+      <h2 className="text-2xl font-bold text-primary-800 text-center mb-8">
+        What's your budget looking like?
+      </h2>
+      
+      <div className="grid grid-cols-2 gap-3">
+        {/* Free Budget Option */}
+        <button
+          onClick={() => handleChange('budgetRange', 'free')}
+          className={`
+            p-4 border-2 rounded-lg text-center transition-all flex flex-col items-center justify-center h-24
+            ${preferences.budgetRange === 'free'
+              ? 'bg-green-50 border-green-300 text-green-800'
+              : 'border-neutral-300 hover:border-green-300 hover:bg-green-50'}
+          `}
+        >
+          <span className="text-base font-semibold">Free</span>
+          <span className="text-xs mt-1 opacity-80">Walking & free activities</span>
+        </button>
 
-              {/* Budget Option */}
-              <button
-                onClick={() => handleChange('budgetRange', 'budget')}
-                className={`
-                  p-4 border-2 rounded-lg text-center transition-all flex flex-col items-center justify-center h-24
-                  ${preferences.budgetRange === 'budget'
-                    ? 'border-primary-500 bg-primary-50 text-primary-700'
-                    : 'border-neutral-300 hover:border-primary-300'}
-                `}
-              >
-              </button>
-              
-              {/* Moderate Option */}
-              <button
-                onClick={() => handleChange('budgetRange', 'moderate')}
-                className={`
-                  p-4 border-2 rounded-lg text-center transition-all flex flex-col items-center justify-center h-24
-                  ${preferences.budgetRange === 'moderate'
-                    ? 'border-primary-500 bg-primary-50 text-primary-700'
-                    : 'border-neutral-300 hover:border-primary-300'}
-                `}
-              >
-              
-              </button>
-              
-              {/* Premium Option */}
-              <button
-                onClick={() => handleChange('budgetRange', 'premium')}
-                className={`
-                  p-4 border-2 rounded-lg text-center transition-all flex flex-col items-center justify-center h-24
-                  ${preferences.budgetRange === 'premium'
-                    ? 'border-primary-500 bg-primary-50 text-primary-700'
-                    : 'border-neutral-300 hover:border-primary-300'}
-                `}
-              >
-                
-              </button>
-            </div>
+        {/* Budget Option */}
+        <button
+          onClick={() => handleChange('budgetRange', 'budget')}
+          className={`
+            p-4 border-2 rounded-lg text-center transition-all flex flex-col items-center justify-center h-24
+            ${preferences.budgetRange === 'budget'
+              ? 'border-primary-500 bg-primary-50 text-primary-700'
+              : 'border-neutral-300 hover:border-primary-300'}
+          `}
+        >
+          <span className="text-base font-semibold">Budget</span>
+          <span className="text-xs">£0-50</span>
+        </button>
+        
+        {/* Moderate Option */}
+        <button
+          onClick={() => handleChange('budgetRange', 'moderate')}
+          className={`
+            p-4 border-2 rounded-lg text-center transition-all flex flex-col items-center justify-center h-24
+            ${preferences.budgetRange === 'moderate'
+              ? 'border-primary-500 bg-primary-50 text-primary-700'
+              : 'border-neutral-300 hover:border-primary-300'}
+          `}
+        >
+          <span className="text-base font-semibold">Moderate</span>
+          <span className="text-xs">£50-150</span>
+        </button>
+        
+        {/* Premium Option */}
+        <button
+          onClick={() => handleChange('budgetRange', 'premium')}
+          className={`
+            p-4 border-2 rounded-lg text-center transition-all flex flex-col items-center justify-center h-24
+            ${preferences.budgetRange === 'premium'
+              ? 'border-primary-500 bg-primary-50 text-primary-700'
+              : 'border-neutral-300 hover:border-primary-300'}
+          `}
+        >
+          <span className="text-base font-semibold">Premium</span>
+          <span className="text-xs">£150+</span>
+        </button>
+      </div>
 
-            {/* Free budget explanation */}
-            {preferences.budgetRange === 'free' && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h4 className="font-medium text-green-800 mb-2">🌱 Free Budget Mode</h4>
-                <ul className="text-sm text-green-700 space-y-1">
-                  <li>• Focus on free activities: parks, beaches, walking trails</li>
-                  <li>• Walking-only transport to keep costs at zero</li>
-                  <li>• Budget-friendly meal suggestions and picnic spots</li>
-                  <li>• Perfect for eco-friendly, healthy adventures</li>
-                </ul>
-              </div>
-            )}
-            
-            <Button
-              variant="primary"
-              size="lg"
-              fullWidth
-              onClick={nextStep}
-            >
-              Next
-            </Button>
-          </div>
-        );
+      {/* Free budget explanation */}
+      {preferences.budgetRange === 'free' && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <h4 className="font-medium text-green-800 mb-2">🌱 Free Budget Mode</h4>
+          <ul className="text-sm text-green-700 space-y-1">
+            <li>• Focus on free activities: parks, beaches, walking trails</li>
+            <li>• Walking-only transport to keep costs at zero</li>
+            <li>• Budget-friendly meal suggestions and picnic spots</li>
+            <li>• Perfect for eco-friendly, healthy adventures</li>
+          </ul>
+        </div>
+      )}
+      
+      <Button
+        variant="primary"
+        size="lg"
+        fullWidth
+        onClick={nextStep}
+      >
+        Next
+      </Button>
+    </div>
+  );
 
       case 5:
         return (
