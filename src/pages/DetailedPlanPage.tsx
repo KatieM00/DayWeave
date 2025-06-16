@@ -66,6 +66,8 @@ const DetailedPlanPage: React.FC = () => {
       };
       storePlanData(planData);
     }
+      clearStoredPlanData();
+      
   }, [dayPlan, showForm, storePlanData]);
   
   const handleSubmit = async (preferences: UserPreferences) => {

@@ -52,6 +52,8 @@ const SurprisePlanPage: React.FC = () => {
         }
       }
       
+      clearStoredPlanData();
+
       // Default: show form for fresh visits
       setShowForm(true);
       setDayPlan(null);
