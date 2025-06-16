@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Users, Clock, Compass, Activity, Coffee, Calendar, Bot as Boot, Bike, Car, Bus, Train, Plus, Sparkles, Heart, Zap, Leaf, Gem } from 'lucide-react';
+import { MapPin, Users, Clock, Compass, Activity, Coffee, Calendar, PersonStandingIcon as Boot, Bike, Car, Bus, Train, Plus, Sparkles, Heart, Zap, Leaf, Gem } from 'lucide-react';
 import Button from '../common/Button';
 import Input from '../common/Input';
 import Card from '../common/Card';
