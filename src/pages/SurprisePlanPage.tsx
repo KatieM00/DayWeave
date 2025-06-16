@@ -33,33 +33,36 @@ const SurprisePlanPage: React.FC = () => {
   });
 
   // Check for stored plan data on component mount - but only restore if appropriate
-  useEffect(() => {
-    if (!hasAttemptedRestore) {
-      setHasAttemptedRestore(true);
-      
-      // Only attempt restoration if we have a specific indicator that we should restore
-      // For example, if coming from an auth flow or if there's a specific URL parameter
-      const urlParams = new URLSearchParams(window.location.search);
-      const shouldRestore = urlParams.get('restore') === 'true' || 
-                           sessionStorage.getItem('dayweave_should_restore') === 'true';
-      
-      if (shouldRestore) {
-        const hasRestoredPlan = restorePlanData();
-        if (hasRestoredPlan) {
-          // Clear the restore flag
-          sessionStorage.removeItem('dayweave_should_restore');
-          return;
-        }
+ // Check for stored plan data on component mount - but only restore if appropriate
+useEffect(() => {
+  // FORCE CLEAR at the very start - no matter what
+  clearStoredPlanData();
+  sessionStorage.removeItem('dayweave_current_plan');
+  sessionStorage.removeItem('dayweave_should_restore');
+  
+  if (!hasAttemptedRestore) {
+    setHasAttemptedRestore(true);
+    
+    // Only attempt restoration if we have a specific indicator that we should restore
+    // For example, if coming from an auth flow or if there's a specific URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const shouldRestore = urlParams.get('restore') === 'true';
+    
+    if (shouldRestore) {
+      const hasRestoredPlan = restorePlanData();
+      if (hasRestoredPlan) {
+        // Clear the restore flag
+        sessionStorage.removeItem('dayweave_should_restore');
+        return;
       }
-      
-      clearStoredPlanData();
-
-      // Default: show form for fresh visits
-      setShowForm(true);
-      setDayPlan(null);
-      setRevealProgress(0);
     }
-  }, [hasAttemptedRestore, restorePlanData]);
+
+    // Default: show form for fresh visits
+    setShowForm(true);
+    setDayPlan(null);
+    setRevealProgress(0);
+  }
+}, [hasAttemptedRestore, restorePlanData, clearStoredPlanData]);
 
   // Store plan data whenever it changes (but only after successful generation)
   useEffect(() => {
