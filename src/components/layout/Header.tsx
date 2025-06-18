@@ -62,10 +62,7 @@ const Header: React.FC = () => {
               alt="DayWeave" 
               className="h-8 md:h-10 w-auto transition-transform duration-200 hover:scale-105"
             />
-           <span className="text-sm text-white/80 hidden sm:block">
-              Plan less, Discover more
-          </span>
-        </Link>
+          </Link>
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
