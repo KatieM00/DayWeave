@@ -56,12 +56,16 @@ const Header: React.FC = () => {
     <header className="bg-gradient-to-r from-primary-700 to-secondary-700 text-white shadow-md">
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="rounded-full bg-white p-1.5">
-              <MapPin className="h-6 w-6 text-primary-600" />
-            </div>
-            <h1 className="text-xl md:text-2xl font-bold">DayWeave</h1>
-          </Link>
+          <Link to="/" className="flex items-center space-x-3">
+            <img 
+              src="/dayweavelogo.svg" 
+              alt="DayWeave" 
+              className="h-8 md:h-10 w-auto transition-transform duration-200 hover:scale-105"
+            />
+           <span className="text-sm text-white/80 hidden sm:block">
+              Plan less, Discover more
+          </span>
+        </Link>
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
