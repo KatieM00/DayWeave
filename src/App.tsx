@@ -14,6 +14,8 @@ import AccountPage from './pages/AccountPage';
 import SharedPlanPage from './pages/SharedPlanPage';
 import AboutPage from './pages/AboutPage';
 import LegalPage from './pages/LegalPage';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
 
 // Components
 import Header from './components/layout/Header';
@@ -67,6 +69,8 @@ function AppContent() {
           <Route path="/plan" element={<DetailedPlanPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/legal" element={<LegalPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
           
           {/* Shared plan route - public access */}
           <Route path="/share/:shareableLinkId" element={<SharedPlanPage />} />

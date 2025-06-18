@@ -39,8 +39,6 @@ const Footer: React.FC = () => {
               <h4 className="text-accent-300 font-medium mb-3">Contact</h4>
               <ul className="space-y-2">
                 <li><a href="mailto:hello@dayweave.com" className="text-neutral-300 hover:text-white transition-colors">hello@dayweave.com</a></li>
-                <li><a href="https://twitter.com/dayweave" className="text-neutral-300 hover:text-white transition-colors">Twitter</a></li>
-                <li><a href="https://instagram.com/dayweave" className="text-neutral-300 hover:text-white transition-colors">Instagram</a></li>
               </ul>
             </div>
           </div>
