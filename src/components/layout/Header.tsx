@@ -42,7 +42,7 @@ const Header: React.FC = () => {
               <img 
                 src="/dayweavelogo.svg" 
                 alt="DayWeave" 
-                className="h-12 md:h-14 w-auto transition-transform duration-200 hover:scale-105"
+                className="h-12 md:h-12 w-auto transition-transform duration-200 hover:scale-105"
               />
             </Link>
             <div className="w-8 h-8 bg-white/20 rounded animate-pulse"></div>
