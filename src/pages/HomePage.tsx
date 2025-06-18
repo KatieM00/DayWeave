@@ -107,7 +107,7 @@ const HomePage: React.FC = () => {
         </div>
         
         {/* Built in Bolt Badge */}
-        <div className="absolute bottom-6 right-6">
+        <div className="absolute top-20 right-6">
           <a
             href="https://bolt.new/"
             target="_blank"
