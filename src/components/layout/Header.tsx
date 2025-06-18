@@ -40,7 +40,7 @@ const Header: React.FC = () => {
           <div className="flex justify-between items-center">
             <Link to="/" className="flex items-center">
               <img 
-                src="/DW%20long-noBG-yellow-blob.svg" 
+                src="/dayweavelogo.svg" 
                 alt="DayWeave" 
                 className="h-8 md:h-10 w-auto transition-transform duration-200 hover:scale-105"
               />
