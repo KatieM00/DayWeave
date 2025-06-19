@@ -401,7 +401,7 @@ const loadActivitySuggestions = async () => {
   
   setTimeout(() => {
     console.log('Would set activity suggestions here, but commenting out for test');
-    // setActivitySuggestions([...]); // COMMENT THIS OUT
+    setActivitySuggestions([...]); // COMMENT THIS OUT
     setIsLoadingSuggestions(false);
   }, 1000);
 };
