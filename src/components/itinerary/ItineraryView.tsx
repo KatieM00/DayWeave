@@ -124,6 +124,7 @@ interface ItineraryViewProps {
   onSharePlan?: () => void;
   onSavePlan?: () => void;
   onUpdatePlan?: (updatedPlan: DayPlan) => void;
+  disablePlanRestoration?: boolean;
 }
 
 // Enhanced time formatting helper function
@@ -261,6 +262,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   onSharePlan,
   onSavePlan,
   onUpdatePlan
+  disablePlanRestoration = false
 }) => {
   const { user } = useAuth();
   const { selectedCurrency } = useCurrency();
@@ -361,17 +363,22 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
     }
   });
 
-  // Store plan data whenever it changes
-  useEffect(() => {
-    const planData = {
-      dayPlan,
-      events,
-      planName,
-      revealProgress,
-      currentUrl: window.location.href
-    };
-    storePlanData(planData);
-  }, [dayPlan, events, planName, revealProgress, storePlanData]);
+// Store plan data whenever it changes - BUT ONLY IF NOT DISABLED
+useEffect(() => {
+  if (disablePlanRestoration) {
+    console.log('Plan restoration disabled - skipping data storage');
+    return;
+  }
+
+  const planData = {
+    dayPlan,
+    events,
+    planName,
+    revealProgress,
+    currentUrl: window.location.href
+  };
+  storePlanData(planData);
+}, [dayPlan, events, planName, revealProgress, storePlanData, disablePlanRestoration]);
 
   // Handle post-authentication actions
   useEffect(() => {

@@ -100,6 +100,7 @@ const EditPlanPage: React.FC = () => {
           onUpdatePlan={handleUpdatePlan}
           onSavePlan={handleSavePlan}
           isSurpriseMode={false}
+          disablePlanRestoration={true} 
         />
       </div>
     </div>
