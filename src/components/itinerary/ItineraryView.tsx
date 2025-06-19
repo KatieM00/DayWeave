@@ -803,26 +803,34 @@ const getActivityDescription = (details: PlaceDetails): string => {
     const [sortOrder, setSortOrder] = useState<'rating' | 'cost' | 'name'>('rating');
     const [filteredSuggestions, setFilteredSuggestions] = useState<Activity[]>([]);
 
-    /* useEffect(() => {
-      if (activitySuggestions.length > 0) {
-        let sorted = [...activitySuggestions];
-        
-        switch (sortOrder) {
-          case 'rating':
-            sorted.sort((a, b) => (b.ratings || 0) - (a.ratings || 0));
-            break;
-          case 'cost':
-            sorted.sort((a, b) => a.cost - b.cost);
-            break;
-          case 'name':
-            sorted.sort((a, b) => a.name.localeCompare(b.name));
-            break;
-        }
+    useEffect(() => {
+  if (activitySuggestions.length > 0) {
+    let sorted = [...activitySuggestions];
+    
+    switch (sortOrder) {
+      case 'rating':
+        sorted.sort((a, b) => (b.ratings || 0) - (a.ratings || 0));
+        break;
+      case 'cost':
+        sorted.sort((a, b) => a.cost - b.cost);
+        break;
+      case 'name':
+        sorted.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+    }
 
-        setFilteredSuggestions(sorted);
+    // Only update if the sorted array is actually different
+    setFilteredSuggestions(prev => {
+      if (JSON.stringify(prev) !== JSON.stringify(sorted)) {
+        return sorted;
       }
-    }, [activitySuggestions, sortOrder]);
-    */
+      return prev;
+    });
+  } else {
+    setFilteredSuggestions([]);
+  }
+}, [activitySuggestions, sortOrder]);
+    
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
