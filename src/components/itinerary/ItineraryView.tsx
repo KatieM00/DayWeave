@@ -378,13 +378,6 @@ const clearStoredPlanData = () => {}; // No-op for edit mode
     }
   }, [user, authAction]);
 
-  /* useEffect(() => {
-    if (showActivityChoices && user) {
-      loadActivitySuggestions();
-    }
-  }, [showActivityChoices, user]);
-  */
-
 const loadActivitySuggestions = async () => {
   console.log('🔥 loadActivitySuggestions called! Stack trace:');
   console.trace();
@@ -947,6 +940,7 @@ if (activitySuggestions.length === 0 && isLoadingSuggestions) {
             <div className="flex-grow">
               <div className="flex gap-2">
                 <Input
+                  key="activity-search-input"
                   type="text"
                   placeholder="Search for specific activities..."
                   value={searchQuery}
