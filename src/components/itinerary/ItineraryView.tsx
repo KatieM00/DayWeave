@@ -356,17 +356,10 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   const [authAction, setAuthAction] = useState<'save' | 'share' | 'modify' | null>(null);
 
   // Initialize plan restoration
-  const isEditMode = dayPlan.id && dayPlan.id !== ''; // Check if this is an existing plan
-
-// Only use plan restoration for NEW plans, not existing ones
-const planRestoration = !isEditMode ? usePlanRestoration({
-  onPlanRestore: (storedData) => {
-    console.log('Plan restoration callback triggered');
-  }
-}) : null;
-
-const storePlanData = planRestoration?.storePlanData || (() => {});
-const clearStoredPlanData = planRestoration?.clearStoredPlanData || (() => {});
+  // Disable plan restoration entirely for existing plans
+const isEditMode = dayPlan.id && dayPlan.id !== '';
+const storePlanData = () => {}; // No-op for edit mode
+const clearStoredPlanData = () => {}; // No-op for edit mode
 
   // Handle post-authentication actions
   useEffect(() => {
