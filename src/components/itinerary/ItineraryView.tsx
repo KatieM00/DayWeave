@@ -386,6 +386,9 @@ const clearStoredPlanData = () => {}; // No-op for edit mode
   */
 
 const loadActivitySuggestions = async () => {
+  console.log('🔥 loadActivitySuggestions called! Stack trace:');
+  console.trace();
+  
   if (isLoadingSuggestions) {
     console.log('Already loading suggestions, skipping...');
     return;
