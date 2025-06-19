@@ -722,9 +722,9 @@ const getActivityDescription = (details: PlaceDetails): string => {
 
   setShowActivityChoices(true);
   // Load suggestions here instead of in useEffect
-  if (activitySuggestions.length === 0) {
+  /*if (activitySuggestions.length === 0) {
     loadActivitySuggestions();
-  }
+  } */
 };
 
   const handleSavePlan = async () => {
