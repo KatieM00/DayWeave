@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, MapPin, DollarSign, ChevronDown, ChevronUp, Activity, AlertTriangle, Camera, Star, Phone, Globe, Navigation, ExternalLink, Calendar, CreditCard } from 'lucide-react';
+import { Clock, MapPin, ChevronDown, ChevronUp, Activity, AlertTriangle, Camera, Star, Phone, Globe, Navigation, ExternalLink, Calendar, CreditCard } from 'lucide-react';
 import type { Activity as ActivityType, Travel, ItineraryEvent } from '../../types';
 import Card from '../common/Card';
 import Button from '../common/Button';
@@ -77,7 +77,7 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
         loadingMapsData
       });
     }
-  }, [expanded, event]);
+  }, [expanded, event.data.id, event.type]);
 
   const loadGoogleMapsData = async () => {
     if (event.type !== 'activity') {
