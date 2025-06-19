@@ -367,23 +367,6 @@ const planRestoration = !isEditMode ? usePlanRestoration({
 const storePlanData = planRestoration?.storePlanData || (() => {});
 const clearStoredPlanData = planRestoration?.clearStoredPlanData || (() => {});
 
-// Only store plan data for NEW plans (not existing ones being edited)
-useEffect(() => {
-  if (isEditMode) {
-    console.log('Edit mode detected - skipping plan restoration');
-    return;
-  }
-
-  const planData = {
-    dayPlan,
-    events,
-    planName,
-    revealProgress,
-    currentUrl: window.location.href
-  };
-  storePlanData(planData);
-}, [dayPlan, events, planName, revealProgress, storePlanData, isEditMode]);
-
   // Handle post-authentication actions
   useEffect(() => {
     if (user && authAction) {
