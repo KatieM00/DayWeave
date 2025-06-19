@@ -94,15 +94,11 @@ const EditPlanPage: React.FC = () => {
             Make changes to your day plan and add new activities
           </p>
         </div>
-
-        <ItineraryView 
-          dayPlan={plan}
-          onUpdatePlan={handleUpdatePlan}
-          onSavePlan={handleSavePlan}
-          isSurpriseMode={false}
-          disablePlanRestoration={true} 
-        />
-      </div>
+             
+        <div>
+          <h1>TEST - No ItineraryView</h1>
+          <p>Plan loaded: {plan?.title}</p>
+        </div>
     </div>
   );
 };
