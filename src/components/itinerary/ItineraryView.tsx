@@ -924,16 +924,16 @@ const getActivityDescription = (details: PlaceDetails): string => {
   }, [activitySuggestions, sortOrder]);
 
   // Show loading state while suggestions are being fetched
-  if (!isInitialized && isLoadingSuggestions) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg w-full max-w-3xl p-8 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-          <p className="text-neutral-600">Loading activity suggestions...</p>
-        </div>
+if (activitySuggestions.length === 0 && isLoadingSuggestions) {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg w-full max-w-3xl p-8 text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+        <p className="text-neutral-600">Loading activity suggestions...</p>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
