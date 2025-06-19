@@ -261,7 +261,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   onRevealMore,
   onSharePlan,
   onSavePlan,
-  onUpdatePlan
+  onUpdatePlan,
   disablePlanRestoration = false
 }) => {
   const { user } = useAuth();
