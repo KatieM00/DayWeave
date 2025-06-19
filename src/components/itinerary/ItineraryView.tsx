@@ -261,7 +261,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   onRevealMore,
   onSharePlan,
   onSavePlan,
-  onUpdatePlan,
+  onUpdatePlan
   disablePlanRestoration = false
 }) => {
   const { user } = useAuth();
@@ -355,7 +355,7 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   const [authAction, setAuthAction] = useState<'save' | 'share' | 'modify' | null>(null);
 
   // Initialize plan restoration
-  const { storePlanData, clearStoredPlanData } = usePlanRestoration({
+  /* const { storePlanData, clearStoredPlanData } = usePlanRestoration({
     onPlanRestore: (storedData) => {
       console.log('Plan restoration callback triggered');
       // The plan data is already set by the parent component
@@ -368,7 +368,7 @@ useEffect(() => {
   if (disablePlanRestoration) {
     console.log('Plan restoration disabled - skipping data storage');
     return;
-  }
+  } 
 
   const planData = {
     dayPlan,
@@ -378,7 +378,7 @@ useEffect(() => {
     currentUrl: window.location.href
   };
   storePlanData(planData);
-}, [dayPlan, events, planName, revealProgress, storePlanData, disablePlanRestoration]);
+}, [dayPlan, events, planName, revealProgress, storePlanData, disablePlanRestoration]); */
 
   // Handle post-authentication actions
   useEffect(() => {
