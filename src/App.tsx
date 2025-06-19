@@ -7,6 +7,7 @@ import { CurrencyProvider } from './contexts/CurrencyContext';
 import HomePage from './pages/HomePage';
 import SurprisePlanPage from './pages/SurprisePlanPage';
 import DetailedPlanPage from './pages/DetailedPlanPage';
+import EditPlanPage from './pages/EditPlanPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import MyPlansPage from './pages/MyPlansPage';
@@ -67,11 +68,23 @@ function AppContent() {
           <Route path="/" element={<HomePage />} />
           <Route path="/surprise" element={<SurprisePlanPage />} />
           <Route path="/plan" element={<DetailedPlanPage />} />
+          <Route path="/plan/:planId" element={
+            <ProtectedRoute>
+              <EditPlanPage />
+            </ProtectedRoute>
+          } />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/legal" element={<LegalPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           
+          
+          <Route path="/plan/:planId" element={
+            <ProtectedRoute>
+              <EditPlanPage />
+            </ProtectedRoute>
+          } />
+
           {/* Shared plan route - public access */}
           <Route path="/share/:shareableLinkId" element={<SharedPlanPage />} />
           
