@@ -803,7 +803,7 @@ const getActivityDescription = (details: PlaceDetails): string => {
     const [sortOrder, setSortOrder] = useState<'rating' | 'cost' | 'name'>('rating');
     const [filteredSuggestions, setFilteredSuggestions] = useState<Activity[]>([]);
 
-    useEffect(() => {
+    /* useEffect(() => {
       if (activitySuggestions.length > 0) {
         let sorted = [...activitySuggestions];
         
@@ -822,6 +822,7 @@ const getActivityDescription = (details: PlaceDetails): string => {
         setFilteredSuggestions(sorted);
       }
     }, [activitySuggestions, sortOrder]);
+    */
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
