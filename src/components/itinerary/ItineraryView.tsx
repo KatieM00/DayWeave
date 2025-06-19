@@ -1387,7 +1387,7 @@ const getActivityDescription = (details: PlaceDetails): string => {
         </div>
       )}
 
-      {showActivityChoices && (!isLoadingSuggestions || activitySuggestions.length > 0) && <ActivityOverlay />}
+      {showActivityChoices && <ActivityOverlay />}
       {showSaveDialog && (
         <SaveDialog
           planName={planName}
