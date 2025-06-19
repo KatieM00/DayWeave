@@ -41,7 +41,7 @@ const EditPlanPage: React.FC = () => {
     };
 
     loadPlan();
-  }, [planId, user, getPlanById]);
+  }, [planId, user]);
 
   const handleUpdatePlan = (updatedPlan: DayPlan) => {
     setPlan(updatedPlan);
