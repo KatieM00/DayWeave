@@ -489,11 +489,10 @@ const loadActivitySuggestions = async () => {
 
     // Filter out null results and sort by rating
     const validSuggestions = suggestions
-      .filter(Boolean)
-      .sort((a, b) => (b.ratings || 0) - (a.ratings || 0));
+  .filter((suggestion): suggestion is Activity => suggestion !== null) // BETTER NULL FILTERING
+  .sort((a, b) => (b.ratings || 0) - (a.ratings || 0));
 
-    console.log(`✅ Generated ${validSuggestions.length} activity suggestions`);
-    setActivitySuggestions(validSuggestions);
+setActivitySuggestions(validSuggestions);
     
   } catch (error) {
     console.error('❌ Error loading suggestions:', error);
