@@ -384,11 +384,12 @@ const clearStoredPlanData = planRestoration?.clearStoredPlanData || (() => {});
     }
   }, [user, authAction]);
 
-  useEffect(() => {
+  /* useEffect(() => {
     if (showActivityChoices && user) {
       loadActivitySuggestions();
     }
   }, [showActivityChoices, user]);
+  */
 
 const loadActivitySuggestions = async () => {
 
@@ -713,14 +714,18 @@ const getActivityDescription = (details: PlaceDetails): string => {
   };
 
   const handleAddNewActivity = () => {
-    if (!user) {
-      setAuthAction('modify');
-      setShowAuthModal(true);
-      return;
-    }
+  if (!user) {
+    setAuthAction('modify');
+    setShowAuthModal(true);
+    return;
+  }
 
-    setShowActivityChoices(true);
-  };
+  setShowActivityChoices(true);
+  // Load suggestions here instead of in useEffect
+  if (activitySuggestions.length === 0) {
+    loadActivitySuggestions();
+  }
+};
 
   const handleSavePlan = async () => {
     if (!user) {
