@@ -449,42 +449,40 @@ const loadActivitySuggestions = async () => {
       index === self.findIndex(p => p.place_id === place.place_id)
     );
 
-    const suggestions = await Promise.all(
-      uniquePlaces.slice(0, 15).map(async (place) => { // Limit to 15 suggestions
-        try {
-          const details = await getPlaceDetails(place.place_id);
-          
-          // Determine activity type based on place details
-          const activityType = determineActivityType(details.name, details.formatted_address);
-          
-          // Calculate estimated cost based on price level
-          const estimatedCost = details.price_level ? details.price_level * 25 : 15;
-          
-          return sanitizeActivityTimes({
-            id: place.place_id,
-            name: details.name,
-            description: `Visit ${details.name} - ${getActivityDescription(details)}`,
-            location: details.name,
-            startTime: '10:00',
-            endTime: '12:00',
-            duration: 120,
-            cost: estimatedCost,
-            activityType: [activityType],
-            address: details.formatted_address,
-            ratings: details.rating,
-            imageUrl: null
-          });
-        } catch (error) {
-          console.error('Error processing place:', error);
-          return null;
-        }
-      })
-    );
+    const suggestions = [];
+for (const place of uniquePlaces.slice(0, 15)) {
+  try {
+    const details = await getPlaceDetails(place.place_id);
+    
+    // Determine activity type based on place details
+    const activityType = determineActivityType(details.name, details.formatted_address);
+    
+    // Calculate estimated cost based on price level
+    const estimatedCost = details.price_level ? details.price_level * 25 : 15;
+    
+    const activity = sanitizeActivityTimes({
+      id: place.place_id,
+      name: details.name,
+      description: `Visit ${details.name} - ${getActivityDescription(details)}`,
+      location: details.name,
+      startTime: '10:00',
+      endTime: '12:00',
+      duration: 120,
+      cost: estimatedCost,
+      activityType: [activityType],
+      address: details.formatted_address,
+      ratings: details.rating,
+      imageUrl: null
+    });
+    
+    suggestions.push(activity);
+  } catch (error) {
+    console.error('Error processing place:', error);
+  }
+}
 
-    // Filter out null results and sort by rating
-    const validSuggestions = suggestions
-      .filter((suggestion): suggestion is Activity => suggestion !== null)
-      .sort((a, b) => (b.ratings || 0) - (a.ratings || 0));
+// Sort by rating
+const validSuggestions = suggestions.sort((a, b) => (b.ratings || 0) - (a.ratings || 0));
 
     console.log(`✅ Generated ${validSuggestions.length} activity suggestions`);
     setActivitySuggestions(validSuggestions);
