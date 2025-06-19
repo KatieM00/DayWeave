@@ -392,114 +392,31 @@ const clearStoredPlanData = planRestoration?.clearStoredPlanData || (() => {});
   */
 
 const loadActivitySuggestions = async () => {
-
-    if (isLoadingSuggestions) {
+  if (isLoadingSuggestions) {
     console.log('Already loading suggestions, skipping...');
     return;
   }
+  
   setIsLoadingSuggestions(true);
-  setError(null);
-  try {
-    console.log('🚀 Loading activity suggestions using Google Places API...');
-    
-    const location = dayPlan.preferences.startLocation;
-    const categories = dayPlan.preferences.activityTypes || [];
-    
-    // Create search queries based on user preferences and popular activities
-    const searchQueries = [
-      // User preference-based searches
-      ...categories.map(category => {
-        const categoryMap: Record<string, string> = {
-          'outdoor': 'parks outdoor activities',
-          'culture': 'museums galleries cultural sites',
-          'food': 'restaurants cafes food',
-          'shopping': 'shopping centers markets',
-          'nightlife': 'bars pubs nightlife',
-          'nature': 'gardens parks nature',
-          'history': 'historical sites heritage',
-          'art': 'art galleries exhibitions',
-          'music': 'music venues concerts',
-          'sports': 'sports activities fitness',
-          'entertainment': 'entertainment attractions',
-          'family': 'family activities kids'
-        };
-        return categoryMap[category] || category;
-      }),
-      // Popular general activities
-      'popular attractions',
-      'recommended restaurants',
-      'things to do',
-      'local experiences',
-      'tourist attractions'
-    ].slice(0, 5); // Limit to 5 searches to avoid rate limits
-
-    console.log('🔍 Searching for:', searchQueries);
-
-    const allPlaces: PlaceDetails[] = [];
-    
-    // Search for each category
-    for (const query of searchQueries) {
-      try {
-        console.log(`🔍 Searching: "${query}" near ${location}`);
-        const places = await searchPlaces(`${query} near ${location}`, location);
-        allPlaces.push(...places.slice(0, 3)); // Take top 3 from each search
-      } catch (error) {
-        console.warn(`Search failed for "${query}":`, error);
+  
+  // Just set some dummy data instead of doing API calls
+  setTimeout(() => {
+    setActivitySuggestions([
+      {
+        id: 'test1',
+        name: 'Test Activity',
+        description: 'A test activity',
+        location: 'Test Location',
+        startTime: '10:00',
+        endTime: '12:00',
+        duration: 120,
+        cost: 25,
+        activityType: ['culture'],
+        ratings: 4.5
       }
-    }
-
-    console.log(`📍 Found ${allPlaces.length} total places`);
-
-    // Remove duplicates and convert to Activity format
-    const uniquePlaces = allPlaces.filter((place, index, self) => 
-      index === self.findIndex(p => p.place_id === place.place_id)
-    );
-
-    const suggestions = await Promise.all(
-      uniquePlaces.slice(0, 15).map(async (place) => { // Limit to 15 suggestions
-        try {
-          const details = await getPlaceDetails(place.place_id);
-          
-          // Determine activity type based on place details
-          const activityType = determineActivityType(details.name, details.formatted_address);
-          
-          // Calculate estimated cost based on price level
-          const estimatedCost = details.price_level ? details.price_level * 25 : 15;
-          
-          return sanitizeActivityTimes({
-            id: place.place_id,
-            name: details.name,
-            description: `Visit ${details.name} - ${getActivityDescription(details)}`,
-            location: details.name,
-            startTime: '10:00',
-            endTime: '12:00',
-            duration: 120,
-            cost: estimatedCost,
-            activityType: [activityType],
-            address: details.formatted_address,
-            ratings: details.rating,
-            imageUrl: null
-          });
-        } catch (error) {
-          console.error('Error processing place:', error);
-          return null;
-        }
-      })
-    );
-
-    // Filter out null results and sort by rating
-    const validSuggestions = suggestions
-  .filter((suggestion): suggestion is Activity => suggestion !== null) // BETTER NULL FILTERING
-  .sort((a, b) => (b.ratings || 0) - (a.ratings || 0));
-
-setActivitySuggestions(validSuggestions);
-    
-  } catch (error) {
-    console.error('❌ Error loading suggestions:', error);
-    setError('Failed to load activity suggestions. Please try again.');
-  } finally {
+    ]);
     setIsLoadingSuggestions(false);
-  }
+  }, 1000);
 };
 
 // Helper function to determine activity type from place details
@@ -722,9 +639,9 @@ const getActivityDescription = (details: PlaceDetails): string => {
 
   setShowActivityChoices(true);
   // Load suggestions here instead of in useEffect
-  /*if (activitySuggestions.length === 0) {
+  if (activitySuggestions.length === 0) {
     loadActivitySuggestions();
-  } */
+  }
 };
 
   const handleSavePlan = async () => {
