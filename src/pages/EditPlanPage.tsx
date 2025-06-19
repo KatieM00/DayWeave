@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePlans } from '../hooks/usePlans';
+import ItineraryView from '../components/itinerary/ItineraryView';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import type { DayPlan } from '../types';
 
@@ -42,6 +43,14 @@ const EditPlanPage: React.FC = () => {
     loadPlan();
   }, [planId, user, getPlanById]);
 
+  const handleUpdatePlan = (updatedPlan: DayPlan) => {
+    setPlan(updatedPlan);
+  };
+
+  const handleSavePlan = () => {
+    navigate('/my-plans');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
@@ -55,8 +64,12 @@ const EditPlanPage: React.FC = () => {
       <div className="min-h-screen bg-neutral-50 py-8 px-4">
         <div className="container mx-auto max-w-2xl text-center">
           <h1 className="text-2xl font-bold text-primary-800 mb-4">Plan Not Found</h1>
-          <p className="text-neutral-600 mb-6">{error}</p>
-          <button onClick={() => navigate('/my-plans')}>
+          <p className="text-neutral-600 mb-6">{error || 'The plan you\'re looking for doesn\'t exist.'}</p>
+          <button 
+            onClick={() => navigate('/my-plans')}
+            className="inline-flex items-center text-primary-600 hover:text-primary-700 underline"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
             Back to My Plans
           </button>
         </div>
@@ -67,7 +80,29 @@ const EditPlanPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-neutral-50 py-8 px-4">
       <div className="container mx-auto max-w-4xl">
-        <h1>TEST - Plan loaded: {plan.title}</h1>
+        <div className="mb-6">
+          <button 
+            onClick={() => navigate('/my-plans')}
+            className="inline-flex items-center text-primary-600 hover:text-primary-700 underline mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Back to My Plans
+          </button>
+          <h1 className="text-3xl font-bold text-primary-800">Edit Plan</h1>
+          <p className="text-neutral-600 mt-1">
+            Make changes to your day plan and add new activities
+          </p>
+        </div>
+
+        {/* Using React.memo to prevent unnecessary re-renders */}
+        <div key={`edit-${plan.id}`}>
+          <ItineraryView 
+            dayPlan={plan}
+            onUpdatePlan={handleUpdatePlan}
+            onSavePlan={handleSavePlan}
+            isSurpriseMode={false}
+          />
+        </div>
       </div>
     </div>
   );

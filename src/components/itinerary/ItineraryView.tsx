@@ -355,20 +355,24 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   const [authAction, setAuthAction] = useState<'save' | 'share' | 'modify' | null>(null);
 
   // Initialize plan restoration
-  /* const { storePlanData, clearStoredPlanData } = usePlanRestoration({
-    onPlanRestore: (storedData) => {
-      console.log('Plan restoration callback triggered');
-      // The plan data is already set by the parent component
-      // This callback can be used for additional restoration logic if needed
-    }
-  });
+  const isEditMode = dayPlan.id && dayPlan.id !== ''; // Check if this is an existing plan
 
-// Store plan data whenever it changes - BUT ONLY IF NOT DISABLED
+// Only use plan restoration for NEW plans, not existing ones
+const planRestoration = !isEditMode ? usePlanRestoration({
+  onPlanRestore: (storedData) => {
+    console.log('Plan restoration callback triggered');
+  }
+}) : null;
+
+const storePlanData = planRestoration?.storePlanData || (() => {});
+const clearStoredPlanData = planRestoration?.clearStoredPlanData || (() => {});
+
+// Only store plan data for NEW plans (not existing ones being edited)
 useEffect(() => {
-  if (disablePlanRestoration) {
-    console.log('Plan restoration disabled - skipping data storage');
+  if (isEditMode) {
+    console.log('Edit mode detected - skipping plan restoration');
     return;
-  } 
+  }
 
   const planData = {
     dayPlan,
@@ -378,7 +382,7 @@ useEffect(() => {
     currentUrl: window.location.href
   };
   storePlanData(planData);
-}, [dayPlan, events, planName, revealProgress, storePlanData, disablePlanRestoration]); */
+}, [dayPlan, events, planName, revealProgress, storePlanData, isEditMode]);
 
   // Handle post-authentication actions
   useEffect(() => {
