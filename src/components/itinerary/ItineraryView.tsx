@@ -255,180 +255,6 @@ const SaveDialog = ({
   </div>
 );
 
-const ActivityOverlay = () => {
-  const [sortOrder, setSortOrder] = useState<'rating' | 'cost' | 'name'>('rating');
-  const [filteredSuggestions, setFilteredSuggestions] = useState<Activity[]>([]);
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  useEffect(() => {
-    if (activitySuggestions.length > 0) {
-      let sorted = [...activitySuggestions];
-      
-      switch (sortOrder) {
-        case 'rating':
-          sorted.sort((a, b) => (b.ratings || 0) - (a.ratings || 0));
-          break;
-        case 'cost':
-          sorted.sort((a, b) => a.cost - b.cost);
-          break;
-        case 'name':
-          sorted.sort((a, b) => a.name.localeCompare(b.name));
-          break;
-      }
-
-      setFilteredSuggestions(sorted);
-      setIsInitialized(true);
-    }
-  }, [activitySuggestions, sortOrder]);
-
-  // Show loading state while suggestions are being fetched
-if (activitySuggestions.length === 0 && isLoadingSuggestions) {
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg w-full max-w-3xl p-8 text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-        <p className="text-neutral-600">Loading activity suggestions...</p>
-      </div>
-    </div>
-  );
-}
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
-        <div className="p-6 border-b border-neutral-200">
-          <div className="flex justify-between items-center">
-            <h3 className="text-xl font-semibold text-primary-800">Add New Activities</h3>
-            <button 
-              onClick={() => setShowActivityChoices(false)}
-              className="text-neutral-500 hover:text-neutral-700"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-          
-          <div className="flex gap-4 mt-4">
-            <div className="flex-grow">
-              <div className="flex gap-2">
-                <Input
-                  key="activity-search-input"
-                  type="text"
-                  placeholder="Search for specific activities..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  fullWidth
-                />
-                <Button
-                  variant="outline"
-                  onClick={handleSearchSuggestions}
-                  disabled={isLoadingSuggestions}
-                >
-                  Search
-                </Button>
-              </div>
-            </div>
-            
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value as 'rating' | 'cost' | 'name')}
-              className="px-3 py-2 border border-neutral-300 rounded-md"
-            >
-              <option value="rating">Sort by Rating</option>
-              <option value="cost">Sort by Cost</option>
-              <option value="name">Sort by Name</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="flex-grow overflow-auto p-6">
-          {isLoadingSuggestions ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto mb-4"></div>
-              <p className="text-neutral-600">Loading suggestions...</p>
-            </div>
-          ) : filteredSuggestions.length > 0 ? (
-            <div className="space-y-3">
-              {filteredSuggestions.map((activity) => (
-                <div
-                  key={activity.id}
-                  className={`
-                    relative p-4 border-2 rounded-lg cursor-pointer transition-all
-                    ${selectedActivities.some(a => a.id === activity.id)
-                      ? 'border-primary-500 bg-primary-50' 
-                      : 'border-neutral-200 hover:border-primary-300'}
-                  `}
-                  onClick={() => {
-                    setSelectedActivities(prev => 
-                      prev.some(a => a.id === activity.id)
-                        ? prev.filter(a => a.id !== activity.id)
-                        : [...prev, activity]
-                    );
-                  }}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-grow">
-                      <h4 className="font-medium text-primary-800">{activity.name}</h4>
-                      <p className="text-sm text-neutral-600 mt-1">{activity.description}</p>
-                      <div className="flex items-center gap-4 mt-2 text-sm text-neutral-500">
-                        <span className="flex items-center">
-                          <Clock className="w-4 h-4 mr-1" />
-                          {activity.duration} min
-                        </span>
-                        <span className="flex items-center">
-                          {selectedCurrency}{activity.cost}
-                        </span>
-                        {activity.ratings && (
-                          <span className="flex items-center">
-                            <Star className="w-4 h-4 mr-1 text-accent-500" />
-                            {activity.ratings}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {selectedActivities.some(a => a.id === activity.id) && (
-                    <div className="absolute top-2 right-2 w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center text-white">
-                      <Check className="w-4 h-4" />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-neutral-600">No activities found. Try searching for something specific!</p>
-            </div>
-          )}
-        </div>
-
-        <div className="p-6 border-t border-neutral-200 bg-neutral-50">
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-neutral-600">
-              {selectedActivities.length} activities selected
-            </div>
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowActivityChoices(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleAddSelectedActivities}
-                disabled={selectedActivities.length === 0}
-              >
-                Add to Plan
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const ItineraryView: React.FC<ItineraryViewProps> = ({
   dayPlan,
   isSurpriseMode = false,
@@ -1056,6 +882,180 @@ const getActivityDescription = (details: PlaceDetails): string => {
       </div>
     </Card>
   );
+
+  const ActivityOverlay = () => {
+  const [sortOrder, setSortOrder] = useState<'rating' | 'cost' | 'name'>('rating');
+  const [filteredSuggestions, setFilteredSuggestions] = useState<Activity[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  useEffect(() => {
+    if (activitySuggestions.length > 0) {
+      let sorted = [...activitySuggestions];
+      
+      switch (sortOrder) {
+        case 'rating':
+          sorted.sort((a, b) => (b.ratings || 0) - (a.ratings || 0));
+          break;
+        case 'cost':
+          sorted.sort((a, b) => a.cost - b.cost);
+          break;
+        case 'name':
+          sorted.sort((a, b) => a.name.localeCompare(b.name));
+          break;
+      }
+
+      setFilteredSuggestions(sorted);
+      setIsInitialized(true);
+    }
+  }, [activitySuggestions, sortOrder]);
+
+  // Show loading state while suggestions are being fetched
+if (activitySuggestions.length === 0 && isLoadingSuggestions) {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg w-full max-w-3xl p-8 text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+        <p className="text-neutral-600">Loading activity suggestions...</p>
+      </div>
+    </div>
+  );
+}
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+        <div className="p-6 border-b border-neutral-200">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xl font-semibold text-primary-800">Add New Activities</h3>
+            <button 
+              onClick={() => setShowActivityChoices(false)}
+              className="text-neutral-500 hover:text-neutral-700"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          
+          <div className="flex gap-4 mt-4">
+            <div className="flex-grow">
+              <div className="flex gap-2">
+                <Input
+                  key="activity-search-input"
+                  type="text"
+                  placeholder="Search for specific activities..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  fullWidth
+                />
+                <Button
+                  variant="outline"
+                  onClick={handleSearchSuggestions}
+                  disabled={isLoadingSuggestions}
+                >
+                  Search
+                </Button>
+              </div>
+            </div>
+            
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as 'rating' | 'cost' | 'name')}
+              className="px-3 py-2 border border-neutral-300 rounded-md"
+            >
+              <option value="rating">Sort by Rating</option>
+              <option value="cost">Sort by Cost</option>
+              <option value="name">Sort by Name</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="flex-grow overflow-auto p-6">
+          {isLoadingSuggestions ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto mb-4"></div>
+              <p className="text-neutral-600">Loading suggestions...</p>
+            </div>
+          ) : filteredSuggestions.length > 0 ? (
+            <div className="space-y-3">
+              {filteredSuggestions.map((activity) => (
+                <div
+                  key={activity.id}
+                  className={`
+                    relative p-4 border-2 rounded-lg cursor-pointer transition-all
+                    ${selectedActivities.some(a => a.id === activity.id)
+                      ? 'border-primary-500 bg-primary-50' 
+                      : 'border-neutral-200 hover:border-primary-300'}
+                  `}
+                  onClick={() => {
+                    setSelectedActivities(prev => 
+                      prev.some(a => a.id === activity.id)
+                        ? prev.filter(a => a.id !== activity.id)
+                        : [...prev, activity]
+                    );
+                  }}
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-grow">
+                      <h4 className="font-medium text-primary-800">{activity.name}</h4>
+                      <p className="text-sm text-neutral-600 mt-1">{activity.description}</p>
+                      <div className="flex items-center gap-4 mt-2 text-sm text-neutral-500">
+                        <span className="flex items-center">
+                          <Clock className="w-4 h-4 mr-1" />
+                          {activity.duration} min
+                        </span>
+                        <span className="flex items-center">
+                          {selectedCurrency}{activity.cost}
+                        </span>
+                        {activity.ratings && (
+                          <span className="flex items-center">
+                            <Star className="w-4 h-4 mr-1 text-accent-500" />
+                            {activity.ratings}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedActivities.some(a => a.id === activity.id) && (
+                    <div className="absolute top-2 right-2 w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center text-white">
+                      <Check className="w-4 h-4" />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-neutral-600">No activities found. Try searching for something specific!</p>
+            </div>
+          )}
+        </div>
+
+        <div className="p-6 border-t border-neutral-200 bg-neutral-50">
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-neutral-600">
+              {selectedActivities.length} activities selected
+            </div>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowActivityChoices(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleAddSelectedActivities}
+                disabled={selectedActivities.length === 0}
+              >
+                Add to Plan
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
   const ShareDialog = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
