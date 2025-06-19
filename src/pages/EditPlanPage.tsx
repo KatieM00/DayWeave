@@ -100,6 +100,7 @@ const EditPlanPage: React.FC = () => {
           <p>Plan loaded: {plan?.title}</p>
         </div>
     </div>
+  </div>
   );
 };
 
