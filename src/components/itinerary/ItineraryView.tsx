@@ -399,22 +399,9 @@ const loadActivitySuggestions = async () => {
   
   setIsLoadingSuggestions(true);
   
-  // Just set some dummy data instead of doing API calls
   setTimeout(() => {
-    setActivitySuggestions([
-      {
-        id: 'test1',
-        name: 'Test Activity',
-        description: 'A test activity',
-        location: 'Test Location',
-        startTime: '10:00',
-        endTime: '12:00',
-        duration: 120,
-        cost: 25,
-        activityType: ['culture'],
-        ratings: 4.5
-      }
-    ]);
+    console.log('Would set activity suggestions here, but commenting out for test');
+    // setActivitySuggestions([...]); // COMMENT THIS OUT
     setIsLoadingSuggestions(false);
   }, 1000);
 };
