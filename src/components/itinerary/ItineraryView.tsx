@@ -390,9 +390,12 @@ const clearStoredPlanData = planRestoration?.clearStoredPlanData || (() => {});
     }
   }, [showActivityChoices, user]);
 
-  // Replace your loadActivitySuggestions function in ItineraryView.tsx with this one:
-
 const loadActivitySuggestions = async () => {
+
+    if (isLoadingSuggestions) {
+    console.log('Already loading suggestions, skipping...');
+    return;
+  }
   setIsLoadingSuggestions(true);
   setError(null);
   try {
