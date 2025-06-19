@@ -464,7 +464,6 @@ const loadActivitySuggestions = async () => {
           
           // Calculate estimated cost based on price level
           const estimatedCost = details.price_level ? details.price_level * 25 : 15;
-          const validSuggestions = suggestions.filter((suggestion): suggestion is Activity => suggestion !== null);
           
           return sanitizeActivityTimes({
             id: place.place_id,
