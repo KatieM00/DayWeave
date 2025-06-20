@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ChevronDown,
   Edit2,
@@ -270,6 +270,8 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [showActivityChoices, setShowActivityChoices] = useState(false);
   const [selectedActivities, setSelectedActivities] = useState<Activity[]>([]);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Initialize events with proper final travel segment and sanitized times
   const [events, setEvents] = useState<ItineraryEvent[]>(() => {
@@ -353,6 +355,31 @@ const ItineraryView: React.FC<ItineraryViewProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [authAction, setAuthAction] = useState<'save' | 'share' | 'modify' | null>(null);
+  
+  const activitySearchInputRef = useRef<HTMLInputElement>(null);
+  const activitySearchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fix focus issue for activity search input
+useEffect(() => {
+  if (activitySearchInputRef.current && document.activeElement !== activitySearchInputRef.current) {
+    const wasSearching = searchQuery.length > 0;
+    const isModalOpen = showActivityChoices;
+    
+    if (wasSearching && isModalOpen) {
+      setTimeout(() => {
+        activitySearchInputRef.current?.focus();
+      }, 0);
+    }
+  }
+}, [searchQuery, activitySuggestions]);
+
+useEffect(() => {
+  return () => {
+    if (activitySearchTimeoutRef.current) {
+      clearTimeout(activitySearchTimeoutRef.current);
+    }
+  };
+}, []);
 
   // Initialize plan restoration
   // Disable plan restoration entirely for existing plans
@@ -939,13 +966,31 @@ if (activitySuggestions.length === 0 && isLoadingSuggestions) {
             <div className="flex-grow">
               <div className="flex gap-2">
                 <Input
-                  key="activity-search-input"
+                  ref={activitySearchInputRef}
                   type="text"
                   placeholder="Search for specific activities..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  fullWidth
-                />
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    if (activitySearchTimeoutRef.current) {
+                      clearTimeout(activitySearchTimeoutRef.current);
+                    }
+                    activitySearchTimeoutRef.current = setTimeout(() => {
+                      if (e.target.value.length > 2) {
+                        handleSearchSuggestions();
+                      } else {
+                    }, 500);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSearchSuggestions();
+                    }
+          }}
+          fullWidth
+          autoComplete="off"
+          autoFocus={true}
+        />
                 <Button
                   variant="outline"
                   onClick={handleSearchSuggestions}
