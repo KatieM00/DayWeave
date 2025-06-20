@@ -18,6 +18,7 @@ import LegalPage from './pages/LegalPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import SupportPage from './pages/SupportPage';
+import WorkWithMePage from './pages/WorkWithMePage';
 
 // Components
 import Header from './components/layout/Header';
@@ -75,6 +76,7 @@ function AppContent() {
             </ProtectedRoute>
           } />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/work-with-me" element={<WorkWithMePage />} />
           <Route path="/support" element={<SupportPage />} />
           <Route path="/legal" element={<LegalPage />} />
           <Route path="/terms" element={<TermsPage />} />
