@@ -65,6 +65,13 @@ const WorkWithMePage: React.FC = () => {
     "Scalable freemium model with B2B opportunities"
   ];
 
+  const keyFeatures = [
+    "AI-powered serendipity engine discovering hidden gems",
+    "Multi-API orchestration with real-time data fusion",
+    "Progressive mystery reveals for surprise experiences",
+    "Scalable freemium model with B2B opportunities"
+  ];
+
   if (submitted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-accent-50 py-12 px-4">
