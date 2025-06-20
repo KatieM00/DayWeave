@@ -237,7 +237,7 @@ const SupportPage: React.FC = () => {
             href="mailto:hello@dayweave.com" 
             className="text-primary-600 hover:text-primary-700 text-sm transition-colors"
           >
-            hello@dayweave.com
+            hello.dayweave@gmail.com
           </a>
         </div>
       </div>

@@ -38,7 +38,7 @@ const Footer: React.FC = () => {
             <div>
               <h4 className="text-accent-300 font-medium mb-3">Contact</h4>
               <ul className="space-y-2">
-                <li><a href="mailto:hello@dayweave.com" className="text-neutral-300 hover:text-white transition-colors">hello@dayweave.com</a></li>
+                <li><a href="mailto:hello.dayweave@gmail.com" className="text-neutral-300 hover:text-white transition-colors">hello.dayweave@gmail.com</a></li>
               </ul>
             </div>
           </div>

@@ -275,17 +275,17 @@ const LegalPage: React.FC = () => {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                   <a 
-                    href="mailto:legal@dayweave.com" 
+                    href="mailto:hello.dayweave@gmail.com" 
                     className="text-primary-600 hover:text-primary-700 underline"
                   >
-                    legal@dayweave.com
+                    hello.dayweave@gmail.com
                   </a>
                   <span className="hidden sm:block text-neutral-400">•</span>
                   <a 
-                    href="mailto:hello@dayweave.com" 
+                    href="mailto:hello.dayweave@gmail.com" 
                     className="text-primary-600 hover:text-primary-700 underline"
                   >
-                    hello@dayweave.com
+                    hello.dayweave@gmail.com
                   </a>
                 </div>
                 <p className="text-sm text-neutral-500 mt-4">
