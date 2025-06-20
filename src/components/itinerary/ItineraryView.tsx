@@ -978,7 +978,7 @@ if (activitySuggestions.length === 0 && isLoadingSuggestions) {
                     activitySearchTimeoutRef.current = setTimeout(() => {
                       if (e.target.value.length > 2) {
                         handleSearchSuggestions();
-                      } else {
+                      }
                     }, 500);
                   }}
                   onKeyDown={(e) => {
@@ -986,11 +986,11 @@ if (activitySuggestions.length === 0 && isLoadingSuggestions) {
                       e.preventDefault();
                       handleSearchSuggestions();
                     }
-          }}
-          fullWidth
-          autoComplete="off"
-          autoFocus={true}
-        />
+                  }}
+                  fullWidth
+                  autoComplete="off"
+                  autoFocus={true}
+                />
                 <Button
                   variant="outline"
                   onClick={handleSearchSuggestions}
