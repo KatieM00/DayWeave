@@ -24,7 +24,6 @@ const Footer: React.FC = () => {
                 <li><Link to="/my-plans" className="text-neutral-300 hover:text-white transition-colors">My Plans</Link></li>
                 <li><Link to="/about" className="text-neutral-300 hover:text-white transition-colors">About</Link></li>
                 <li><Link to="/support" className="text-neutral-300 hover:text-white transition-colors">Support</Link></li>
-                <li><Link to="/work-with-me" className="text-neutral-300 hover:text-white transition-colors">Work With Me</Link></li>
               </ul>
             </div>
             
@@ -41,6 +40,7 @@ const Footer: React.FC = () => {
               <h4 className="text-accent-300 font-medium mb-3">Contact</h4>
               <ul className="space-y-2">
                 <li><a href="mailto:hello.dayweave@gmail.com" className="text-neutral-300 hover:text-white transition-colors">hello.dayweave@gmail.com</a></li>
+                <li><Link to="/work-with-me" className="text-neutral-300 hover:text-white transition-colors">Work With Me</Link></li>
               </ul>
             </div>
           </div>
