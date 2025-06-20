@@ -32,7 +32,7 @@ const Footer: React.FC = () => {
               <ul className="space-y-2">
                 <li><Link to="/legal" className="text-neutral-300 hover:text-white transition-colors">Legal Information</Link></li>
                 <li><Link to="/terms" className="text-neutral-300 hover:text-white transition-colors">Terms of Service</Link></li>
-                <li><Link to="/privacy" className="text-neutral-300 hover:text-white transition-colors">Privacy Policy</Link></li>#
+                <li><Link to="/privacy" className="text-neutral-300 hover:text-white transition-colors">Privacy Policy</Link></li>
               </ul>
             </div>
             
