@@ -1,4 +1,3 @@
-// WorkWithMePage.tsx - Add this to src/pages/
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -31,7 +30,6 @@ const WorkWithMePage: React.FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [showPartnerships, setShowPartnerships] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -52,9 +50,9 @@ const WorkWithMePage: React.FC = () => {
   };
 
   const metrics = [
+    { label: "Market Size", value: "£47B", subtitle: "UK leisure industry" },
     { label: "Planning Time Saved", value: "3+ hours", subtitle: "vs manual research" },
     { label: "AI Response Time", value: "30 seconds", subtitle: "complete itinerary" },
-    { label: "Global Coverage", value: "Worldwide", subtitle: "any city, any country" },
     { label: "Target Users", value: "Everyone", subtitle: "who wants to adventure" }
   ];
 
@@ -113,7 +111,7 @@ const WorkWithMePage: React.FC = () => {
 
       <div className="max-w-6xl mx-auto px-4 py-12">
         {/* Value Proposition */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-16">
           <div className="inline-flex items-center bg-accent-100 text-accent-800 px-4 py-2 rounded-full text-sm font-medium mb-6">
             <Sparkles className="w-4 h-4 mr-2" />
             Built for the World's Largest Hackathon
@@ -123,89 +121,100 @@ const WorkWithMePage: React.FC = () => {
             From 3+ Hours of Planning to 30 Seconds of Magic
           </h2>
           
-          <p className="text-lg text-neutral-600 max-w-3xl mx-auto mb-8">
-            DayWeave creates serendipitous experiences through AI-powered discovery. 
+          <p className="text-lg text-neutral-600 max-w-4xl mx-auto mb-8">
+            DayWeave doesn't just solve decision fatigue—it creates serendipitous experiences through AI-powered discovery. 
             We're not another booking platform; we're pioneering intelligent experience curation.
           </p>
 
           {/* Key Metrics */}
-          <div className="grid md:grid-cols-4 gap-6 mb-8">
+          <div className="grid md:grid-cols-4 gap-6 mb-12">
             {metrics.map((metric, index) => (
-              <Card key={index} className="text-center p-4">
-                <div className="text-2xl font-bold text-primary-600 mb-1">{metric.value}</div>
-                <div className="font-medium text-primary-800 text-sm mb-1">{metric.label}</div>
-                <div className="text-xs text-neutral-600">{metric.subtitle}</div>
+              <Card key={index} className="text-center p-6">
+                <div className="text-3xl font-bold text-primary-600 mb-2">{metric.value}</div>
+                <div className="font-medium text-primary-800 mb-1">{metric.label}</div>
+                <div className="text-sm text-neutral-600">{metric.subtitle}</div>
               </Card>
             ))}
           </div>
         </div>
 
-        {/* Investment Focus */}
-        <div className="max-w-3xl mx-auto mb-12">
-          <Card className="p-8">
-            <h3 className="text-2xl font-bold text-primary-800 mb-6 text-center">
+        {/* Investment Opportunities */}
+        <div className="grid lg:grid-cols-2 gap-12 mb-16">
+          <div>
+            <h3 className="text-2xl font-bold text-primary-800 mb-6 flex items-center">
+              <TrendingUp className="w-6 h-6 mr-3 text-accent-500" />
               Investment Opportunity
             </h3>
             
-            <div className="space-y-6">
-              <div className="text-center">
-                <h4 className="font-semibold text-primary-800 mb-2">Seed Stage</h4>
-                <p className="text-neutral-600">Seeking strategic partners to scale across global markets</p>
+            <div className="space-y-4 mb-8">
+              <div className="flex items-start">
+                <Target className="w-5 h-5 text-accent-500 mr-3 mt-1 flex-shrink-0" />
+                <div>
+                  <h4 className="font-semibold text-primary-800">Seed Stage</h4>
+                  <p className="text-neutral-600">Seeking strategic partners to scale across the UK and expand internationally</p>
+                </div>
               </div>
               
-              <div className="grid md:grid-cols-3 gap-6 text-center">
+              <div className="flex items-start">
+                <BarChart3 className="w-5 h-5 text-accent-500 mr-3 mt-1 flex-shrink-0" />
                 <div>
-                  <Target className="w-8 h-8 text-accent-500 mx-auto mb-2" />
-                  <h5 className="font-medium text-primary-800">Proven Product</h5>
-                  <p className="text-sm text-neutral-600">Live platform with real users</p>
+                  <h4 className="font-semibold text-primary-800">Proven Product-Market Fit</h4>
+                  <p className="text-neutral-600">Live platform with real users experiencing the magic of AI-powered discovery</p>
                 </div>
+              </div>
+              
+              <div className="flex items-start">
+                <Globe className="w-5 h-5 text-accent-500 mr-3 mt-1 flex-shrink-0" />
                 <div>
-                  <BarChart3 className="w-8 h-8 text-accent-500 mx-auto mb-2" />
-                  <h5 className="font-medium text-primary-800">Global Market</h5>
-                  <p className="text-sm text-neutral-600">Massive leisure industry opportunity</p>
-                </div>
-                <div>
-                  <Globe className="w-8 h-8 text-accent-500 mx-auto mb-2" />
-                  <h5 className="font-medium text-primary-800">Scalable Tech</h5>
-                  <p className="text-sm text-neutral-600">Ready for international expansion</p>
+                  <h4 className="font-semibold text-primary-800">Scalable Architecture</h4>
+                  <p className="text-neutral-600">Built on Supabase with multi-API orchestration, ready for global expansion</p>
                 </div>
               </div>
             </div>
-          </Card>
-        </div>
 
-        {/* Collapsible Partnership Section */}
-        <div className="max-w-3xl mx-auto mb-12">
-          <Card className="overflow-hidden">
-            <button
-              onClick={() => setShowPartnerships(!showPartnerships)}
-              className="w-full p-6 text-left hover:bg-neutral-50 transition-colors flex items-center justify-between"
-            >
-              <h3 className="text-lg font-semibold text-primary-800">Partnership Opportunities</h3>
-              {showPartnerships ? (
-                <ChevronDown className="w-5 h-5 text-neutral-400" />
-              ) : (
-                <ChevronRight className="w-5 h-5 text-neutral-400" />
-              )}
-            </button>
+            <div className="bg-primary-50 p-6 rounded-xl border border-primary-200">
+              <h4 className="font-semibold text-primary-800 mb-3">Why Now?</h4>
+              <ul className="space-y-2 text-sm text-primary-700">
+                <li>• Post-pandemic travel boom with demand for unique experiences</li>
+                <li>• AI technology mature enough for consumer applications</li>
+                <li>• Decision fatigue epidemic in choice-rich environments</li>
+                <li>• Shift from transactional to experiential travel spending</li>
+              </ul>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-2xl font-bold text-primary-800 mb-6 flex items-center">
+              <Zap className="w-6 h-6 mr-3 text-accent-500" />
+              Partnership Opportunities
+            </h3>
             
-            {showPartnerships && (
-              <div className="px-6 pb-6 border-t border-neutral-100 space-y-4">
-                <div className="py-4">
-                  <h4 className="font-medium text-primary-800 mb-2">Tourism Boards</h4>
-                  <p className="text-sm text-neutral-600">White-label discovery engine to promote local gems</p>
-                </div>
-                <div className="py-4">
-                  <h4 className="font-medium text-primary-800 mb-2">Hospitality Partners</h4>
-                  <p className="text-sm text-neutral-600">Integrate with hotels for guest experience enhancement</p>
-                </div>
-                <div className="py-4">
-                  <h4 className="font-medium text-primary-800 mb-2">Technology Partners</h4>
-                  <p className="text-sm text-neutral-600">AI advancement and data collaboration opportunities</p>
-                </div>
-              </div>
-            )}
-          </Card>
+            <div className="space-y-6">
+              <Card className="p-6">
+                <h4 className="font-semibold text-primary-800 mb-3">Tourism Boards</h4>
+                <p className="text-neutral-600 mb-4">
+                  White-label our discovery engine to promote local hidden gems and distribute tourism more evenly across regions.
+                </p>
+                <div className="text-sm text-accent-600 font-medium">B2B Revenue Opportunity</div>
+              </Card>
+              
+              <Card className="p-6">
+                <h4 className="font-semibold text-primary-800 mb-3">Hospitality Partners</h4>
+                <p className="text-neutral-600 mb-4">
+                  Integrate with hotels and travel companies to provide guests with curated local experiences beyond typical tourist attractions.
+                </p>
+                <div className="text-sm text-accent-600 font-medium">Revenue Share Model</div>
+              </Card>
+              
+              <Card className="p-6">
+                <h4 className="font-semibold text-primary-800 mb-3">Technology Partners</h4>
+                <p className="text-neutral-600 mb-4">
+                  Collaborate on AI advancement, data partnerships, or integration opportunities with complementary platforms.
+                </p>
+                <div className="text-sm text-accent-600 font-medium">Strategic Partnership</div>
+              </Card>
+            </div>
+          </div>
         </div>
 
         {/* Technical Highlights */}
@@ -328,7 +337,7 @@ const WorkWithMePage: React.FC = () => {
                 className="flex items-center text-primary-600 hover:text-primary-700 transition-colors"
               >
                 <Mail className="w-4 h-4 mr-2" />
-                hello@dayweave.com
+                hello.dayweave@gmail.com
               </a>
               <span className="text-neutral-400">•</span>
               <span className="text-neutral-600">Oxford, England</span>
