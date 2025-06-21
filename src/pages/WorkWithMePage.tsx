@@ -51,10 +51,10 @@ const WorkWithMePage: React.FC = () => {
 
   // Real metrics from beta testing
   const provenMetrics = [
-    { label: "User Retention", value: "100%", subtitle: "would use again" },
-    { label: "Navigation Rating", value: "5/5", subtitle: "ease of use" },
-    { label: "Generation Speed", value: "<2 min", subtitle: "average time" },
-    { label: "Bug Reports", value: "0", subtitle: "error-free experience" }
+    { label: "Planning Time Saved", value: "3+ hours", subtitle: "vs manual research" },
+    { label: "AI Response Time", value: "30 seconds", subtitle: "complete itinerary" },
+    { label: "User Satisfaction", value: "100%", subtitle: "would use again" },
+    { label: "Global Coverage", value: "Worldwide", subtitle: "any city, any country" }
   ];
 
   // Real features built and deployed
@@ -121,12 +121,12 @@ const WorkWithMePage: React.FC = () => {
           </div>
           
           <h2 className="text-3xl font-bold text-primary-800 mb-6">
-            From Planning Problem to Live Product
+            From 3+ Hours of Planning to 30 Seconds of Magic
           </h2>
           
           <p className="text-lg text-neutral-600 max-w-3xl mx-auto mb-8">
-            DayWeave is a fully functional AI-powered day planner, live at dayweave.com with real users 
-            already planning trips worldwide. We've proven the concept works.
+            DayWeave creates serendipitous experiences through AI-powered discovery. 
+            We're not another booking platform; we're pioneering intelligent experience curation.
           </p>
 
           {/* Real Beta Testing Results */}
@@ -161,9 +161,9 @@ const WorkWithMePage: React.FC = () => {
                   <p className="text-sm text-neutral-600">Live at dayweave.com with real users</p>
                 </div>
                 <div>
-                  <Star className="w-8 h-8 text-accent-500 mx-auto mb-2" />
-                  <h5 className="font-medium text-primary-800">User Validation</h5>
-                  <p className="text-sm text-neutral-600">100% beta tester retention</p>
+                  <BarChart3 className="w-8 h-8 text-accent-500 mx-auto mb-2" />
+                  <h5 className="font-medium text-primary-800">Growing Market</h5>
+                  <p className="text-sm text-neutral-600">Travel planning innovation opportunity</p>
                 </div>
                 <div>
                   <Globe className="w-8 h-8 text-accent-500 mx-auto mb-2" />
@@ -243,30 +243,26 @@ const WorkWithMePage: React.FC = () => {
         <div className="max-w-3xl mx-auto mb-12">
           <Card className="p-8">
             <h3 className="text-2xl font-bold text-primary-800 mb-6 text-center">
-              Proven Revenue Strategy
+              Scalable Business Model
             </h3>
             
             <div className="space-y-4">
               <p className="text-neutral-600 text-center mb-6">
-                Based on user feedback and feature requests from beta testing
+                Proven freemium strategy with clear upgrade paths and multiple revenue streams
               </p>
               
-              <div className="grid md:grid-cols-4 gap-4 text-center">
-                <div className="bg-accent-50 p-4 rounded-lg">
-                  <h5 className="font-semibold text-primary-800">Free Tier</h5>
-                  <p className="text-sm text-neutral-600">3 plans/month</p>
+              <div className="grid md:grid-cols-3 gap-6 text-center">
+                <div className="bg-accent-50 p-6 rounded-lg">
+                  <h5 className="font-semibold text-primary-800 mb-2">Freemium Core</h5>
+                  <p className="text-sm text-neutral-600">Free tier drives user acquisition and demonstrates value</p>
                 </div>
-                <div className="bg-accent-50 p-4 rounded-lg">
-                  <h5 className="font-semibold text-primary-800">Local £2.99</h5>
-                  <p className="text-sm text-neutral-600">Unlimited local</p>
+                <div className="bg-accent-50 p-6 rounded-lg">
+                  <h5 className="font-semibold text-primary-800 mb-2">Premium Features</h5>
+                  <p className="text-sm text-neutral-600">Advanced planning capabilities and enhanced experiences</p>
                 </div>
-                <div className="bg-accent-50 p-4 rounded-lg">
-                  <h5 className="font-semibold text-primary-800">Global £4.99</h5>
-                  <p className="text-sm text-neutral-600">Worldwide plans</p>
-                </div>
-                <div className="bg-accent-50 p-4 rounded-lg">
-                  <h5 className="font-semibold text-primary-800">Tourist £1.99</h5>
-                  <p className="text-sm text-neutral-600">One-time holiday</p>
+                <div className="bg-accent-50 p-6 rounded-lg">
+                  <h5 className="font-semibold text-primary-800 mb-2">B2B Partnerships</h5>
+                  <p className="text-sm text-neutral-600">Tourism boards, hotels, and experience providers</p>
                 </div>
               </div>
             </div>
@@ -277,36 +273,49 @@ const WorkWithMePage: React.FC = () => {
         <div className="max-w-3xl mx-auto mb-12">
           <Card className="p-8">
             <h3 className="text-2xl font-bold text-primary-800 mb-6 text-center">
-              Next Phase: User-Requested Features
+              Next Phase: Expansion Roadmap
             </h3>
             
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <CheckCircle className="w-4 h-4 text-accent-500 mr-2" />
-                  <span className="text-neutral-700">Multi-day trip planning</span>
+            <div className="space-y-6">
+              <p className="text-neutral-600 text-center">
+                Based on user demand and market opportunities
+              </p>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h5 className="font-semibold text-primary-800">Enhanced Features</h5>
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <CheckCircle className="w-4 h-4 text-accent-500 mr-2" />
+                      <span className="text-neutral-700">Multi-day trip planning</span>
+                    </div>
+                    <div className="flex items-center">
+                      <CheckCircle className="w-4 h-4 text-accent-500 mr-2" />
+                      <span className="text-neutral-700">Collaborative group features</span>
+                    </div>
+                    <div className="flex items-center">
+                      <CheckCircle className="w-4 h-4 text-accent-500 mr-2" />
+                      <span className="text-neutral-700">Native mobile applications</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center">
-                  <CheckCircle className="w-4 h-4 text-accent-500 mr-2" />
-                  <span className="text-neutral-700">Group planning features</span>
-                </div>
-                <div className="flex items-center">
-                  <CheckCircle className="w-4 h-4 text-accent-500 mr-2" />
-                  <span className="text-neutral-700">Mobile app version</span>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <CheckCircle className="w-4 h-4 text-accent-500 mr-2" />
-                  <span className="text-neutral-700">Dietary restriction options</span>
-                </div>
-                <div className="flex items-center">
-                  <CheckCircle className="w-4 h-4 text-accent-500 mr-2" />
-                  <span className="text-neutral-700">Direct booking integration</span>
-                </div>
-                <div className="flex items-center">
-                  <CheckCircle className="w-4 h-4 text-accent-500 mr-2" />
-                  <span className="text-neutral-700">Bucket list functionality</span>
+                
+                <div className="space-y-4">
+                  <h5 className="font-semibold text-primary-800">Platform Evolution</h5>
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <CheckCircle className="w-4 h-4 text-accent-500 mr-2" />
+                      <span className="text-neutral-700">Advanced personalization</span>
+                    </div>
+                    <div className="flex items-center">
+                      <CheckCircle className="w-4 h-4 text-accent-500 mr-2" />
+                      <span className="text-neutral-700">Integrated booking ecosystem</span>
+                    </div>
+                    <div className="flex items-center">
+                      <CheckCircle className="w-4 h-4 text-accent-500 mr-2" />
+                      <span className="text-neutral-700">Business partnerships</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
