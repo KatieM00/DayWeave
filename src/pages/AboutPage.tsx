@@ -147,18 +147,18 @@ const AboutPage: React.FC = () => {
                   
                   <div className="relative z-10">
                     <h2 className="text-3xl font-bold text-white mb-6">
-                      The Vision Behind DayWeave
+                      Why I Built DayWeave
                     </h2>
                     
                     <div className="text-white/90 text-lg leading-relaxed mb-8 space-y-4">
                       <p>
-                        DayWeave transforms the universal "what should we do today?" challenge into instant, personalized discoveries.
+                        Picture this: you want to have a great day out, but you spend more time researching than actually doing. That was my life every weekend.
                       </p>
                       <p>
-                        While others focus on booking platforms and endless listings, we've built an AI-powered planning tool that understands context, weather, and personal preferences to suggest genuinely interesting experiences.
+                        I got tired of endless scrolling through reviews, comparing options, and still ending up at the same old places. There had to be a better way.
                       </p>
                       <p>
-                        Our approach: combining intelligent algorithms with real-time data to turn decision fatigue into effortless exploration, one perfect day at a time.
+                        So I built DayWeave – an AI assistant that understands your mood, budget, and location to suggest experiences you'll actually love. No more decision paralysis.
                       </p>
                     </div>
 
@@ -215,18 +215,18 @@ const AboutPage: React.FC = () => {
                   
                   <div className="relative z-10">
                     <h2 className="text-3xl font-bold text-white mb-6">
-                      Market Impact & Validation
+                      Real Results & Impact
                     </h2>
                     
                     <div className="text-white/90 text-lg leading-relaxed mb-8 space-y-4">
                       <p>
-                        DayWeave tackles the universal "what should we do today?" challenge that affects millions of people every weekend.
+                        DayWeave isn't just an idea – it's a working platform that real people use for actual trips and adventures.
                       </p>
                       <p>
-                        Our beta testing shows strong validation: 100% user satisfaction, 4.8/5 rating, and 90% preference for our "Surprise Me!" feature over traditional planning methods.
+                        Our beta testing shows impressive results: 100% user satisfaction, 4.8/5 rating, and 90% of users prefer our "Surprise Me!" feature over traditional planning methods.
                       </p>
                       <p>
-                        Built with enterprise-grade architecture and real-world APIs, DayWeave is ready to scale globally.
+                        Built with enterprise-grade technology and real-world APIs, DayWeave is ready to scale while maintaining the personal touch that makes each plan special.
                       </p>
                     </div>
 
