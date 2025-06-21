@@ -1,20 +1,19 @@
+// WorkWithMePage.tsx - Rewritten with only verified information
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
-  TrendingUp, 
   Users, 
-  Zap, 
   Globe, 
   Mail, 
-  Phone, 
   MapPin,
   CheckCircle,
   Sparkles,
   Target,
   BarChart3,
-  Heart,
-  Send
+  Send,
+  Clock,
+  Star
 } from 'lucide-react';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
@@ -30,6 +29,7 @@ const WorkWithMePage: React.FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [showPartnerships, setShowPartnerships] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -49,18 +49,21 @@ const WorkWithMePage: React.FC = () => {
     }, 1500);
   };
 
-  const metrics = [
-    { label: "Market Size", value: "£47B", subtitle: "UK leisure industry" },
-    { label: "Planning Time Saved", value: "3+ hours", subtitle: "vs manual research" },
-    { label: "AI Response Time", value: "30 seconds", subtitle: "complete itinerary" },
-    { label: "Target Users", value: "Everyone", subtitle: "who wants to adventure" }
+  // Real metrics from beta testing
+  const provenMetrics = [
+    { label: "User Retention", value: "100%", subtitle: "would use again" },
+    { label: "Navigation Rating", value: "5/5", subtitle: "ease of use" },
+    { label: "Generation Speed", value: "<2 min", subtitle: "average time" },
+    { label: "Bug Reports", value: "0", subtitle: "error-free experience" }
   ];
 
-  const keyFeatures = [
-    "AI-powered serendipity engine discovering hidden gems",
-    "Multi-API orchestration with real-time data fusion",
-    "Progressive mystery reveals for surprise experiences",
-    "Scalable freemium model with B2B opportunities"
+  // Real features built and deployed
+  const deployedFeatures = [
+    "Live AI-powered itinerary generation",
+    "Multi-API integration (Maps, Weather, Places)",
+    "User authentication and plan storage",
+    "Mobile-responsive design",
+    "Real-time data processing"
   ];
 
   if (submitted) {
@@ -73,7 +76,7 @@ const WorkWithMePage: React.FC = () => {
           <h1 className="text-3xl font-bold text-primary-800 mb-4">Thank You!</h1>
           <p className="text-neutral-600 mb-6">
             We've received your message and will get back to you within 24 hours to discuss 
-            how we can work together to revolutionize day planning.
+            how we can work together to grow DayWeave.
           </p>
           <div className="space-y-3">
             <Link to="/">
@@ -103,150 +106,211 @@ const WorkWithMePage: React.FC = () => {
               Let's Build the Future of Travel Together
             </h1>
             <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
-              Join us in transforming the £47 billion UK leisure industry through intelligent experience curation
+              Join us in revolutionizing day planning with proven AI technology and real user validation
             </p>
           </div>
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-12">
-        {/* Value Proposition */}
-        <div className="text-center mb-16">
+        {/* Proven Results */}
+        <div className="text-center mb-12">
           <div className="inline-flex items-center bg-accent-100 text-accent-800 px-4 py-2 rounded-full text-sm font-medium mb-6">
             <Sparkles className="w-4 h-4 mr-2" />
             Built for the World's Largest Hackathon
           </div>
           
           <h2 className="text-3xl font-bold text-primary-800 mb-6">
-            From 3+ Hours of Planning to 30 Seconds of Magic
+            From Planning Problem to Live Product
           </h2>
           
-          <p className="text-lg text-neutral-600 max-w-4xl mx-auto mb-8">
-            DayWeave doesn't just solve decision fatigue—it creates serendipitous experiences through AI-powered discovery. 
-            We're not another booking platform; we're pioneering intelligent experience curation.
+          <p className="text-lg text-neutral-600 max-w-3xl mx-auto mb-8">
+            DayWeave is a fully functional AI-powered day planner, live at dayweave.com with real users 
+            already planning trips worldwide. We've proven the concept works.
           </p>
 
-          {/* Key Metrics */}
-          <div className="grid md:grid-cols-4 gap-6 mb-12">
-            {metrics.map((metric, index) => (
-              <Card key={index} className="text-center p-6">
-                <div className="text-3xl font-bold text-primary-600 mb-2">{metric.value}</div>
-                <div className="font-medium text-primary-800 mb-1">{metric.label}</div>
-                <div className="text-sm text-neutral-600">{metric.subtitle}</div>
+          {/* Real Beta Testing Results */}
+          <div className="grid md:grid-cols-4 gap-6 mb-8">
+            {provenMetrics.map((metric, index) => (
+              <Card key={index} className="text-center p-4">
+                <div className="text-2xl font-bold text-primary-600 mb-1">{metric.value}</div>
+                <div className="font-medium text-primary-800 text-sm mb-1">{metric.label}</div>
+                <div className="text-xs text-neutral-600">{metric.subtitle}</div>
               </Card>
             ))}
           </div>
         </div>
 
-        {/* Investment Opportunities */}
-        <div className="grid lg:grid-cols-2 gap-12 mb-16">
-          <div>
-            <h3 className="text-2xl font-bold text-primary-800 mb-6 flex items-center">
-              <TrendingUp className="w-6 h-6 mr-3 text-accent-500" />
+        {/* Investment Focus */}
+        <div className="max-w-3xl mx-auto mb-12">
+          <Card className="p-8">
+            <h3 className="text-2xl font-bold text-primary-800 mb-6 text-center">
               Investment Opportunity
             </h3>
             
-            <div className="space-y-4 mb-8">
-              <div className="flex items-start">
-                <Target className="w-5 h-5 text-accent-500 mr-3 mt-1 flex-shrink-0" />
-                <div>
-                  <h4 className="font-semibold text-primary-800">Seed Stage</h4>
-                  <p className="text-neutral-600">Seeking strategic partners to scale across the UK and expand internationally</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start">
-                <BarChart3 className="w-5 h-5 text-accent-500 mr-3 mt-1 flex-shrink-0" />
-                <div>
-                  <h4 className="font-semibold text-primary-800">Proven Product-Market Fit</h4>
-                  <p className="text-neutral-600">Live platform with real users experiencing the magic of AI-powered discovery</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start">
-                <Globe className="w-5 h-5 text-accent-500 mr-3 mt-1 flex-shrink-0" />
-                <div>
-                  <h4 className="font-semibold text-primary-800">Scalable Architecture</h4>
-                  <p className="text-neutral-600">Built on Supabase with multi-API orchestration, ready for global expansion</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-primary-50 p-6 rounded-xl border border-primary-200">
-              <h4 className="font-semibold text-primary-800 mb-3">Why Now?</h4>
-              <ul className="space-y-2 text-sm text-primary-700">
-                <li>• Post-pandemic travel boom with demand for unique experiences</li>
-                <li>• AI technology mature enough for consumer applications</li>
-                <li>• Decision fatigue epidemic in choice-rich environments</li>
-                <li>• Shift from transactional to experiential travel spending</li>
-              </ul>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-2xl font-bold text-primary-800 mb-6 flex items-center">
-              <Zap className="w-6 h-6 mr-3 text-accent-500" />
-              Partnership Opportunities
-            </h3>
-            
             <div className="space-y-6">
-              <Card className="p-6">
-                <h4 className="font-semibold text-primary-800 mb-3">Tourism Boards</h4>
-                <p className="text-neutral-600 mb-4">
-                  White-label our discovery engine to promote local hidden gems and distribute tourism more evenly across regions.
-                </p>
-                <div className="text-sm text-accent-600 font-medium">B2B Revenue Opportunity</div>
-              </Card>
+              <div className="text-center">
+                <h4 className="font-semibold text-primary-800 mb-2">Early Stage</h4>
+                <p className="text-neutral-600">Seeking partners to scale a proven product with validated user demand</p>
+              </div>
               
-              <Card className="p-6">
-                <h4 className="font-semibold text-primary-800 mb-3">Hospitality Partners</h4>
-                <p className="text-neutral-600 mb-4">
-                  Integrate with hotels and travel companies to provide guests with curated local experiences beyond typical tourist attractions.
-                </p>
-                <div className="text-sm text-accent-600 font-medium">Revenue Share Model</div>
-              </Card>
-              
-              <Card className="p-6">
-                <h4 className="font-semibold text-primary-800 mb-3">Technology Partners</h4>
-                <p className="text-neutral-600 mb-4">
-                  Collaborate on AI advancement, data partnerships, or integration opportunities with complementary platforms.
-                </p>
-                <div className="text-sm text-accent-600 font-medium">Strategic Partnership</div>
-              </Card>
+              <div className="grid md:grid-cols-3 gap-6 text-center">
+                <div>
+                  <Target className="w-8 h-8 text-accent-500 mx-auto mb-2" />
+                  <h5 className="font-medium text-primary-800">Proven Product</h5>
+                  <p className="text-sm text-neutral-600">Live at dayweave.com with real users</p>
+                </div>
+                <div>
+                  <Star className="w-8 h-8 text-accent-500 mx-auto mb-2" />
+                  <h5 className="font-medium text-primary-800">User Validation</h5>
+                  <p className="text-sm text-neutral-600">100% beta tester retention</p>
+                </div>
+                <div>
+                  <Globe className="w-8 h-8 text-accent-500 mx-auto mb-2" />
+                  <h5 className="font-medium text-primary-800">Global Ready</h5>
+                  <p className="text-sm text-neutral-600">Works worldwide from day one</p>
+                </div>
+              </div>
             </div>
-          </div>
+          </Card>
         </div>
 
-        {/* Technical Highlights */}
-        <div className="bg-white rounded-2xl p-8 mb-16 border border-neutral-200">
-          <h3 className="text-2xl font-bold text-primary-800 mb-6 text-center">
-            Technical Innovation That Sets Us Apart
-          </h3>
-          
-          <div className="grid md:grid-cols-2 gap-8">
-            <div>
-              <h4 className="font-semibold text-primary-800 mb-4">Core Technology</h4>
-              <ul className="space-y-3">
-                {keyFeatures.map((feature, index) => (
-                  <li key={index} className="flex items-start">
-                    <CheckCircle className="w-5 h-5 text-accent-500 mr-3 mt-0.5 flex-shrink-0" />
-                    <span className="text-neutral-700">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+        {/* Real User Testimonials */}
+        <div className="max-w-4xl mx-auto mb-12">
+          <Card className="p-8">
+            <h3 className="text-2xl font-bold text-primary-800 mb-6 text-center">
+              What Real Users Are Saying
+            </h3>
             
-            <div>
-              <h4 className="font-semibold text-primary-800 mb-4">Tech Stack Highlights</h4>
-              <div className="space-y-3 text-neutral-700">
-                <p><strong>Frontend:</strong> React + TypeScript, deployed on Netlify</p>
-                <p><strong>Backend:</strong> Supabase with Edge Functions</p>
-                <p><strong>AI:</strong> Google Gemini AI for intelligent curation</p>
-                <p><strong>APIs:</strong> Multi-service orchestration (Maps, Weather, Places)</p>
-                <p><strong>Domain:</strong> Custom domain via IONOS (dayweave.com)</p>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="bg-primary-50 p-4 rounded-lg">
+                <p className="italic text-primary-800 mb-2">
+                  "I love this. It made everything so easy to do. I'll be using this in my upcoming trip to Lisbon!"
+                </p>
+                <p className="text-sm text-primary-600">— Beta Tester</p>
+              </div>
+              
+              <div className="bg-primary-50 p-4 rounded-lg">
+                <p className="italic text-primary-800 mb-2">
+                  "Such a fun and genuinely useful idea! I'd use the hell out of this - I'm terrible at planning days out."
+                </p>
+                <p className="text-sm text-primary-600">— Beta Tester</p>
+              </div>
+              
+              <div className="bg-primary-50 p-4 rounded-lg">
+                <p className="italic text-primary-800 mb-2">
+                  "This would be super cool for planning dates!"
+                </p>
+                <p className="text-sm text-primary-600">— Beta Tester</p>
+              </div>
+              
+              <div className="bg-primary-50 p-4 rounded-lg">
+                <p className="italic text-primary-800 mb-2">
+                  "Tools like this are super helpful and take the stress out of planning."
+                </p>
+                <p className="text-sm text-primary-600">— Beta Tester</p>
               </div>
             </div>
-          </div>
+          </Card>
+        </div>
+
+        {/* Technical Achievement */}
+        <div className="max-w-3xl mx-auto mb-12">
+          <Card className="p-8">
+            <h3 className="text-2xl font-bold text-primary-800 mb-6 text-center">
+              Technical Foundation
+            </h3>
+            
+            <div className="space-y-4">
+              <h4 className="font-semibold text-primary-800 mb-4">Deployed & Operational</h4>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-3 text-neutral-700">
+                  <p><strong>Live Platform:</strong> dayweave.com (custom domain)</p>
+                  <p><strong>Frontend:</strong> React + TypeScript on Netlify</p>
+                  <p><strong>Backend:</strong> Supabase with Edge Functions</p>
+                </div>
+                <div className="space-y-3 text-neutral-700">
+                  <p><strong>AI Engine:</strong> Google Gemini integration</p>
+                  <p><strong>APIs:</strong> Maps, Weather, Places orchestration</p>
+                  <p><strong>Users:</strong> Authentication & plan storage</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Revenue Model */}
+        <div className="max-w-3xl mx-auto mb-12">
+          <Card className="p-8">
+            <h3 className="text-2xl font-bold text-primary-800 mb-6 text-center">
+              Proven Revenue Strategy
+            </h3>
+            
+            <div className="space-y-4">
+              <p className="text-neutral-600 text-center mb-6">
+                Based on user feedback and feature requests from beta testing
+              </p>
+              
+              <div className="grid md:grid-cols-4 gap-4 text-center">
+                <div className="bg-accent-50 p-4 rounded-lg">
+                  <h5 className="font-semibold text-primary-800">Free Tier</h5>
+                  <p className="text-sm text-neutral-600">3 plans/month</p>
+                </div>
+                <div className="bg-accent-50 p-4 rounded-lg">
+                  <h5 className="font-semibold text-primary-800">Local £2.99</h5>
+                  <p className="text-sm text-neutral-600">Unlimited local</p>
+                </div>
+                <div className="bg-accent-50 p-4 rounded-lg">
+                  <h5 className="font-semibold text-primary-800">Global £4.99</h5>
+                  <p className="text-sm text-neutral-600">Worldwide plans</p>
+                </div>
+                <div className="bg-accent-50 p-4 rounded-lg">
+                  <h5 className="font-semibold text-primary-800">Tourist £1.99</h5>
+                  <p className="text-sm text-neutral-600">One-time holiday</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Most Requested Features */}
+        <div className="max-w-3xl mx-auto mb-12">
+          <Card className="p-8">
+            <h3 className="text-2xl font-bold text-primary-800 mb-6 text-center">
+              Next Phase: User-Requested Features
+            </h3>
+            
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <div className="flex items-center">
+                  <CheckCircle className="w-4 h-4 text-accent-500 mr-2" />
+                  <span className="text-neutral-700">Multi-day trip planning</span>
+                </div>
+                <div className="flex items-center">
+                  <CheckCircle className="w-4 h-4 text-accent-500 mr-2" />
+                  <span className="text-neutral-700">Group planning features</span>
+                </div>
+                <div className="flex items-center">
+                  <CheckCircle className="w-4 h-4 text-accent-500 mr-2" />
+                  <span className="text-neutral-700">Mobile app version</span>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center">
+                  <CheckCircle className="w-4 h-4 text-accent-500 mr-2" />
+                  <span className="text-neutral-700">Dietary restriction options</span>
+                </div>
+                <div className="flex items-center">
+                  <CheckCircle className="w-4 h-4 text-accent-500 mr-2" />
+                  <span className="text-neutral-700">Direct booking integration</span>
+                </div>
+                <div className="flex items-center">
+                  <CheckCircle className="w-4 h-4 text-accent-500 mr-2" />
+                  <span className="text-neutral-700">Bucket list functionality</span>
+                </div>
+              </div>
+            </div>
+          </Card>
         </div>
 
         {/* Contact Form */}
@@ -254,7 +318,7 @@ const WorkWithMePage: React.FC = () => {
           <div className="text-center mb-8">
             <h3 className="text-2xl font-bold text-primary-800 mb-4">Ready to Work Together?</h3>
             <p className="text-neutral-600">
-              Whether you're an investor, potential partner, or just want to learn more, we'd love to hear from you.
+              Whether you're an investor, potential partner, or want to learn more about our proven results.
             </p>
           </div>
 
@@ -321,27 +385,18 @@ const WorkWithMePage: React.FC = () => {
                 loading={isSubmitting}
                 icon={<Send className="w-5 h-5" />}
               >
-                {isSubmitting ? 'Sending Message...' : 'Start the Conversation'}
+                {isSubmitting ? 'Sending...' : 'Start the Conversation'}
               </Button>
             </form>
           </Card>
 
-          {/* Direct Contact */}
-          <div className="text-center mt-8 pt-8 border-t border-neutral-200">
-            <p className="text-sm text-neutral-600 mb-4">
-              Prefer to reach out directly?
-            </p>
-            <div className="flex justify-center items-center space-x-6 text-sm">
-              <a 
-                href="mailto:hello@dayweave.com" 
-                className="flex items-center text-primary-600 hover:text-primary-700 transition-colors"
-              >
-                <Mail className="w-4 h-4 mr-2" />
-                hello.dayweave@gmail.com
+          <div className="text-center mt-8">
+            <p className="text-sm text-neutral-600">
+              Experience DayWeave yourself at{' '}
+              <a href="https://dayweave.com" className="text-primary-600 hover:text-primary-700 font-medium">
+                dayweave.com
               </a>
-              <span className="text-neutral-400">•</span>
-              <span className="text-neutral-600">Oxford, England</span>
-            </div>
+            </p>
           </div>
         </div>
       </div>
