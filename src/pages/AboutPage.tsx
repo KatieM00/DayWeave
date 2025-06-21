@@ -36,23 +36,23 @@ const AboutPage: React.FC = () => {
 
   const values = [
     {
-      title: "Intelligent Curation",
-      description: "Advanced AI algorithms that understand context, weather, and personal preferences to create truly personalized experiences.",
+      title: "Smart Curation",
+      description: "AI algorithms that consider weather, preferences, and local context to suggest experiences you'll actually enjoy.",
       icon: <Heart className="w-6 h-6" />
     },
     {
-      title: "Real-World Impact",
-      description: "Genuine solutions for real problems. Every feature solves an actual pain point in travel and leisure planning.",
+      title: "Practical Solutions",
+      description: "Every feature addresses real planning frustrations. Simple interfaces that actually work in the real world.",
       icon: <Sparkles className="w-6 h-6" />
     },
     {
-      title: "Continuous Innovation",
-      description: "Built for scale and evolution. From local day planning to international travel, we're creating the future of discovery.",
+      title: "Built to Grow",
+      description: "Starting with local day planning, expanding to longer trips and international travel as we learn and improve.",
       icon: <Users className="w-6 h-6" />
     },
     {
-      title: "User-Centric Design",
-      description: "Every decision prioritizes user experience. Simple interfaces, powerful results, and genuine value creation.",
+      title: "User-First Design",
+      description: "Clean interfaces, fast results, and genuine value. Built by someone who actually uses it for their own adventures.",
       icon: <Zap className="w-6 h-6" />
     }
   ];
@@ -115,7 +115,7 @@ const AboutPage: React.FC = () => {
             About <span style={{ color: '#f4d03f' }}>DayWeave</span>
           </h1>
           <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto leading-relaxed">
-            Transforming travel planning from hours of research into 30 seconds of intelligent discovery.
+            Making travel planning faster and more enjoyable through intelligent recommendations.
           </p>
         </div>
       </section>
@@ -155,10 +155,10 @@ const AboutPage: React.FC = () => {
                         DayWeave transforms the universal "what should we do today?" challenge into instant, personalized discoveries.
                       </p>
                       <p>
-                        While others focus on booking platforms and endless listings, we've created the first AI-powered serendipitous discovery engine that understands context, weather, and personal preferences.
+                        While others focus on booking platforms and endless listings, we've built an AI-powered planning tool that understands context, weather, and personal preferences to suggest genuinely interesting experiences.
                       </p>
                       <p>
-                        Our vision: turning decision fatigue into effortless exploration, one perfect day at a time.
+                        Our approach: combining intelligent algorithms with real-time data to turn decision fatigue into effortless exploration, one perfect day at a time.
                       </p>
                     </div>
 
@@ -220,10 +220,10 @@ const AboutPage: React.FC = () => {
                     
                     <div className="text-white/90 text-lg leading-relaxed mb-8 space-y-4">
                       <p>
-                        DayWeave addresses a £47 billion market opportunity in the UK leisure industry, where decision fatigue prevents millions from discovering amazing local experiences.
+                        DayWeave tackles the universal "what should we do today?" challenge that affects millions of people every weekend.
                       </p>
                       <p>
-                        Our beta testing achieved remarkable validation: 100% user satisfaction, 4.8/5 rating, and 90% preference for our "Surprise Me!" feature over traditional planning.
+                        Our beta testing shows strong validation: 100% user satisfaction, 4.8/5 rating, and 90% preference for our "Surprise Me!" feature over traditional planning methods.
                       </p>
                       <p>
                         Built with enterprise-grade architecture and real-world APIs, DayWeave is ready to scale globally.
@@ -264,10 +264,10 @@ const AboutPage: React.FC = () => {
             }`}
           >
             <h2 className="text-3xl font-bold text-white mb-6">
-              Ready to experience intelligent discovery?
+              Ready to try smarter planning?
             </h2>
             <p className="text-white/90 text-lg mb-8 max-w-2xl mx-auto">
-              Join thousands of users who've transformed their planning from hours of research into seconds of discovery.
+              Join users who've discovered that planning doesn't have to be a chore. See what DayWeave can find for you.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
