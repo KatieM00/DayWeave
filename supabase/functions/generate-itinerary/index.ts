@@ -1,5 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { GoogleGenerativeAI } from 'npm:@google/generative-ai@0.24.0';
+import { GoogleGenerativeAI } from 'npm:@google/generative-ai@0.21.0';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -94,7 +94,7 @@ serve(async (req)=>{
     // Initialize Gemini AI with server-side API key
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       tools: [{ googleSearch: {} }],
     });
     const prompt = `Before generating this itinerary, search the web for:
