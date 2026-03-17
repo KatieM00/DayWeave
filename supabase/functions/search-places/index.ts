@@ -9,6 +9,7 @@ const corsHeaders = {
 interface PlaceSearchRequest {
   query: string;
   location: string;
+  radius?: number;
 }
 
 serve(async (req) => {
@@ -18,7 +19,25 @@ serve(async (req) => {
   }
 
   try {
-    const { query, location }: PlaceSearchRequest = await req.json()
+    const { query, location, radius }: PlaceSearchRequest = await req.json()
+
+    // Sanitise query: strip leading street numbers, UK postcodes, and bare street addresses
+    // so the Places API receives a clean venue name rather than a street address
+    const sanitisedQuery = query
+      // Strip UK postcodes (e.g. "SL4 1AB", "EC1A 1BB", "W1A 0AX")
+      .replace(/\b[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d[A-Z]{2}\b/gi, '')
+      // Strip leading house/street numbers (e.g. "37 High Street" → "High Street")
+      .replace(/^\d+\s+/, '')
+      .trim()
+      // Collapse any double commas or trailing commas left after stripping
+      .replace(/,\s*,/g, ',')
+      .replace(/,\s*$/, '')
+      .trim()
+
+    console.log(`Query sanitisation: "${query}" → "${sanitisedQuery}"`)
+
+    // Convert radius from miles to metres; default 10km if not provided
+    const radiusMetres = radius ? Math.round(radius * 1609) : 10000
 
     // Get API key from environment
     const apiKey = Deno.env.get('GOOGLE_API_KEY')
@@ -54,7 +73,7 @@ serve(async (req) => {
     const { lat, lng } = geocodeData.results[0].geometry.location
 
     // Search for places using Google Places API
-    const placesUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&location=${lat},${lng}&radius=5000&key=${apiKey}`
+    const placesUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(sanitisedQuery)}&location=${lat},${lng}&radius=${radiusMetres}&key=${apiKey}`
     const placesResponse = await fetch(placesUrl)
     
     if (!placesResponse.ok) {

@@ -96,9 +96,19 @@ const ItineraryItem: React.FC<ItineraryItemProps> = ({
         activityLocation: activity.location
       });
       
-      // Search for the place using activity.location (the exact venue name) instead of activity.name
+      // Use activity.location as the search query, but fall back to activity.name
+      // if location looks like a street address (starts with a digit or contains a UK postcode)
+      const looksLikeAddress =
+        /^\d/.test(activity.location) ||
+        /\b[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d[A-Z]{2}\b/i.test(activity.location);
+      const searchQuery = looksLikeAddress ? activity.name : activity.location;
+      console.log(
+        looksLikeAddress
+          ? `⚠️ location looks like a street address ("${activity.location}") — using name instead: "${activity.name}"`
+          : `🔍 Using location as search query: "${activity.location}"`
+      );
       console.log('🔍 Calling searchPlaces API...');
-      const places = await searchPlaces(activity.location, planStartLocation);
+      const places = await searchPlaces(searchQuery, planStartLocation);
       console.log('📍 searchPlaces response:', places);
       
       if (places.length > 0) {

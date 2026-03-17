@@ -117,26 +117,9 @@ Return ONLY a JSON array of activities with this structure:
       console.log('Cleaned JSON preview:', cleanedJson.substring(0, 200) + '...')
       suggestions = JSON.parse(cleanedJson)
     } catch (parseError) {
-      console.error('JSON parsing error:', parseError)
+      console.warn('JSON parsing error — returning empty suggestions:', parseError)
       console.error('Raw AI response:', text)
-      
-      // Return fallback suggestions if AI fails
-      suggestions = [
-        {
-          id: 'fallback-1',
-          name: 'Local Walk',
-          description: 'Take a pleasant walk around the local area',
-          location: 'Local area',
-          startTime: '10:00',
-          endTime: '11:00',
-          duration: 60,
-          cost: 0,
-          activityType: ['outdoor'],
-          address: '',
-          ratings: 4.0,
-          imageUrl: null
-        }
-      ]
+      suggestions = []
     }
 
     console.log('Successfully generated activity suggestions')
@@ -153,27 +136,9 @@ Return ONLY a JSON array of activities with this structure:
 
   } catch (error) {
     console.error('Error generating activity suggestions:', error)
-    
-    // Return fallback suggestions if everything fails
-    const fallbackSuggestions = [
-      {
-        id: 'fallback-1',
-        name: 'Local Walk',
-        description: 'Take a pleasant walk around the local area',
-        location: 'Local area',
-        startTime: '10:00',
-        endTime: '11:00',
-        duration: 60,
-        cost: 0,
-        activityType: ['outdoor'],
-        address: '',
-        ratings: 4.0,
-        imageUrl: null
-      }
-    ]
 
     return new Response(
-      JSON.stringify(fallbackSuggestions),
+      JSON.stringify([]),
       { 
         headers: { 
           ...corsHeaders, 
