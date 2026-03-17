@@ -1,5 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { GoogleGenerativeAI } from 'npm:@google/generative-ai@0.21.0';
+import { GoogleGenerativeAI } from 'npm:@google/generative-ai@0.2.1';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -95,7 +95,6 @@ serve(async (req)=>{
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
       model: "gemini-2.0-flash",
-      tools: [{ googleSearch: {} }],
     });
     const prompt = `Before generating this itinerary, search the web for:
 - Reddit recommendations for ${preferences.activityTypes?.join(', ') || 'days out'} near ${location} (e.g. r/travel, r/unitedkingdom, r/london, local city subreddits)
